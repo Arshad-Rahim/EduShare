@@ -2,7 +2,6 @@ import { OtpController } from "../controller/otpController";
 import { OtpRepository } from "../repository/otpRepository";
 import { OtpService } from "../service/otpService";
 
-
 const otpRepository = new OtpRepository();
 const otpService = new OtpService(otpRepository);
 

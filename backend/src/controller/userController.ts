@@ -22,18 +22,15 @@ export class UserController {
     }
   }
 
-  async verifyOtpToRegister(req:Request,res:Response){
+  async verifyOtpToRegister(req: Request, res: Response) {
     try {
       const data = req.body;
       const user = await this.userService.verifyOtpToRegister(data);
-      res
-        .status(200)
-        .json({ message: "OTP verified successfully", user });
-      
+      res.status(200).json({ message: "OTP verified successfully", user });
     } catch (error) {
-       if (error instanceof Error) {
+      if (error instanceof Error) {
         res.status(400).json({ error: error.message });
-       }
+      }
     }
   }
 }

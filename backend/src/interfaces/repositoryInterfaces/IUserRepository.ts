@@ -1,5 +1,8 @@
-import { TOtp } from "../../types/otp";
-import { TEmail, TUserLogin, TUserModel, TUserRegister } from "../../types/user";
+import {
+  TEmail,
+  TUserModel,
+  TUserRegister,
+} from "../../types/user";
 
 export interface IUserRepository {
   createUser(data: TUserRegister): Promise<void>;

@@ -2,8 +2,6 @@ import mongoose from "mongoose";
 
 export async function connectDB() {
   try {
-
-
     const dbURL = process.env.MONGO_CONNECTION_STRING;
     if (!dbURL) {
       throw new Error("Connection String is Missing");
