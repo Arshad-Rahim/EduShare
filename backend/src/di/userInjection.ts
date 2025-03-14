@@ -1,14 +1,21 @@
-import { UserController } from "../controller/userController";
+import { CreateUserController } from "../controller/userController/createUserController";
+import { LoginUserController } from "../controller/userController/loginUserController";
 import { OtpRepository } from "../repository/otpRepository";
 import { UserRepository } from "../repository/userRepository";
 import { OtpService } from "../service/otpService";
-import { TutorService } from "../service/tutorService";
-import { UserService } from "../service/userService";
-
-const otpRepository = new OtpRepository();
-const otpService = new OtpService(otpRepository);
+import { CreateUserService } from "../service/user/createUserService";
+import { LoginUserService } from "../service/user/loginUserService";
+import { VerifyOtpToRegisterUserService } from "../service/user/verifyOtpToRegisterUserService";
 
 const userRepository = new UserRepository();
-const userService = new UserService(userRepository, otpService);
+// const otpRepository = new OtpRepository();
 
-export const injectedUserController = new UserController(userService);
+const createUserService = new CreateUserService(userRepository)
+const loginUserService = new LoginUserService(userRepository)
+// const otpService = new OtpService(otpRepository)
+
+
+export const injectedCreateUserController = new CreateUserController(createUserService)
+export const injectedLoginUserController = new LoginUserController(loginUserService)
+// export const injectedVerifyOtpToRegisterUserController = new verify(otpService)
+

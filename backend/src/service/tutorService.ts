@@ -1,16 +1,15 @@
-import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
-import { IOtpService } from "../interfaces/serviceInterfaces/otpServiceInterface";
+import { IFindByEmailUserRepository } from "../interfaces/repositoryInterfaces/user/findByEmailUserRepository";
 import { ITutorService } from "../interfaces/serviceInterfaces/tutorServiceInterface";
+import { ICreateUserService } from "../interfaces/serviceInterfaces/user/createUserService";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
-import { TVerifyOtpToRegister } from "../types/otp";
-import { TUserModel, TUserRegister } from "../types/user";
+import { TUserRegister } from "../types/user";
 import { hashPassword } from "../util/bcrypt";
 import { CustomError } from "../util/CustomError";
 
 export class TutorService implements ITutorService {
   constructor(
-    private userRepository: IUserRepository,
-    private otpService: IOtpService
+    private userRepository: IFindByEmailUserRepository,
+    private userRepositoryCreateUser: ICreateUserService
   ) {}
 
   async createUser(data: TUserRegister): Promise<void> {
@@ -28,6 +27,6 @@ export class TutorService implements ITutorService {
       role: "tutor",
     };
 
-    await this.userRepository.createUser(newUser);
+    await this.userRepositoryCreateUser.createUser(newUser);
   }
 }

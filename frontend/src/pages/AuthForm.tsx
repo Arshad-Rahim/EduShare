@@ -1,8 +1,9 @@
 "use client";
 
-import type * as React from "react";
 import axios from "axios";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -26,8 +27,13 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { OTPModal } from "@/components/modal-components/OTPModal";
-
 import { toast } from "sonner";
+import {
+  loginSchema,
+  registerSchema,
+  LoginFormData,
+  RegisterFormData,
+} from "@/validation";
 
 export type UserRole = "admin" | "user" | "tutor";
 
@@ -35,8 +41,8 @@ interface AuthFormProps {
   role?: UserRole;
   allowRoleSelection?: boolean;
   showRegistration?: boolean;
-  onLogin?: (data: any, role: UserRole) => void;
-  onRegister?: (data: any, role: UserRole) => void;
+  onLogin?: (data: LoginFormData, role: UserRole) => void;
+  onRegister?: (data: RegisterFormData, role: UserRole) => void;
   className?: string;
 }
 
@@ -48,102 +54,88 @@ export default function AuthForm({
   onRegister,
   className,
 }: AuthFormProps) {
-  // Active role state
   const [activeRole, setActiveRole] = useState<UserRole>(role);
-
-  // Form states
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
-  const [registerData, setRegisterData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-
-  // Password visibility states
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // OTP modal state
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
 
-  // Form handlers
-  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setLoginData((prev) => ({ ...prev, [name]: value }));
-  };
+  // Login form setup
+  const loginForm = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setRegisterData((prev) => ({ ...prev, [name]: value }));
-  };
+  // Register form setup
+  const registerForm = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      specialization: "",
+    },
+  });
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle login logic here
-    console.log(`${activeRole} login submitted:`, loginData);
-    onLogin?.(loginData, activeRole);
-  };
-
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate passwords match
-    if (registerData.password !== registerData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
+  const handleLoginSubmit = (data: LoginFormData) => {
+    // console.log(`${activeRole} login submitted:`, data);
     axios
-      .post("http://localhost:3000/register/otp", { email: registerData.email })
-      .then((data) => toast.success(data.data.message))
-      .catch((error) => toast.error(error.data.message));
+      .post("http://localhost:3000/login", data)
+      .then((response) => {
+        toast.success(response.data.message)
+        loginForm.reset();
+  })
+      .catch((error) => toast.error(error.response?.data?.error));
+    // onLogin?.(data, activeRole);
+  };
 
-    // Open OTP modal
-    setIsOTPModalOpen(true);
-    // toast.success("OTP Send Succesfully");
-
-    // In a real app, you would send the registration data to your API
-    console.log(`${activeRole} registration submitted:`, registerData);
+  const handleRegisterSubmit = (data: RegisterFormData) => {
+    axios
+      .post("http://localhost:3000/register/otp", { email: data.email })
+      .then((response) => {
+        toast.success(response.data.message);
+        setIsOTPModalOpen(true);
+      })
+      .catch((error) =>
+        toast.error(error.response?.data?.message || "Error sending OTP")
+      );
   };
 
   const handleOTPVerified = (otp: string) => {
-    // Handle successful OTP verification
+    const data = registerForm.getValues();
     axios
       .post("http://localhost:3000/register/verify-otp", {
-        email: registerData.email,
+        email: data.email,
         otp,
       })
       .then((response) => {
         toast.success(response.data.message);
         setIsOTPModalOpen(false);
 
-        onRegister?.(registerData, activeRole);
-
         axios
           .post("http://localhost:3000/register/user", {
-            name: registerData.name,
-            email: registerData.email,
-            password: registerData.password,
+            name: data.name,
+            email: data.email,
+            password: data.password,
           })
           .then((response) => {
             toast.success(response.data.message);
-            setRegisterData({
-              name: "",
-              email: "",
-              password: "",
-              confirmPassword: "",
-            });
+            onRegister?.(data, activeRole);
+            registerForm.reset();
           })
-          .catch((error) => toast.error(error.response.data.error));
+          .catch((error) =>
+            toast.error(error.response?.data?.error || "Registration failed")
+          );
       })
-      .catch((error) => toast.error(error.response.data.error));
-
-    // Reset form or redirect user
+      .catch((error) =>
+        toast.error(error.response?.data?.error || "OTP verification failed")
+      );
   };
 
-  // Get role-specific styling and content
   const getRoleConfig = (role: UserRole) => {
     switch (role) {
       case "admin":
@@ -190,7 +182,7 @@ export default function AuthForm({
       )}
     >
       <div className="w-full max-w-md">
-        {/* Role selection header */}
+        {/* Role selection header and selector remain unchanged */}
         <div className="mb-6 text-center">
           <div
             className={cn(
@@ -210,7 +202,6 @@ export default function AuthForm({
           </p>
         </div>
 
-        {/* Role selector (only shown when allowRoleSelection is true) */}
         {allowRoleSelection && activeRole !== "admin" && (
           <Card className="mb-6">
             <CardContent className="pt-6">
@@ -232,8 +223,7 @@ export default function AuthForm({
                     htmlFor="user"
                     className="flex items-center cursor-pointer"
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Student
+                    <Users className="h-4 w-4 mr-2" /> Student
                   </Label>
                 </div>
                 <div
@@ -249,8 +239,7 @@ export default function AuthForm({
                     htmlFor="tutor"
                     className="flex items-center cursor-pointer"
                   >
-                    <GraduationCap className="h-4 w-4 mr-2" />
-                    Tutor
+                    <GraduationCap className="h-4 w-4 mr-2" /> Tutor
                   </Label>
                 </div>
               </RadioGroup>
@@ -258,7 +247,6 @@ export default function AuthForm({
           </Card>
         )}
 
-        {/* Auth forms */}
         <Tabs defaultValue="login" className="w-full">
           {showRegistration && activeRole !== "admin" ? (
             <TabsList className="grid w-full grid-cols-2">
@@ -266,7 +254,7 @@ export default function AuthForm({
               <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
           ) : (
-            <div className="h-10"></div> // Spacer when tabs aren't shown
+            <div className="h-10" />
           )}
 
           {/* Login Form */}
@@ -282,31 +270,30 @@ export default function AuthForm({
                     : "Continue your learning journey"}
                 </CardDescription>
               </CardHeader>
-              <form onSubmit={handleLoginSubmit}>
+              <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">Email</Label>
                     <Input
                       id="login-email"
-                      name="email"
+                      {...loginForm.register("email")}
                       type="email"
                       placeholder="your.email@example.com"
-                      value={loginData.email}
-                      onChange={handleLoginChange}
-                      required
                     />
+                    {loginForm.formState.errors.email && (
+                      <p className="text-red-500 text-sm">
+                        {loginForm.formState.errors.email.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
                     <div className="relative">
                       <Input
                         id="login-password"
-                        name="password"
+                        {...loginForm.register("password")}
                         type={showLoginPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        value={loginData.password}
-                        onChange={handleLoginChange}
-                        required
                       />
                       <Button
                         type="button"
@@ -320,23 +307,20 @@ export default function AuthForm({
                         ) : (
                           <EyeIcon className="h-4 w-4" />
                         )}
-                        <span className="sr-only">
-                          {showLoginPassword
-                            ? "Hide password"
-                            : "Show password"}
-                        </span>
                       </Button>
                     </div>
+                    {loginForm.formState.errors.password && (
+                      <p className="text-red-500 text-sm">
+                        {loginForm.formState.errors.password.message}
+                      </p>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
                   <Button
                     type="submit"
                     className="w-full"
-                    style={{
-                      backgroundColor: getRoleConfig(activeRole).color,
-                      borderColor: getRoleConfig(activeRole).color,
-                    }}
+                    style={{ backgroundColor: roleConfig.color }}
                   >
                     Login
                   </Button>
@@ -348,7 +332,7 @@ export default function AuthForm({
             </Card>
           </TabsContent>
 
-          {/* Register Form - Only shown for user and tutor */}
+          {/* Register Form */}
           {showRegistration && activeRole !== "admin" && (
             <TabsContent value="register">
               <Card className={cn("border-t-4", roleConfig.borderColor)}>
@@ -360,42 +344,45 @@ export default function AuthForm({
                       : "Start your learning journey today"}
                   </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleRegisterSubmit}>
+                <form
+                  onSubmit={registerForm.handleSubmit(handleRegisterSubmit)}
+                >
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
                       <Input
                         id="name"
-                        name="name"
+                        {...registerForm.register("name")}
                         placeholder="John Doe"
-                        value={registerData.name}
-                        onChange={handleRegisterChange}
-                        required
                       />
+                      {registerForm.formState.errors.name && (
+                        <p className="text-red-500 text-sm">
+                          {registerForm.formState.errors.name.message}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="register-email">Email</Label>
                       <Input
                         id="register-email"
-                        name="email"
+                        {...registerForm.register("email")}
                         type="email"
                         placeholder="your.email@example.com"
-                        value={registerData.email}
-                        onChange={handleRegisterChange}
-                        required
                       />
+                      {registerForm.formState.errors.email && (
+                        <p className="text-red-500 text-sm">
+                          {registerForm.formState.errors.email.message}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="register-password">Password</Label>
                       <div className="relative">
                         <Input
                           id="register-password"
-                          name="password"
+                          {...registerForm.register("password")}
                           type={showRegisterPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          value={registerData.password}
-                          onChange={handleRegisterChange}
-                          required
                         />
                         <Button
                           type="button"
@@ -411,25 +398,22 @@ export default function AuthForm({
                           ) : (
                             <EyeIcon className="h-4 w-4" />
                           )}
-                          <span className="sr-only">
-                            {showRegisterPassword
-                              ? "Hide password"
-                              : "Show password"}
-                          </span>
                         </Button>
                       </div>
+                      {registerForm.formState.errors.password && (
+                        <p className="text-red-500 text-sm">
+                          {registerForm.formState.errors.password.message}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password">Confirm Password</Label>
                       <div className="relative">
                         <Input
                           id="confirm-password"
-                          name="confirmPassword"
+                          {...registerForm.register("confirmPassword")}
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          value={registerData.confirmPassword}
-                          onChange={handleRegisterChange}
-                          required
                         />
                         <Button
                           type="button"
@@ -445,29 +429,24 @@ export default function AuthForm({
                           ) : (
                             <EyeIcon className="h-4 w-4" />
                           )}
-                          <span className="sr-only">
-                            {showConfirmPassword
-                              ? "Hide password"
-                              : "Show password"}
-                          </span>
                         </Button>
                       </div>
+                      {registerForm.formState.errors.confirmPassword && (
+                        <p className="text-red-500 text-sm">
+                          {
+                            registerForm.formState.errors.confirmPassword
+                              .message
+                          }
+                        </p>
+                      )}
                     </div>
-
-                    {/* Additional fields for tutor */}
                     {activeRole === "tutor" && (
                       <div className="space-y-2">
                         <Label htmlFor="specialization">Specialization</Label>
                         <Input
                           id="specialization"
-                          name="specialization"
+                          {...registerForm.register("specialization")}
                           placeholder="e.g. Mathematics, Programming, etc."
-                          onChange={(e) =>
-                            setRegisterData((prev) => ({
-                              ...prev,
-                              specialization: e.target.value,
-                            }))
-                          }
                         />
                       </div>
                     )}
@@ -476,10 +455,7 @@ export default function AuthForm({
                     <Button
                       type="submit"
                       className="w-full"
-                      style={{
-                        backgroundColor: getRoleConfig(activeRole).color,
-                        borderColor: getRoleConfig(activeRole).color,
-                      }}
+                      style={{ backgroundColor: roleConfig.color }}
                     >
                       Register
                     </Button>
@@ -490,7 +466,6 @@ export default function AuthForm({
           )}
         </Tabs>
 
-        {/* Platform branding */}
         <div className="mt-8 text-center">
           <div className="flex justify-center items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
@@ -502,7 +477,6 @@ export default function AuthForm({
         </div>
       </div>
 
-      {/* OTP Modal */}
       <OTPModal
         isOpen={isOTPModalOpen}
         onClose={() => setIsOTPModalOpen(false)}

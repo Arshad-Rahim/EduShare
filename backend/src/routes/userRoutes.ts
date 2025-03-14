@@ -1,7 +1,9 @@
 import { Request, Response, Router } from "express";
-import { injectedUserController } from "../di/userInjection";
-import { injectedTutorController } from "../di/tutorInjection";
+import { injectedCreateUserController, injectedLoginUserController } from "../di/userInjection";
 import { injectedOtpController } from "../di/otpInjection";
+import { validateDTO } from "../middleware/validateDTO";
+import {  withoutRoleRegisterSchema } from "../validation/userValidation";
+import { injectedCreateTutorController } from "../di/tutorInjection";
 
 export class UserRoutes {
   public router: Router;
@@ -12,12 +14,15 @@ export class UserRoutes {
   }
 
   initializeRoutes() {
-    this.router.post("/register/user", (req: Request, res: Response) =>
-      injectedUserController.createUser(req, res)
+    this.router.post(
+      "/register/user",
+      validateDTO(withoutRoleRegisterSchema),
+      (req: Request, res: Response) =>
+        injectedCreateUserController.handle(req, res)
     );
 
     this.router.post("/register/tutor", (req: Request, res: Response) =>
-      injectedTutorController.createUser(req, res)
+      injectedCreateTutorController.handle(req, res)
     );
 
     this.router.post("/register/otp", (req: Request, res: Response) =>
@@ -25,7 +30,11 @@ export class UserRoutes {
     );
 
     this.router.post("/register/verify-otp", (req: Request, res: Response) =>
-      injectedUserController.verifyOtpToRegister(req, res)
+      injectedOtpController.verifyOtpToRegister(req, res)
+    );
+
+    this.router.post("/login", (req: Request, res: Response) =>
+      injectedLoginUserController.loginUser(req, res)
     );
   }
 }

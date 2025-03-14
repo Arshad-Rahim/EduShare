@@ -1,13 +1,17 @@
 import { TutorController } from "../controller/tutorController";
-import { OtpRepository } from "../repository/otpRepository";
+import { CreateUserController } from "../controller/userController/createUserController";
+import { LoginUserController } from "../controller/userController/loginUserController";
 import { UserRepository } from "../repository/userRepository";
-import { OtpService } from "../service/otpService";
-import { TutorService } from "../service/tutorService";
+import { CreateUserService } from "../service/user/createUserService";
+import { LoginUserService } from "../service/user/loginUserService";
 
-const otpRepository = new OtpRepository();
-const otpService = new OtpService(otpRepository);
 
 const tutorRepository = new UserRepository();
-const tutorService = new TutorService(tutorRepository, otpService);
 
-export const injectedTutorController = new TutorController(tutorService);
+const createUserService = new CreateUserService(tutorRepository)
+const loginUserService = new LoginUserService(tutorRepository)
+
+
+// export const injectedTutorController = new TutorController(tutorService);
+export const injectedCreateTutorController = new CreateUserController(createUserService)
+export const injectedLoginTutorController = new LoginUserController(loginUserService)
