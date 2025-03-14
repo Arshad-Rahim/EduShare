@@ -1,0 +1,181 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import { Label } from "@/components/ui/label";
+import type { UserRole } from "../../pages/AuthForm";
+import { cn } from "@/lib/utils";
+
+interface OTPModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onVerify: (otp:string) => void;
+  role?: UserRole;
+}
+
+export function OTPModal({
+  isOpen,
+  onClose,
+  onVerify,
+  role = "user",
+}: OTPModalProps) {
+  const [otp, setOtp] = useState<string>("");
+  const [timeLeft, setTimeLeft] = useState<number>(60);
+  const [canResend, setCanResend] = useState<boolean>(false);
+
+  // Get role-specific styling
+  const getRoleColor = (role: UserRole) => {
+    switch (role) {
+      case "admin":
+        return "bg-red-500";
+      case "tutor":
+        return "bg-purple-500";
+      case "user":
+      default:
+        return "bg-primary";
+    }
+  };
+
+  // Timer effect
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Reset states when modal opens
+    setOtp("");
+    setTimeLeft(60);
+    setCanResend(false);
+
+    // Start the timer
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Cleanup
+    return () => clearInterval(timer);
+  }, [isOpen]);
+
+  const handleVerify = () => {
+    // In a real app, you would verify the OTP with your backend
+    if (otp.length === 6) {
+      onVerify(otp);
+    } else {
+      alert("Please enter a valid 6-digit OTP");
+    }
+  };
+
+  const handleResendOTP = () => {
+    // Reset timer and resend OTP
+    setTimeLeft(60);
+    setCanResend(false);
+
+    // In a real app, you would call your API to resend the OTP
+    console.log("Resending OTP...");
+
+    // Start the timer again
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Verify Your Email</DialogTitle>
+          <DialogDescription>
+            We've sent a 6-digit verification code to your email address. Please
+            enter it below to complete your registration.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col items-center space-y-6 py-4">
+          <div className="w-full space-y-2">
+            <Label htmlFor="otp" className="text-center block">
+              Enter verification code
+            </Label>
+            <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          <div className="text-center space-y-4 w-full">
+            <div className="text-sm">
+              Time remaining:{" "}
+              <span className="font-mono font-medium">
+                {formatTime(timeLeft)}
+              </span>
+            </div>
+
+            {canResend ? (
+              <Button
+                variant="outline"
+                onClick={handleResendOTP}
+                className="w-full"
+              >
+                Resend Code
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                disabled
+                className="w-full opacity-50 cursor-not-allowed"
+              >
+                Resend Code
+              </Button>
+            )}
+
+            <Button
+              onClick={handleVerify}
+              className={cn("w-full", getRoleColor(role))}
+              disabled={otp.length !== 6}
+            >
+              Verify
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

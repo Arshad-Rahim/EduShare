@@ -2,6 +2,7 @@ import { UserController } from "../controller/userController";
 import { OtpRepository } from "../repository/otpRepository";
 import { UserRepository } from "../repository/userRepository";
 import { OtpService } from "../service/otpService";
+import { TutorService } from "../service/tutorService";
 import { UserService } from "../service/userService";
 
 const otpRepository = new OtpRepository();

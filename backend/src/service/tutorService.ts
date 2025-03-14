@@ -1,11 +1,13 @@
 import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
 import { IOtpService } from "../interfaces/serviceInterfaces/otpServiceInterface";
-import { IUserService } from "../interfaces/serviceInterfaces/userServiceInterface";
+import { ITutorService } from "../interfaces/serviceInterfaces/tutorServiceInterface";
+import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 import { TVerifyOtpToRegister } from "../types/otp";
 import { TUserModel, TUserRegister } from "../types/user";
 import { hashPassword } from "../util/bcrypt";
+import { CustomError } from "../util/CustomError";
 
-export class TutorService implements IUserService {
+export class TutorService implements ITutorService {
   constructor(
     private userRepository: IUserRepository,
     private otpService: IOtpService
@@ -15,7 +17,7 @@ export class TutorService implements IUserService {
     const alredyExisting = await this.userRepository.findByEmail(data);
 
     if (alredyExisting) {
-      throw new Error("Email alredy existing");
+      throw new CustomError(ERROR_MESSAGES.EMAIL_EXISTS, HTTP_STATUS.CONFLICT);
     }
 
     const hashedPassword = await hashPassword(data.password);
@@ -27,22 +29,5 @@ export class TutorService implements IUserService {
     };
 
     await this.userRepository.createUser(newUser);
-  }
-
-  // test cheyyan vendi idith itteth aan
-
-  async verifyOtpToRegister(
-    data: TVerifyOtpToRegister
-  ): Promise<TUserModel | null> {
-    const isOtpValid = await this.otpService.verifyOtp(data);
-    if (!isOtpValid) {
-      throw new Error("OTP verification failed");
-    }
-
-    const user = await this.userRepository.findByEmail(data);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    return user;
   }
 }

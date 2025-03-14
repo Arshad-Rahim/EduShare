@@ -2,8 +2,10 @@ import { IOtpService } from "../interfaces/serviceInterfaces/otpServiceInterface
 import { TOtp, TVerifyOtpToRegister } from "../types/otp";
 import { transporter } from "../mial/sendMail";
 import { generateOtp } from "../util/generateOtp";
-import { config } from "../shared/constants";
+import { config } from "../shared/mailTemplate";
 import { IOtpRepository } from "../interfaces/repositoryInterfaces/IOtpRepository";
+import { CustomError } from "../util/CustomError";
+import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 
 export class OtpService implements IOtpService {
   constructor(private otpRepository: IOtpRepository) {}
@@ -36,16 +38,20 @@ export class OtpService implements IOtpService {
   }
 
   async verifyOtp(data: TVerifyOtpToRegister): Promise<boolean> {
+    console.log("ComingData:", data);
     const otpEntry = await this.otpRepository.findByEmailAnOtp(data);
 
     if (!otpEntry) {
-      throw new Error("Invalid OTP");
+      throw new CustomError(
+        ERROR_MESSAGES.OTP_INVALID,
+        HTTP_STATUS.BAD_REQUEST
+      );
     }
 
     if (!otpEntry.expiredAt || otpEntry.expiredAt < new Date()) {
-      throw new Error("OTP has expired");
+      throw new CustomError(ERROR_MESSAGES.OTP_EXPIRED, HTTP_STATUS.GONE);
     }
-    await this.otpRepository.deleteOtp(data.email)
+    await this.otpRepository.deleteOtp(data.email);
     return true;
   }
 }

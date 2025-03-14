@@ -20,10 +20,12 @@ export class UserRoutes {
       injectedTutorController.createUser(req, res)
     );
 
-     this.router.post("/register/otp", (req: Request, res: Response) =>
-      injectedOtpController.otpGenerate(req,res)
+    this.router.post("/register/otp", (req: Request, res: Response) =>
+      injectedOtpController.otpGenerate(req, res)
     );
 
-     this.router.post("/register/verify-otp", (req: Request, res: Response) => injectedUserController.verifyOtpToRegister(req,res))
+    this.router.post("/register/verify-otp", (req: Request, res: Response) =>
+      injectedUserController.verifyOtpToRegister(req, res)
+    );
   }
 }
