@@ -1,6 +1,6 @@
 "use client";
 
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +34,13 @@ import {
   LoginFormData,
   RegisterFormData,
 } from "@/validation";
+import { EmailModal } from "@/components/modal-components/EmailModal";
+import { authAxiosInstance } from "@/api/authAxiosInstance";
+import { sendOtp } from "@/services/otpService/axiosOTPSend";
+import { verifyEmail } from "@/services/userService/verfiyEmail";
+import { sendOtpForgetPassword } from "@/services/otpService/axiosOtpSendForForgetPassword";
+import { verifyOtp } from "@/services/otpService/verifyOtp";
+import { registerUser } from "@/services/userService/registerUser";
 
 export type UserRole = "admin" | "user" | "tutor";
 
@@ -59,6 +66,8 @@ export default function AuthForm({
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [forgetPasswordEmail, setForgetPasswordEmail] = useState("");
 
   // Login form setup
   const loginForm = useForm<LoginFormData>({
@@ -82,58 +91,57 @@ export default function AuthForm({
   });
 
   const handleLoginSubmit = (data: LoginFormData) => {
-    // console.log(`${activeRole} login submitted:`, data);
-    axios
-      .post("http://localhost:3000/login", data)
+    authAxiosInstance
+      .post("/login", data)
       .then((response) => {
-        toast.success(response.data.message)
+        toast.success(response.data.message);
         loginForm.reset();
-  })
+      })
       .catch((error) => toast.error(error.response?.data?.error));
-    // onLogin?.(data, activeRole);
   };
 
-  const handleRegisterSubmit = (data: RegisterFormData) => {
-    axios
-      .post("http://localhost:3000/register/otp", { email: data.email })
-      .then((response) => {
-        toast.success(response.data.message);
-        setIsOTPModalOpen(true);
-      })
-      .catch((error) =>
-        toast.error(error.response?.data?.message || "Error sending OTP")
-      );
+  const handleRegisterSubmit = async (data: RegisterFormData) => {
+    try {
+      const res = await sendOtp(data);
+      toast.success(res.message);
+      setIsOTPModalOpen(true);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data?.message || "Error sending OTP");
+      }
+    }
   };
 
-  const handleOTPVerified = (otp: string) => {
-    const data = registerForm.getValues();
-    axios
-      .post("http://localhost:3000/register/verify-otp", {
-        email: data.email,
-        otp,
-      })
-      .then((response) => {
-        toast.success(response.data.message);
-        setIsOTPModalOpen(false);
+  const handleRegisterUser = async () => {
+    try {
+      const data = registerForm.getValues();
+      const res = await registerUser(data);
+      toast.success(res.message);
+      onRegister?.(data, activeRole);
+      registerForm.reset();
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data?.message || "Registration failed");
+      }
+    }
+  };
 
-        axios
-          .post("http://localhost:3000/register/user", {
-            name: data.name,
-            email: data.email,
-            password: data.password,
-          })
-          .then((response) => {
-            toast.success(response.data.message);
-            onRegister?.(data, activeRole);
-            registerForm.reset();
-          })
-          .catch((error) =>
-            toast.error(error.response?.data?.error || "Registration failed")
-          );
-      })
-      .catch((error) =>
-        toast.error(error.response?.data?.error || "OTP verification failed")
-      );
+  const handleOTPVerified = async (otp: string) => {
+    try {
+      const data = registerForm.getValues();
+      const email = data.email || forgetPasswordEmail;
+      const res = await verifyOtp(email, otp);
+      toast.success(res.message);
+      setIsOTPModalOpen(false);
+      setIsEmailModalOpen(false)
+      if (data.email) {
+        handleRegisterUser();
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data?.message || "Error sending OTP");
+      }
+    }
   };
 
   const getRoleConfig = (role: UserRole) => {
@@ -324,7 +332,12 @@ export default function AuthForm({
                   >
                     Login
                   </Button>
-                  <Button variant="link" type="button" className="text-sm">
+                  <Button
+                    variant="link"
+                    onClick={() => setIsEmailModalOpen(true)}
+                    type="button"
+                    className="text-sm"
+                  >
                     Forgot password?
                   </Button>
                 </CardFooter>
@@ -482,6 +495,27 @@ export default function AuthForm({
         onClose={() => setIsOTPModalOpen(false)}
         onVerify={handleOTPVerified}
         role={activeRole}
+      />
+
+      <EmailModal
+        open={isEmailModalOpen} // Modal is always open
+        onOpenChange={(open: boolean) => setIsEmailModalOpen(open)}
+        onEmailVerified={async (email: string) => {
+          try {
+            setForgetPasswordEmail(email);
+            const verify = await verifyEmail(email);
+            toast.success(verify.message);
+            setIsOTPModalOpen(true);
+
+            const sendEmail = await sendOtpForgetPassword(email);
+            toast.success(sendEmail.message);
+            
+          } catch (error) {
+            if (error instanceof AxiosError) {
+              toast.error(error.response?.data?.message || "Error sending OTP");
+            }
+          }
+        }}
       />
     </div>
   );

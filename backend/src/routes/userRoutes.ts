@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { injectedCreateUserController, injectedLoginUserController } from "../di/userInjection";
+import { injectedCreateUserController, injectedLoginUserController, injectedVerifyUserController } from "../di/userInjection";
 import { injectedOtpController } from "../di/otpInjection";
 import { validateDTO } from "../middleware/validateDTO";
 import {  withoutRoleRegisterSchema } from "../validation/userValidation";
@@ -25,16 +25,20 @@ export class UserRoutes {
       injectedCreateTutorController.handle(req, res)
     );
 
-    this.router.post("/register/otp", (req: Request, res: Response) =>
+    this.router.post("/sendOtp", (req: Request, res: Response) =>
       injectedOtpController.otpGenerate(req, res)
     );
 
-    this.router.post("/register/verify-otp", (req: Request, res: Response) =>
+    this.router.post("/verify-otp", (req: Request, res: Response) =>
       injectedOtpController.verifyOtpToRegister(req, res)
     );
 
     this.router.post("/login", (req: Request, res: Response) =>
       injectedLoginUserController.loginUser(req, res)
+    );
+
+    this.router.post("/verifyEmail", (req: Request, res: Response) =>
+      injectedVerifyUserController.verifyEmail(req, res)
     );
   }
 }

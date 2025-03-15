@@ -1,17 +1,17 @@
-import { IOtpService } from "../interfaces/serviceInterfaces/otpServiceInterface";
-import { TOtp, TVerifyOtpToRegister } from "../types/otp";
-import { transporter } from "../mial/sendMail";
-import { generateOtp } from "../util/generateOtp";
-import { config } from "../shared/mailTemplate";
-import { IOtpRepository } from "../interfaces/repositoryInterfaces/IOtpRepository";
-import { CustomError } from "../util/CustomError";
-import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
+import { IOtpService } from "../../interfaces/serviceInterfaces/otpServiceInterface";
+import { TOtp, TVerifyOtpToRegister } from "../../types/otp";
+import { transporter } from "../../mail/sendMail";
+import { generateOtp } from "../../util/generateOtp";
+import { config } from "../../shared/mailTemplate";
+import { IOtpRepository } from "../../interfaces/repositoryInterfaces/IOtpRepository";
+import { CustomError } from "../../util/CustomError";
+import { ERROR_MESSAGES, HTTP_STATUS } from "../../shared/constant";
 
 export class OtpService implements IOtpService {
   constructor(private otpRepository: IOtpRepository) {}
   async otpGenerate(data: Omit<TOtp, "otp">): Promise<void> {
     const otp = generateOtp();
-
+    console.log("OTP sended:", otp);
     const newOtp = {
       email: data.email,
       otp: otp,
@@ -30,7 +30,7 @@ export class OtpService implements IOtpService {
 
     try {
       const info = await transporter.sendMail(mailOptions);
-      console.log("Email sent :", info.response);
+      // console.log("Email sent :", info.response);
     } catch (error) {
       console.error("Error sending email :", error);
       throw error;
@@ -38,7 +38,6 @@ export class OtpService implements IOtpService {
   }
 
   async verifyOtp(data: TVerifyOtpToRegister): Promise<boolean> {
-    console.log("ComingData:", data);
     const otpEntry = await this.otpRepository.findByEmailAnOtp(data);
 
     if (!otpEntry) {

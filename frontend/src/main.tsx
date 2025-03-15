@@ -10,5 +10,6 @@ createRoot(document.getElementById("root")!).render(
     {/* <App /> */}
     <Toaster position="top-right" richColors />
     <AuthForm />
+   
   </StrictMode>
 );

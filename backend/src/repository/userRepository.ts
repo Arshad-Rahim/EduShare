@@ -1,9 +1,5 @@
 import { userModel } from "../models/userModels";
-import {
-  TUserLogin,
-  TUserModel,
-  TUserRegister,
-} from "../types/user";
+import { TUserRegister } from "../types/user";
 import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
 
 export class UserRepository implements IUserRepository {
@@ -12,8 +8,8 @@ export class UserRepository implements IUserRepository {
   }
 
   async findByEmail(email: string): Promise<TUserRegister | null> {
-    return await userModel.findOne({ email });
+    const user = await userModel.findOne({ email });
+
+    return user;
   }
-
-
 }

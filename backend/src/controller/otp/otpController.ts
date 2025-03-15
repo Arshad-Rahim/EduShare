@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { IOtpService } from "../interfaces/serviceInterfaces/otpServiceInterface";
-import { TOtp } from "../types/otp";
+import { IOtpService } from "../../interfaces/serviceInterfaces/otpServiceInterface";
+import { TOtp } from "../../types/otp";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
   SUCCESS_MESSAGES,
-} from "../shared/constant";
-import { CustomError } from "../util/CustomError";
+} from "../../shared/constant";
+import { CustomError } from "../../util/CustomError";
 
 export class OtpController {
   constructor(private otpService: IOtpService) {}
@@ -14,7 +14,6 @@ export class OtpController {
   async otpGenerate(req: Request, res: Response) {
     try {
       const data: TOtp = req.body;
-
       await this.otpService.otpGenerate(data);
 
       res.status(HTTP_STATUS.CREATED).json({
@@ -49,7 +48,7 @@ export class OtpController {
         res
           .status(error.statusCode)
           .json({ success: false, message: error.message });
-          return
+        return;
       }
       console.log(error);
       res
