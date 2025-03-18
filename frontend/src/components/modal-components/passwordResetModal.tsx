@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 interface PasswordResetModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPasswordReset: () => void;
+  onPasswordReset: (newPassword: string) => void;
   email?: string;
 }
 
@@ -56,7 +56,10 @@ export function PasswordResetModal({
   const handleSubmit = () => {
     if (validatePasswords()) {
       setTimeout(() => {
-        onPasswordReset();
+        onPasswordReset(newPassword);
+        setNewPassword(""); 
+        setConfirmPassword("");
+        setIsValid(false);
       }, 1000);
     }
   };

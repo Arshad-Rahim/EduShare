@@ -5,11 +5,8 @@ import { TUserRegister } from "../../types/user";
 import { hashPassword } from "../../util/bcrypt";
 import { CustomError } from "../../util/CustomError";
 
-
 export class CreateUserService implements ICreateUserService {
-  constructor(
-    private userRepository:IUserRepository
-  ) {}
+  constructor(private userRepository: IUserRepository) {}
 
   async createUser(data: TUserRegister): Promise<void> {
     const alredyExisting = await this.userRepository.findByEmail(data.email);
@@ -21,7 +18,7 @@ export class CreateUserService implements ICreateUserService {
       name: data.name,
       email: data.email,
       password: hashedPassword,
-      role: "user",
+      role: data.role,
     };
 
     await this.userRepository.createUser(newUser);

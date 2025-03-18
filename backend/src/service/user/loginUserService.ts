@@ -5,8 +5,6 @@ import { TUserLogin, TUserModel } from "../../types/user";
 import { comparePassword } from "../../util/bcrypt";
 import { CustomError } from "../../util/CustomError";
 
-
-
 export class LoginUserService implements ILoginUserService {
   constructor(private userRepository: IUserRepository) {}
 
@@ -16,12 +14,19 @@ export class LoginUserService implements ILoginUserService {
     if (userData) {
       valid = await comparePassword(data.password, userData.password);
     }
-    if (!valid) {
+
+    // console.log("Valid",valid)
+    // console.log("ROLE in the service",data.role)
+    // console.log("Userdata Role",userData?.role)
+    const validRole = data.role == userData?.role ? true : false;
+    if (!valid || !validRole) {
       throw new CustomError(
         ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
         HTTP_STATUS.UNAUTHORIZED
       );
     }
+    console.log("USERDAT IN THE BACKEND",userData)
+    
     return userData;
   }
 }

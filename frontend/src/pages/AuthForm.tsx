@@ -41,6 +41,10 @@ import { verifyEmail } from "@/services/userService/verfiyEmail";
 import { sendOtpForgetPassword } from "@/services/otpService/axiosOtpSendForForgetPassword";
 import { verifyOtp } from "@/services/otpService/verifyOtp";
 import { registerUser } from "@/services/userService/registerUser";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "@/redux/slice/userSlice";
+import { PasswordResetModal } from "@/components/modal-components/passwordResetModal";
 
 export type UserRole = "admin" | "user" | "tutor";
 
@@ -55,7 +59,7 @@ interface AuthFormProps {
 
 export default function AuthForm({
   role = "user",
-  allowRoleSelection = false,
+  allowRoleSelection = true, //ith true aakiyal selection option varum user and tutor
   showRegistration = true,
   onLogin,
   onRegister,
@@ -68,6 +72,10 @@ export default function AuthForm({
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [forgetPasswordEmail, setForgetPasswordEmail] = useState("");
+  const [isPasswordResetModalOpen, setIsPasswordResetModalOpen] =
+    useState(false);
+
+  const navigate = useNavigate();
 
   // Login form setup
   const loginForm = useForm<LoginFormData>({
@@ -89,13 +97,23 @@ export default function AuthForm({
       specialization: "",
     },
   });
+  const dispatch = useDispatch();
 
   const handleLoginSubmit = (data: LoginFormData) => {
     authAxiosInstance
-      .post("/login", data)
+      .post("/login", { ...data, role: activeRole })
       .then((response) => {
+        let { user } = response.data;
+        user = {
+          ...user,
+          role: activeRole,
+        };
+
+        dispatch(addUser(user));
         toast.success(response.data.message);
         loginForm.reset();
+        console.log("ActiveRole:", activeRole);
+        navigate(`/${activeRole}/home`);
       })
       .catch((error) => toast.error(error.response?.data?.error));
   };
@@ -115,7 +133,7 @@ export default function AuthForm({
   const handleRegisterUser = async () => {
     try {
       const data = registerForm.getValues();
-      const res = await registerUser(data);
+      const res = await registerUser({ ...data, role: activeRole });
       toast.success(res.message);
       onRegister?.(data, activeRole);
       registerForm.reset();
@@ -133,10 +151,12 @@ export default function AuthForm({
       const res = await verifyOtp(email, otp);
       toast.success(res.message);
       setIsOTPModalOpen(false);
-      setIsEmailModalOpen(false)
-      if (data.email) {
-        handleRegisterUser();
-      }
+      setIsEmailModalOpen(false);
+     if (forgetPasswordEmail) {
+       setIsPasswordResetModalOpen(true); 
+     } else if (data.email) {
+       handleRegisterUser(); 
+     }
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data?.message || "Error sending OTP");
@@ -181,6 +201,30 @@ export default function AuthForm({
   };
 
   const roleConfig = getRoleConfig(activeRole);
+
+
+  const resetPassword = async (email: string, newPassword: string) => {
+    const response = await authAxiosInstance.post("/resetPassword", {
+      email,
+      newPassword,
+    });
+    return response.data;
+  };
+
+  const handlePasswordReset = async (newPassword: string) => {
+    try {
+      const res = await resetPassword(forgetPasswordEmail, newPassword);
+      toast.success(res.message || "Password reset successfully");
+      setIsPasswordResetModalOpen(false);
+      setForgetPasswordEmail(""); 
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(
+          error.response?.data?.message || "Failed to reset password"
+        );
+      }
+    }
+  };
 
   return (
     <div
@@ -489,14 +533,6 @@ export default function AuthForm({
           </p>
         </div>
       </div>
-
-      <OTPModal
-        isOpen={isOTPModalOpen}
-        onClose={() => setIsOTPModalOpen(false)}
-        onVerify={handleOTPVerified}
-        role={activeRole}
-      />
-
       <EmailModal
         open={isEmailModalOpen} // Modal is always open
         onOpenChange={(open: boolean) => setIsEmailModalOpen(open)}
@@ -505,11 +541,12 @@ export default function AuthForm({
             setForgetPasswordEmail(email);
             const verify = await verifyEmail(email);
             toast.success(verify.message);
-            setIsOTPModalOpen(true);
 
             const sendEmail = await sendOtpForgetPassword(email);
             toast.success(sendEmail.message);
-            
+
+            setIsOTPModalOpen(true);
+            setIsEmailModalOpen(false);
           } catch (error) {
             if (error instanceof AxiosError) {
               toast.error(error.response?.data?.message || "Error sending OTP");
@@ -517,6 +554,19 @@ export default function AuthForm({
           }
         }}
       />
+      <OTPModal
+        isOpen={isOTPModalOpen}
+        onClose={() => setIsOTPModalOpen(false)}
+        onVerify={handleOTPVerified}
+        role={activeRole}
+      />
+      <PasswordResetModal
+        open={isPasswordResetModalOpen}
+        onOpenChange={setIsPasswordResetModalOpen}
+        onPasswordReset={handlePasswordReset}
+        email={forgetPasswordEmail}
+      />
+      ;
     </div>
   );
 }

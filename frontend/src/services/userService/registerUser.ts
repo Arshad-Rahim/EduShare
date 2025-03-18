@@ -6,6 +6,7 @@ export const registerUser = async (data:any)=>{
       name: data.name,
       email: data.email,
       password: data.password,
+      role:data.role
     });
     return response.data;
 }
