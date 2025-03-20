@@ -14,6 +14,7 @@ export enum HTTP_STATUS {
 
 
 export enum SUCCESS_MESSAGES  {
+  OPERATION_SUCCESS="Opearation Succesfull",
   CREATED= "Created successfully.",
   LOGIN_SUCCESS= "Login successful.",
   REGISTRATION_SUCCESS= "Registration completed successfully.",
@@ -29,6 +30,8 @@ export enum SUCCESS_MESSAGES  {
 
 
 export enum ERROR_MESSAGES {
+  ADMIN_BLOCKED="Account is Blocked by admin",
+  ADMIN_DONOT_ACCEPTED ="Admin Must Verify First",
   OTP_SEND_FAILED = "OTP sent failed",
   OTP_INVALID = "Invalid OTP",
   OTP_EXPIRED = "OTP has Expired",

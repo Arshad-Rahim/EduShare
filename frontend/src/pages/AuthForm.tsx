@@ -108,14 +108,21 @@ export default function AuthForm({
           ...user,
           role: activeRole,
         };
-
         dispatch(addUser(user));
         toast.success(response.data.message);
         loginForm.reset();
         console.log("ActiveRole:", activeRole);
-        navigate(`/${activeRole}/home`);
+        if (activeRole == "tutor") {
+          navigate(`/${activeRole}/home`);
+        } else {
+          navigate(`/`);
+        }
       })
-      .catch((error) => toast.error(error.response?.data?.error));
+      .catch((error) =>
+        toast.error(
+          error.response?.data?.error ?? error.response?.data?.message
+        )
+      );
   };
 
   const handleRegisterSubmit = async (data: RegisterFormData) => {
@@ -152,11 +159,11 @@ export default function AuthForm({
       toast.success(res.message);
       setIsOTPModalOpen(false);
       setIsEmailModalOpen(false);
-     if (forgetPasswordEmail) {
-       setIsPasswordResetModalOpen(true); 
-     } else if (data.email) {
-       handleRegisterUser(); 
-     }
+      if (forgetPasswordEmail) {
+        setIsPasswordResetModalOpen(true);
+      } else if (data.email) {
+        handleRegisterUser();
+      }
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(error.response?.data?.message || "Error sending OTP");
@@ -202,7 +209,6 @@ export default function AuthForm({
 
   const roleConfig = getRoleConfig(activeRole);
 
-
   const resetPassword = async (email: string, newPassword: string) => {
     const response = await authAxiosInstance.post("/resetPassword", {
       email,
@@ -216,7 +222,7 @@ export default function AuthForm({
       const res = await resetPassword(forgetPasswordEmail, newPassword);
       toast.success(res.message || "Password reset successfully");
       setIsPasswordResetModalOpen(false);
-      setForgetPasswordEmail(""); 
+      setForgetPasswordEmail("");
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(

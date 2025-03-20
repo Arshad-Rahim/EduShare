@@ -5,13 +5,11 @@ import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 export class JwtService implements ITokenService {
   private accessSecret: Secret;
   private accessExpiresIn: string;
-  private refreshSecret: Secret;
   private refreshExpiresIn: string;
 
   constructor() {
     this.accessSecret = process.env.JWT_SECRET as Secret;
     this.accessExpiresIn = process.env.JWT_ACCESS_EXPIRES || "";
-    this.refreshSecret = process.env.JWT_SECRET as Secret;
     this.refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES || "";
   }
 
@@ -34,7 +32,7 @@ export class JwtService implements ITokenService {
     email: string;
     role: string;
   }): string {
-    return jwt.sign(payload, this.refreshSecret, {
+    return jwt.sign(payload, this.accessSecret, {
       expiresIn: this.refreshExpiresIn as ms.StringValue,
     });
   }
@@ -51,7 +49,7 @@ export class JwtService implements ITokenService {
 
   verifyRefreshtoken(token: string): string | JwtPayload | null {
     try {
-      return jwt.verify(token, this.refreshSecret) as JwtPayload;
+      return jwt.verify(token, this.accessSecret) as JwtPayload;
     } catch (error) {
       console.error("Refresh token verification failed:", error);
       return null;
@@ -60,6 +58,7 @@ export class JwtService implements ITokenService {
 
   decodeAccessToken(token: string): JwtPayload | null {
     try {
+      console.log('token inside the decode token in the toen service', token)
       return jwt.decode(token) as JwtPayload;
     } catch (error) {
       console.error("Refresh token verification failed:", error);

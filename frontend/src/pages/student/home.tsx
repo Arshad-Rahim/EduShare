@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import {Link} from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Code,
@@ -12,8 +12,9 @@ import {
   Server,
   Star,
   X,
+  Bell,
+  ChevronDown,
 } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,88 +28,199 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
+import { authAxiosInstance } from "@/api/authAxiosInstance"; // Adjust path
+import { toast } from "sonner";
 
-export  function UserHomePage() {
+// Header Component
+function Header() {
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null
+  );
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    authAxiosInstance.get("/users/me").then((response) => {
+      console.log("RESPONSE IN FRONTEND", response);
+      setUser({
+        name: response.data.users.name,
+        email: response.data.users.email,
+      });
+    });
+  }, []);
+
+
+  // Logout function
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("token");
+    toast.success("Signed out successfully");
+    navigate("/auth");
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BookOpen className="h-6 w-6 text-primary" />
+          <span className="text-xl font-bold">LearnHub</span>
+        </div>
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex md:gap-6">
+          <Link to="/" className="text-sm font-medium text-primary">
+            Home
+          </Link>
+          <Link
+            to="#"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Courses
+          </Link>
+          <Link
+            to="#"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Paths
+          </Link>
+          <Link
+            to="#"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Community
+          </Link>
+          <Link
+            to="#"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            About
+          </Link>
+        </nav>
+
+        {/* Right Section */}
+        <div className="flex items-center gap-4">
+          <form className="hidden md:block">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search courses..."
+                className="w-[200px] pl-8 md:w-[250px] lg:w-[300px]"
+              />
+            </div>
+          </form>
+
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 px-2"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src="/placeholder.svg?height=32&width=32&text=U"
+                      alt={user.name}
+                    />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="hidden flex-col items-start text-sm md:flex">
+                    <span>{user.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span>{user.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="hidden md:inline-flex"
+              >
+                <Link to="/auth">Log in</Link>
+              </Button>
+              <Button size="sm" asChild className="hidden md:inline-flex">
+                <Link to="/auth">Sign up</Link>
+              </Button>
+            </>
+          )}
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// Main UserHomePage Component
+export function UserHomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null
+  );
+  useEffect(() => {
+    function fetchUser() {
+      authAxiosInstance.get("/users/me").then((response) => {
+        console.log("RESPONSE IN FRONTEND", response);
+        setUser({
+          name: response.data.users.name,
+          email: response.data.users.email,
+        });
+      });
+    }
+    fetchUser();
+  }, []);
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("token");
+    toast.success("Signed out successfully");
+    navigate("/auth");
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">LearnHub</span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex md:gap-6">
-            <Link to="#" className="text-sm font-medium text-primary">
-              Home
-            </Link>
-            <Link
-              to="#"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Courses
-            </Link>
-            <Link
-              to="#"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Paths
-            </Link>
-            <Link
-              to="#"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              Community
-            </Link>
-            <Link
-              to="#"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
-              About
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <form className="hidden md:block">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search courses..."
-                  className="w-[200px] pl-8 md:w-[250px] lg:w-[300px]"
-                />
-              </div>
-            </form>
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="hidden md:inline-flex"
-            >
-              <Link to="/auth">Log in</Link>
-            </Button>
-            <Button size="sm" asChild className="hidden md:inline-flex">
-              <Link to="/auth">Sign up</Link>
-            </Button>
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </div>
-        </div>
-      </header>
+      {/* Integrated Header */}
+      <Header />
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
@@ -138,42 +250,52 @@ export  function UserHomePage() {
                 />
               </div>
             </form>
-            <Link to="#" className="text-lg font-medium text-primary">
+            <Link to="/" className="text-lg font-medium text-primary">
               Home
             </Link>
-            <Link
-              to="#"
-              className="text-lg font-medium text-muted-foreground"
-            >
+            <Link to="#" className="text-lg font-medium text-muted-foreground">
               Courses
             </Link>
-            <Link
-              to="#"
-              className="text-lg font-medium text-muted-foreground"
-            >
+            <Link to="#" className="text-lg font-medium text-muted-foreground">
               Paths
             </Link>
-            <Link
-              to="#"
-              className="text-lg font-medium text-muted-foreground"
-            >
+            <Link to="#" className="text-lg font-medium text-muted-foreground">
               Community
             </Link>
-            <Link
-              to="#"
-              className="text-lg font-medium text-muted-foreground"
-            >
+            <Link to="#" className="text-lg font-medium text-muted-foreground">
               About
             </Link>
             <Separator />
-            <div className="flex flex-col gap-4">
-              <Button variant="outline" asChild className="w-full">
-                <Link to="#">Log in</Link>
-              </Button>
-              <Button asChild className="w-full">
-                <Link to="#">Sign up</Link>
-              </Button>
-            </div>
+            {user ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <span className="text-lg font-medium">{user.name}</span>
+                    <p className="text-sm text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <Button variant="outline" asChild>
+                  <Link to="/profile">Profile</Link>
+                </Button>
+                <Button variant="outline" onClick={handleLogout}>
+                  Sign out
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <Button variant="outline" asChild className="w-full">
+                  <Link to="/auth">Log in</Link>
+                </Button>
+                <Button asChild className="w-full">
+                  <Link to="/auth">Sign up</Link>
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       )}
@@ -366,7 +488,7 @@ export  function UserHomePage() {
                     >
                       <div className="aspect-video w-full overflow-hidden">
                         <img
-                          src={"/vite.svg"|| "/placeholder.svg"}
+                          src={course.image}
                           alt={course.title}
                           className="h-full w-full object-cover transition-transform hover:scale-105"
                         />
@@ -417,7 +539,6 @@ export  function UserHomePage() {
 
               <TabsContent value="new" className="mt-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {/* Similar structure as above with different courses */}
                   <Card className="overflow-hidden transition-all hover:shadow-md">
                     <div className="aspect-video w-full overflow-hidden">
                       <img
@@ -459,14 +580,11 @@ export  function UserHomePage() {
                       <Button className="w-full">Enroll Now</Button>
                     </CardFooter>
                   </Card>
-
-                  {/* Add more new courses here */}
                 </div>
               </TabsContent>
 
               <TabsContent value="trending" className="mt-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {/* Similar structure as above with different courses */}
                   <Card className="overflow-hidden transition-all hover:shadow-md">
                     <div className="aspect-video w-full overflow-hidden">
                       <img
@@ -506,8 +624,6 @@ export  function UserHomePage() {
                       <Button className="w-full">Enroll Now</Button>
                     </CardFooter>
                   </Card>
-
-                  {/* Add more trending courses here */}
                 </div>
               </TabsContent>
             </Tabs>
@@ -539,7 +655,7 @@ export  function UserHomePage() {
                   role: "Software Engineer",
                   company: "TechCorp",
                   testimonial:
-                    "The web development courses on LearnHub helped me transition from a junior to a senior developer in just 8 months. The instructors are amazing and the content is always up-to-date.",
+                    "The web development courses on LearnHub helped me transition from a junior to a senior developer in just 8 months.",
                   avatar: "/placeholder.svg?height=100&width=100",
                 },
                 {
@@ -547,7 +663,7 @@ export  function UserHomePage() {
                   role: "Data Scientist",
                   company: "DataInsights",
                   testimonial:
-                    "I started with zero knowledge in data science and now I'm working at my dream company. The Python for Data Science course was comprehensive and practical.",
+                    "I started with zero knowledge in data science and now I'm working at my dream company.",
                   avatar: "/placeholder.svg?height=100&width=100",
                 },
                 {
@@ -555,7 +671,7 @@ export  function UserHomePage() {
                   role: "Frontend Developer",
                   company: "CreativeAgency",
                   testimonial:
-                    "The React courses are exceptional. I've tried many platforms, but LearnHub's project-based approach and community support made all the difference in my learning journey.",
+                    "The React courses are exceptional. The project-based approach made all the difference.",
                   avatar: "/placeholder.svg?height=100&width=100",
                 },
               ].map((testimonial, index) => (
@@ -667,14 +783,6 @@ export  function UserHomePage() {
                     Mobile Development
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    to="#"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    DevOps
-                  </Link>
-                </li>
               </ul>
             </div>
 
@@ -695,22 +803,6 @@ export  function UserHomePage() {
                     className="text-muted-foreground hover:text-foreground"
                   >
                     Careers
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="#"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="#"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Press
                   </Link>
                 </li>
                 <li>
@@ -743,14 +835,6 @@ export  function UserHomePage() {
                     Privacy Policy
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    to="#"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Cookie Policy
-                  </Link>
-                </li>
               </ul>
             </div>
           </div>
@@ -759,92 +843,6 @@ export  function UserHomePage() {
             <p className="text-sm text-muted-foreground">
               © 2025 LearnHub. All rights reserved.
             </p>
-            <div className="flex gap-4">
-              <Link
-                to="#"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <span className="sr-only">Twitter</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                >
-                  <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-                </svg>
-              </Link>
-              <Link
-                to="#"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <span className="sr-only">LinkedIn</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                >
-                  <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                  <rect width="4" height="12" x="2" y="9"></rect>
-                  <circle cx="4" cy="4" r="2"></circle>
-                </svg>
-              </Link>
-              <Link
-                to="#"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <span className="sr-only">GitHub</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                >
-                  <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path>
-                  <path d="M9 18c-4.51 2-5-2-7-2"></path>
-                </svg>
-              </Link>
-              <Link
-                to="#"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <span className="sr-only">YouTube</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                >
-                  <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17"></path>
-                  <path d="m10 15 5-3-5-3z"></path>
-                </svg>
-              </Link>
-            </div>
           </div>
         </div>
       </footer>

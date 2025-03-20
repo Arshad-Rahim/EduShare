@@ -16,13 +16,15 @@ import { Search, Trash, Edit } from "lucide-react";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
 import Table from "@/components/modal-components/TableReusableStructure";
+import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
+import { Switch } from "@/components/ui/switch";
 
 interface User {
-  id: number; // or string
+  _id: string;
   name: string;
   email: string;
   role: string;
-  status: string;
+  isBlocked: boolean; // Change from status (string) to isBlocked (boolean)
   lastActive: string;
   enrolledCourses: number;
 }
@@ -34,7 +36,9 @@ const UserListing: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const rowsPerPage = 3; // Matches backend limit
+  const rowsPerPage = 3;
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -44,75 +48,122 @@ const UserListing: React.FC = () => {
           params: {
             page: currentPage,
             limit: rowsPerPage,
-            search: searchQuery || undefined, 
-            role: "user", 
+            search: searchQuery,
+            role: "user",
           },
         });
+        console.log("Fetched users:", response.data.users); // Debug
         setUsers(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
-        // toast.success("Users loaded successfully");
+        toast.success("Users loaded successfully");
       } catch (error) {
         toast.error("Failed to load users");
-        console.error(error);
+        console.error("Fetch error:", error);
       } finally {
         setLoading(false);
       }
     };
     fetchUsers();
-  }, [currentPage, searchQuery]); // Re-fetch when page or search changes
+  }, [currentPage, searchQuery]);
+
+  const handleEdit = (user: User) => {
+    toast.info(`Editing user: ${user.name}`);
+  };
+
+  const handleOpenDeleteModal = (id: string) => {
+    console.log("Opening modal with ID:", id);
+    setUserToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete) {
+      console.log("No userToDelete set");
+      return;
+    }
+
+    console.log("Starting delete for ID:", userToDelete);
+    try {
+      await authAxiosInstance.delete(`/users/${userToDelete}`);
+      setUsers(users.filter((user) => user._id !== userToDelete));
+      toast.success("User deleted successfully");
+
+      if (users.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      } else {
+        const response = await authAxiosInstance.get("/usersList", {
+          params: { page: currentPage, limit: rowsPerPage, role: "user" },
+        });
+        setUsers(response.data.users);
+        setTotalPages(Math.ceil(response.data.total / rowsPerPage));
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete user");
+    } finally {
+      console.log("Finally block: Closing modal");
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleToggleStatus = async (
+    userId: string,
+    currentBlocked: boolean
+  ) => {
+    const newBlocked = !currentBlocked; // Toggle boolean
+    try {
+      await authAxiosInstance.patch(`/users/${userId}/status`, {
+        status: newBlocked, 
+      });
+      setUsers(
+        users.map((user) =>
+          user._id === userId ? { ...user, isBlocked: newBlocked } : user
+        )
+      );
+      toast.success(
+        `User ${newBlocked ? "blocked" : "unblocked"} successfully`
+      );
+    } catch (error) {
+      console.error("Toggle status error:", error);
+      toast.error("Failed to update user status");
+    }
+  };
 
   const headers = [
-    { key: "id", label: "ID" },
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
-    { key: "status", label: "Status" },
+    {
+      key: "isBlocked",
+      label: "Status",
+      render: (user: User) => (user.isBlocked ? "Blocked" : "Active"), 
+    },
     { key: "lastActive", label: "Last Active" },
     { key: "enrolledCourses", label: "Enrolled Courses" },
     {
       key: "actions",
       label: "Actions",
       render: (user: User) => (
-        <div className="flex gap-2">
-          <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
+        <div className="flex gap-2 items-center">
+          {/* <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
             <Edit className="h-4 w-4" />
-          </Button>
-          <Button
+          </Button> */}
+          {/* <Button
             variant="ghost"
             size="icon"
-            onClick={() => handleDelete(user.id)}
+            onClick={() => handleOpenDeleteModal(user._id)}
           >
             <Trash className="h-4 w-4" />
-          </Button>
+          </Button> */}
+          <Switch
+            checked={!user.isBlocked} 
+            onCheckedChange={() => handleToggleStatus(user._id, user.isBlocked)}
+            className="ml-2"
+          />
         </div>
       ),
     },
   ];
-
-  const handleEdit = (user: User) => {
-    toast.info(`Editing user: ${user.name}`);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        await authAxiosInstance.delete(`/users/${id}`);
-        setUsers(users.filter((user) => user.id !== id));
-        toast.success("User deleted successfully");
-        // Refresh data if last item on page is deleted
-        if (users.length === 1 && currentPage > 1)
-          setCurrentPage(currentPage - 1);
-        else {
-          const response = await authAxiosInstance.get("/usersList", {
-            params: { page: currentPage, limit: rowsPerPage, role: "Student" },
-          });
-          setUsers(response.data.users);
-          setTotalPages(Math.ceil(response.data.total / rowsPerPage));
-        }
-      } catch (error) {
-        toast.error("Failed to delete user");
-      }
-    }
-  };
 
   return (
     <>
@@ -148,8 +199,8 @@ const UserListing: React.FC = () => {
             <>
               <Table
                 headers={headers}
-                data={users} // Directly use backend-paginated data
-                rowKey="id"
+                data={users}
+                rowKey="_id"
                 className="shadow-md rounded-lg"
               />
               {totalPages > 1 && (
@@ -201,6 +252,15 @@ const UserListing: React.FC = () => {
               )}
             </>
           )}
+          <ConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDelete}
+            title="Delete User"
+            description="Are you sure you want to delete this user? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+          />
         </main>
       </div>
     </>

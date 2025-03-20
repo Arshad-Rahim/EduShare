@@ -21,7 +21,14 @@ function App() {
       <Provider store={store}>
         <Router>
           <Routes>
-            <Route path="*" element={<NotFound />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedUserRoute>
+                  <UserHomePage />
+                </ProtectedUserRoute>
+              }
+            />
             <Route
               path="/auth"
               element={
@@ -41,14 +48,13 @@ function App() {
             />
 
             <Route
-              path="/user/home"
+              path="/tutor/home"
               element={
                 <ProtectedUserRoute>
-                  <UserHomePage />
+                  <TutorHome />
                 </ProtectedUserRoute>
               }
             />
-            <Route path="/tutor/home" element={<TutorHome />} />
             <Route
               path="/admin/home"
               element={
@@ -73,6 +79,7 @@ function App() {
                 </ProtectedAdminRoute>
               }
             />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
       </Provider>

@@ -1,23 +1,19 @@
 import { Request, Response } from "express";
-import { IFindAllUsersService } from "../../interfaces/serviceInterfaces/user/findAllUserService";
-import {
-  ERROR_MESSAGES,
-  HTTP_STATUS,
-  SUCCESS_MESSAGES,
-} from "../../shared/constant";
+import { IDeleteUserService } from "../../interfaces/serviceInterfaces/user/deleteUserService";
 import { CustomError } from "../../util/CustomError";
+import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../../shared/constant";
 
-export class FindAllUsersController {
-  constructor(private findAllUsersService: IFindAllUsersService) {}
+export class DeleteUserController {
+  constructor(private DeleteUserService: IDeleteUserService) {}
 
   async handle(req: Request, res: Response) {
     try {
-      const users = await this.findAllUsersService.findAllUsers();
-      res.status(HTTP_STATUS.CREATED).json({
-        success: true,
-        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-        users,
-      });
+      const { id } = req.params;
+      await this.DeleteUserService.deleteUser(id);
+       res.status(HTTP_STATUS.OK).json({
+              success: true,
+              message: SUCCESS_MESSAGES.DELETE_SUCCESS,
+            });
     } catch (error) {
       if (error instanceof CustomError) {
         res

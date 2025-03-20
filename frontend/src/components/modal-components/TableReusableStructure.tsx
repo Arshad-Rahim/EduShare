@@ -17,7 +17,7 @@ function Table<T>({
   headers,
   data,
   className,
-  rowKey = "id",
+  rowKey = "_id",
   onRowClick,
 }: TableProps<T>) {
   const getRowKey = (item: T, index: number): string =>

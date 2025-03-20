@@ -6,29 +6,49 @@ import {
   SUCCESS_MESSAGES,
 } from "../../shared/constant";
 import { CustomError } from "../../util/CustomError";
-import { Secret } from "jsonwebtoken";
+import { ITokenService } from "../../interfaces/tokenServiceInterface";
 
 export class LoginUserController {
-  constructor(private loginUserService: ILoginUserService) {}
+  constructor(
+    private loginUserService: ILoginUserService,
+    private jwtService: ITokenService
+  ) {}
 
   async loginUser(req: Request, res: Response) {
     try {
       const data = req.body;
-      const jwt = require("jsonwebtoken");
 
       const user = await this.loginUserService.loginUser(data);
-      const token = jwt.sign(
-        { id: user?._id },
-        process.env.JWT_SECRET as Secret,
-        {
-          expiresIn: "1h",
-        }
-      );
 
-      res.cookie(`${data.role}AccessToken`, token, {
-        httpOnly: true, // Prevents JavaScript access
-        sameSite: "strict", // CSRF protection
-        maxAge: 3600000, // 1 hour in milliseconds
+      if (user?.isAccepted == false && user?.role == "tutor") {
+        res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: ERROR_MESSAGES.ADMIN_DONOT_ACCEPTED,
+        });
+        return;
+      }
+
+      const accessToken = this.jwtService.generateAccessToken({
+        id: user?._id?.toString()!,
+        email: user?.email!,
+        role: user?.role!,
+      });
+      const refreshToken = this.jwtService.generateRefreshToken({
+        id: user?._id?.toString()!,
+        email: user?.email!,
+        role: user?.role!,
+      });
+
+      res.cookie(`${data.role}AccessToken`, accessToken, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: true,
+      });
+
+      res.cookie(`${data.role}RefreshToken`, refreshToken, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: true,
       });
 
       res.status(HTTP_STATUS.OK).json({

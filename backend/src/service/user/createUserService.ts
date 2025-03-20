@@ -19,6 +19,8 @@ export class CreateUserService implements ICreateUserService {
       email: data.email,
       password: hashedPassword,
       role: data.role,
+      isBlocked:false,
+      isAccepted:data.role == 'tutor'?false:true
     };
 
     await this.userRepository.createUser(newUser);

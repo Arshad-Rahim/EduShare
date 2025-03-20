@@ -1,9 +1,14 @@
 import { Request, Response, Router } from "express";
 import {
+  injectedAcceptTutorController,
   injectedCreateUserController,
+  injectedDeleteUserController,
+  injectedFindUserByIdController,
   injectedLoginUserController,
   injectedPaginatedUserController,
+  injectedRefreshTokenController,
   injectedResetPasswordController,
+  injectedUpdateStatusUserController,
   injectedVerifyUserController,
 } from "../di/userInjection";
 import { injectedOtpController } from "../di/otpInjection";
@@ -11,6 +16,8 @@ import { validateDTO } from "../middleware/validateDTO";
 import { withoutRoleRegisterSchema } from "../validation/userValidation";
 import { injectedCreateTutorController } from "../di/tutorInjection";
 import { adminAuthMiddleware } from "../middleware/adminAuthMiddleware";
+import { CheckBlockedStatus } from "../middleware/checkBlockedStatus";
+import { userAuthMiddleware } from "../middleware/userAuthMiddleware";
 // import {verifyToken} from '../middleware/adminAuthMiddleware'
 export class UserRoutes {
   public router: Router;
@@ -49,8 +56,17 @@ export class UserRoutes {
       injectedLoginUserController.loginUser(req, res)
     );
 
+
+    this.router.get("/users/me",userAuthMiddleware, (req: Request, res: Response) =>
+      injectedFindUserByIdController.handle(req, res)
+    );
+
     this.router.post("/verifyEmail", (req: Request, res: Response) =>
       injectedVerifyUserController.verifyEmail(req, res)
+    );
+
+    this.router.post("/refresh-token", (req: Request, res: Response) =>
+      injectedRefreshTokenController.handle(req,res)
     );
 
     // this.router.get(
@@ -67,6 +83,29 @@ export class UserRoutes {
        (req: Request, res: Response) =>
          injectedPaginatedUserController.handle(req, res)
      );
+
+        this.router.delete(
+          "/users/:id",
+          adminAuthMiddleware,
+          (req: Request, res: Response) =>
+            injectedDeleteUserController.handle(req, res)
+        );
+
+
+
+        this.router.patch(
+          "/users/:id/status",
+          adminAuthMiddleware,
+          (req: Request, res: Response) =>
+            injectedUpdateStatusUserController.handler(req, res)
+        );
+
+         this.router.patch(
+           "/tutors/:tutorId/approval",
+           adminAuthMiddleware,
+           (req: Request, res: Response) =>
+             injectedAcceptTutorController.handler(req, res)
+         );
 
     this.router.post("/resetPassword", (req: Request, res: Response) =>
       injectedResetPasswordController.resetPassword(req, res)

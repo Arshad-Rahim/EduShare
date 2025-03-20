@@ -5,6 +5,8 @@ export type TUserRegister = {
   email: string;
   password: string;
   role: string;
+  isBlocked:boolean;
+  isAccepted:boolean;
 };
 
 export type TEmail = {
@@ -28,6 +30,8 @@ export type TUserModel = {
   password: string;
   role: string;
   _id?: Types.ObjectId;
+  isBlocked:boolean;
+  isAccepted:boolean;
 };
 
 

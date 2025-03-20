@@ -10,14 +10,18 @@ export class LoginUserService implements ILoginUserService {
 
   async loginUser(data: TUserLogin): Promise<TUserModel | null> {
     const userData = await this.userRepository.findByEmail(data.email);
+    if(userData?.isBlocked){
+       throw new CustomError(
+         ERROR_MESSAGES.ADMIN_BLOCKED,
+         HTTP_STATUS.UNAUTHORIZED
+       );
+    }
     let valid;
     if (userData) {
       valid = await comparePassword(data.password, userData.password);
     }
 
-    // console.log("Valid",valid)
-    // console.log("ROLE in the service",data.role)
-    // console.log("Userdata Role",userData?.role)
+
     const validRole = data.role == userData?.role ? true : false;
     if (!valid || !validRole) {
       throw new CustomError(
@@ -25,7 +29,6 @@ export class LoginUserService implements ILoginUserService {
         HTTP_STATUS.UNAUTHORIZED
       );
     }
-    console.log("USERDAT IN THE BACKEND",userData)
     
     return userData;
   }

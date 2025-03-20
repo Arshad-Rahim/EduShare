@@ -13,6 +13,8 @@ export const registerSchema = z.object({
     .regex(/[A-Za-z]/, "Password must contain at least one letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
   role: z.string(),
+  isBlocked: z.boolean().optional().default(false),
+  isAccepted: z.boolean().optional().default(false),
 });
 
 export const withoutRoleRegisterSchema = registerSchema.omit({ role: true });

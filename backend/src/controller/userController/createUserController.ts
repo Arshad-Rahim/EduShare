@@ -13,7 +13,16 @@ export class CreateUserController {
 
   async handle(req: Request, res: Response) {
     try {
-      const data: RegisterDTO = req.body;
+      let data: RegisterDTO = req.body;
+
+      console.log("Data",data)
+      if(data.role =='tutor'){
+        data={
+          ...data,
+          isAccepted:false
+        }
+      }
+      console.log("Datab After", data);
 
       await this.createUserService.createUser(data);
 

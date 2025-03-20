@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema({
     enum: ["admin", "user", "tutor"],
     default: "user",
   },
+  isBlocked:{
+    type:Boolean,
+    default:false,
+  },
+  isAccepted:{
+    type:Boolean,
+    default:false,
+  }
 });
 
 export const userModel = mongoose.model("user", userSchema);

@@ -21,7 +21,7 @@ export const userAuthMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies.adminAccessToken;
+    const token = req.cookies.userAccessToken;
 
     if (!token) {
       console.log("no token");
@@ -32,7 +32,8 @@ export const userAuthMiddleware = async (
     }
 
     const user = tokenService.verifyAccessToken(token) as CustomJwtPayload;
-    if (!user || !user.id) {
+    console.log("USER IM USERAUTH",user)
+    if (!user || !user.userId) {
       res
         .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS });
@@ -83,6 +84,21 @@ export const decodeToken = async (
       access_token: token.access_token,
       refresh_token: token.refresh_token,
     };
+    console.log("FINAL USER",user)
     next();
-  } catch (error) {}
+  } catch (error:any) {
+     if (error.name === "TokenExpiredError") {
+       console.log("token is expired is worked");
+       res
+         .status(HTTP_STATUS.UNAUTHORIZED)
+         .json({ message: ERROR_MESSAGES.TOKEN_EXPIRED });
+       return;
+     }
+     console.log("token is invalid is worked");
+
+     res
+       .status(HTTP_STATUS.UNAUTHORIZED)
+       .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
+     return;
+  }
 };

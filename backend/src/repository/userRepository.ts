@@ -12,6 +12,11 @@ export class UserRepository implements IUserRepository {
     return user;
   }
 
+  async findById(id: string): Promise<TUserModel | null> {
+    const user = await userModel.findOne({ _id:id });
+    return user;
+  }
+
   async findAllUsers(): Promise<TUserModel[] | null> {
     const users = await userModel.find();
     console.log(users);
@@ -49,10 +54,18 @@ export class UserRepository implements IUserRepository {
     const users = await userModel.find(query).skip(skip).limit(limit).lean();
     const total = await userModel.countDocuments(query);
 
-    return { users, total ,page,limit};
+    return { users, total, page, limit };
   }
 
   async deleteUser(id: string): Promise<void> {
     await userModel.findByIdAndDelete(id);
+  }
+
+  async updateStatus(id: string, status: boolean): Promise<void> {
+    await userModel.findByIdAndUpdate({ _id: id }, { isBlocked: status });
+  }
+
+  async acceptTutor(tutorId: string): Promise<void> {
+    await userModel.findByIdAndUpdate({ _id: tutorId }, { isAccepted: true });
   }
 }

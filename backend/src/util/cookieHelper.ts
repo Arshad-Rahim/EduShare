@@ -21,3 +21,26 @@ export const setAuthCookies = (
     sameSite: "strict",
   });
 };
+
+export const updateCookieWithAccessToken = (
+  res: Response,
+  accessToken: string,
+  accessTokenName: string
+) => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  res.cookie(accessTokenName, accessToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "strict",
+  });
+};
+
+export const clearAuthCookies = (
+  res: Response,
+  accessTokenName: string,
+  refreshTokenName: string
+) => {
+  res.clearCookie(accessTokenName);
+  res.clearCookie(refreshTokenName);
+};
