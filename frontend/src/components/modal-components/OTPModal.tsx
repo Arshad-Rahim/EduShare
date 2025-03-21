@@ -17,12 +17,17 @@ import {
 import { Label } from "@/components/ui/label";
 import type { UserRole } from "../../pages/AuthForm";
 import { cn } from "@/lib/utils";
+import { RegisterFormData } from "@/validation";
+import { sendOtp } from "@/services/otpService/axiosOTPSend";
+import { toast } from "sonner";
 
 interface OTPModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onVerify: (otp:string) => void;
+  onVerify: (otp: string) => void;
   role?: UserRole;
+  data: RegisterFormData
+  setIsOTPModalOpen:boolean
 }
 
 export function OTPModal({
@@ -30,6 +35,8 @@ export function OTPModal({
   onClose,
   onVerify,
   role = "user",
+  data,
+  setIsOTPModalOpen
 }: OTPModalProps) {
   const [otp, setOtp] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(60);
@@ -82,25 +89,34 @@ export function OTPModal({
     }
   };
 
-  const handleResendOTP = () => {
-    // Reset timer and resend OTP
-    setTimeLeft(60);
-    setCanResend(false);
-
+  const handleResendOTP = async() => {
+   
     // In a real app, you would call your API to resend the OTP
-    console.log("Resending OTP...");
+    // console.log("Resending OTP...");
+try {
+  // Reset timer and resend OTP
+  setTimeLeft(60);
+  setCanResend(false);
+    const res = await sendOtp(data);
+        toast.success(res.message);
+        // setIsOTPModalOpen(true);
+  // Start the timer again
+  const timer = setInterval(() => {
+    setTimeLeft((prev) => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        setCanResend(true);
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
-    // Start the timer again
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setCanResend(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+} catch (error) {
+  
+}
+
+   
   };
 
   // Format time as MM:SS

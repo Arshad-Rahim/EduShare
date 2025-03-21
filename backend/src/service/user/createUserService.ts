@@ -13,14 +13,17 @@ export class CreateUserService implements ICreateUserService {
     if (alredyExisting) {
       throw new CustomError(ERROR_MESSAGES.EMAIL_EXISTS, HTTP_STATUS.CONFLICT);
     }
-    const hashedPassword = await hashPassword(data.password);
+    let hashedPassword=""
+    if (data.password) {
+       hashedPassword = await hashPassword(data.password);
+    }
     const newUser = {
       name: data.name,
       email: data.email,
       password: hashedPassword,
       role: data.role,
-      isBlocked:false,
-      isAccepted:data.role == 'tutor'?false:true
+      isBlocked: false,
+      isAccepted: data.role == "tutor" ? false : true,
     };
 
     await this.userRepository.createUser(newUser);

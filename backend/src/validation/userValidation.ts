@@ -11,7 +11,9 @@ export const registerSchema = z.object({
     .string()
     .min(8, "Password must be atleast 8 charecters")
     .regex(/[A-Za-z]/, "Password must contain at least one letter")
-    .regex(/[0-9]/, "Password must contain at least one number"),
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .optional(),
+
   role: z.string(),
   isBlocked: z.boolean().optional().default(false),
   isAccepted: z.boolean().optional().default(false),

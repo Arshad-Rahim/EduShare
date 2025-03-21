@@ -8,6 +8,7 @@ export class PaginatedUserService implements IPaginatedUserService{
 
     async getUsers(options: TPaginationOptions): Promise<TPaginatedResult> {
         const { page, limit, search, role } = options;
+        console.log("pag", page, limit, search, role);
         const { users, total } = await this.userRepository.getUsers({
           page,
           limit,

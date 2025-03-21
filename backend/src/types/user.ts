@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 export type TUserRegister = {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   role: string;
   isBlocked:boolean;
   isAccepted:boolean;
@@ -27,11 +27,11 @@ export type TOtpVerify = {
 export type TUserModel = {
   name: string;
   email: string;
-  password: string;
+  password?: string | null | undefined;
   role: string;
   _id?: Types.ObjectId;
-  isBlocked:boolean;
-  isAccepted:boolean;
+  isBlocked: boolean;
+  isAccepted: boolean;
 };
 
 

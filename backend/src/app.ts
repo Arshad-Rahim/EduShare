@@ -21,4 +21,6 @@ app.use((error:any,req:Request,res:Response,next:NextFunction) => handleError(er
 
 app.use("/", new UserRoutes().router);
 
+
+
 export default app;

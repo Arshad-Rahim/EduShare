@@ -54,4 +54,5 @@ export enum ERROR_MESSAGES {
   MISSING_PARAMETERS = "Missing required parameters.",
   ROUTE_NOT_FOUND = "Route not found.",
   ID_NOT_PROVIDED = "ID not provided",
+  INVALID_PASSWORD ="Password Doesnot Match"
 };

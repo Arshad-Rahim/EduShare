@@ -1,3 +1,4 @@
+import { googleController } from "../controller/googleAuthController/googleController";
 import { AcceptTutorController } from "../controller/userController/accepttutorController";
 import { CreateUserController } from "../controller/userController/createUserController";
 import { DeleteUserController } from "../controller/userController/deleteUserController";
@@ -5,11 +6,13 @@ import { FindAllUsersController } from "../controller/userController/findAllUser
 import { FindUserByIdController } from "../controller/userController/findUsersByIdController";
 import { GetUsersController } from "../controller/userController/getUsersController";
 import { LoginUserController } from "../controller/userController/loginUserController";
+import { LogoutUserController } from "../controller/userController/logoutUserController";
 import { RefreshTokenController } from "../controller/userController/refreshTokenController";
 import { ResetPasswordController } from "../controller/userController/resetPasswordController";
 import { UpdateStatusController } from "../controller/userController/updateStatusController";
 import { VerifyEmailController } from "../controller/userController/verifyEmailController";
 import { UserRepository } from "../repository/userRepository";
+import { GoogleService } from "../service/googleAuth/googleService";
 import { JwtService } from "../service/jwt/jwtService";
 import { AcceptTutorService } from "../service/user/acceptTutorService";
 import { CreateUserService } from "../service/user/createUserService";
@@ -38,6 +41,8 @@ const updateStatusService = new UpdateStatusService(userRepository);
 const acceptTutorService = new AcceptTutorService(userRepository);
 const findUserByIdService = new FindUserByIdService(userRepository);
 const refreshTokenService = new RefreshTokenService(tokenService)
+const googleService = new GoogleService(userRepository)
+
 
 export const injectedCreateUserController = new CreateUserController(
   createUserService
@@ -68,10 +73,18 @@ export const injectedAcceptTutorController = new AcceptTutorController(
   acceptTutorService
 );
 export const injectedFindUserByIdController = new FindUserByIdController(
-  findUserByIdService
+  findUserByIdService,
+  userRepository
 );
 
 export const injectedRefreshTokenController = new RefreshTokenController(
   refreshTokenService,
   tokenService
 );
+
+
+export const injectedGoogleController = new googleController(
+  googleService,
+);
+
+export const injectedLogoutUserController = new LogoutUserController();

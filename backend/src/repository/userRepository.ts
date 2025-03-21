@@ -3,17 +3,18 @@ import { TPaginatedResult, TPaginationOptions, TUpdatePassword, TUserModel, TUse
 import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
 
 export class UserRepository implements IUserRepository {
-  async createUser(data: TUserRegister): Promise<void> {
-    await userModel.create(data);
+  async createUser(data: TUserRegister): Promise<TUserModel> {
+    const userData =await userModel.create(data);
+    return userData;
   }
 
-  async findByEmail(email: string): Promise<TUserRegister | null> {
+  async findByEmail(email: string): Promise<TUserModel | null> {
     const user = await userModel.findOne({ email });
     return user;
   }
 
   async findById(id: string): Promise<TUserModel | null> {
-    const user = await userModel.findOne({ _id:id });
+    const user = await userModel.findById(id);
     return user;
   }
 

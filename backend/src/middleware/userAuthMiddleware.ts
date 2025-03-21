@@ -33,7 +33,7 @@ export const userAuthMiddleware = async (
 
     const user = tokenService.verifyAccessToken(token) as CustomJwtPayload;
     console.log("USER IM USERAUTH",user)
-    if (!user || !user.userId) {
+    if (!user) {
       res
         .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS });

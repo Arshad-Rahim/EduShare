@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   BookOpen,
   BarChart3,
@@ -22,10 +22,17 @@ import {
   ArrowUp,
   ArrowDown,
   Activity,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,15 +40,38 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { authAxiosInstance } from "@/api/authAxiosInstance";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { removeUser } from "@/redux/slice/userSlice";
+import { toast } from "sonner";
 
-export  function TutorHome() {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+export function TutorHome() {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    authAxiosInstance
+      .post("/logout")
+      .then((response) => {
+        console.log(response);
+        toast.success(response.data.message);
+
+        localStorage.removeItem("userData");
+        dispatch(removeUser());
+        navigate("/auth");
+      })
+      .catch((error) => {
+        console.error("Logout failed:", error);
+      });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -49,7 +79,12 @@ export  function TutorHome() {
       <header className="sticky top-0 z-40 w-full border-b bg-background">
         <div className="container flex h-16 items-center justify-between space-x-4 sm:space-x-0">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="md:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden"
+            >
               <Menu className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
@@ -67,9 +102,15 @@ export  function TutorHome() {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 px-2"
+                >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32&text=T" alt="@tutor" />
+                    <AvatarImage
+                      src="/placeholder.svg?height=32&width=32&text=T"
+                      alt="@tutor"
+                    />
                     <AvatarFallback>T</AvatarFallback>
                   </Avatar>
                   <div className="hidden flex-col items-start text-sm md:flex">
@@ -86,7 +127,13 @@ export  function TutorHome() {
                 <DropdownMenuItem>Earnings</DropdownMenuItem>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    handleSignOut();
+                  }}
+                >
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -96,7 +143,9 @@ export  function TutorHome() {
       <div className="flex">
         {/* Sidebar */}
         <aside
-          className={`${sidebarOpen ? "block" : "hidden"} fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block`}
+          className={`${
+            sidebarOpen ? "block" : "hidden"
+          } fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block`}
         >
           <div className="flex h-full flex-col">
             <div className="px-4">
@@ -107,15 +156,29 @@ export  function TutorHome() {
             </div>
             <nav className="mt-6 grid gap-1 px-2">
               {[
-                { icon: <LayoutDashboard className="h-4 w-4" />, name: "Dashboard", active: true },
+                {
+                  icon: <LayoutDashboard className="h-4 w-4" />,
+                  name: "Dashboard",
+                  active: true,
+                },
                 { icon: <FileText className="h-4 w-4" />, name: "My Courses" },
-                { icon: <Video className="h-4 w-4" />, name: "Content Creation" },
+                {
+                  icon: <Video className="h-4 w-4" />,
+                  name: "Content Creation",
+                },
                 { icon: <Users className="h-4 w-4" />, name: "Students" },
-                { icon: <MessageSquare className="h-4 w-4" />, name: "Messages" },
+                {
+                  icon: <MessageSquare className="h-4 w-4" />,
+                  name: "Messages",
+                },
                 { icon: <BarChart3 className="h-4 w-4" />, name: "Analytics" },
                 { icon: <Calendar className="h-4 w-4" />, name: "Schedule" },
               ].map((item) => (
-                <Button key={item.name} variant={item.active ? "secondary" : "ghost"} className="justify-start">
+                <Button
+                  key={item.name}
+                  variant={item.active ? "secondary" : "ghost"}
+                  className="justify-start"
+                >
                   {item.icon}
                   <span className="ml-2">{item.name}</span>
                 </Button>
@@ -139,7 +202,9 @@ export  function TutorHome() {
           <div className="container py-6">
             <div className="mb-10">
               <h1 className="text-3xl font-bold">Welcome back, Dr. Ryan</h1>
-              <p className="text-muted-foreground">Here's what's happening with your courses today.</p>
+              <p className="text-muted-foreground">
+                Here's what's happening with your courses today.
+              </p>
             </div>
 
             {/* Stats Overview */}
@@ -177,7 +242,9 @@ export  function TutorHome() {
                 <Card key={index}>
                   <CardContent className="flex items-center justify-between p-6">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {stat.title}
+                      </p>
                       <p className="mt-1 text-2xl font-bold">{stat.value}</p>
                       <div className="mt-1 flex items-center">
                         {stat.status === "increase" ? (
@@ -185,12 +252,20 @@ export  function TutorHome() {
                         ) : (
                           <ArrowDown className="mr-1 h-3 w-3 text-red-500" />
                         )}
-                        <span className={stat.status === "increase" ? "text-green-500" : "text-red-500"}>
+                        <span
+                          className={
+                            stat.status === "increase"
+                              ? "text-green-500"
+                              : "text-red-500"
+                          }
+                        >
                           {stat.change}
                         </span>
                       </div>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-3">{stat.icon}</div>
+                    <div className="rounded-full bg-primary/10 p-3">
+                      {stat.icon}
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -201,7 +276,9 @@ export  function TutorHome() {
               <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle>Course Performance</CardTitle>
-                  <CardDescription>Overview of your active courses</CardDescription>
+                  <CardDescription>
+                    Overview of your active courses
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
@@ -253,12 +330,20 @@ export  function TutorHome() {
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="text-right">
-                              <div className="text-sm font-medium">{course.rating}/5</div>
-                              <div className="text-xs text-muted-foreground">Rating</div>
+                              <div className="text-sm font-medium">
+                                {course.rating}/5
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Rating
+                              </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-sm font-medium">{course.completion}%</div>
-                              <div className="text-xs text-muted-foreground">Completion</div>
+                              <div className="text-sm font-medium">
+                                {course.completion}%
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Completion
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -278,7 +363,9 @@ export  function TutorHome() {
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Student Activity</CardTitle>
-                  <CardDescription>Latest enrollments and completions</CardDescription>
+                  <CardDescription>
+                    Latest enrollments and completions
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -314,7 +401,10 @@ export  function TutorHome() {
                     ].map((activity, index) => (
                       <div key={index} className="flex items-start gap-3">
                         <Avatar>
-                          <AvatarImage src={activity.avatar} alt={activity.name} />
+                          <AvatarImage
+                            src={activity.avatar}
+                            alt={activity.name}
+                          />
                           <AvatarFallback>
                             {activity.name
                               .split(" ")
@@ -324,10 +414,15 @@ export  function TutorHome() {
                         </Avatar>
                         <div>
                           <p className="text-sm">
-                            <span className="font-medium">{activity.name}</span> {activity.action}{" "}
-                            <span className="font-medium">{activity.course}</span>
+                            <span className="font-medium">{activity.name}</span>{" "}
+                            {activity.action}{" "}
+                            <span className="font-medium">
+                              {activity.course}
+                            </span>
                           </p>
-                          <p className="text-xs text-muted-foreground">{activity.time}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {activity.time}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -347,7 +442,9 @@ export  function TutorHome() {
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <div>
                     <CardTitle>Content Management</CardTitle>
-                    <CardDescription>Manage your course content</CardDescription>
+                    <CardDescription>
+                      Manage your course content
+                    </CardDescription>
                   </div>
                   <Button>
                     <Plus className="mr-2 h-4 w-4" />
@@ -386,14 +483,25 @@ export  function TutorHome() {
                             status: "Published",
                           },
                         ].map((content, index) => (
-                          <div key={index} className="flex items-center justify-between rounded-lg border p-3">
+                          <div
+                            key={index}
+                            className="flex items-center justify-between rounded-lg border p-3"
+                          >
                             <div className="flex items-center gap-3">
-                              {content.type === "Video" && <Film className="h-5 w-5 text-blue-500" />}
-                              {content.type === "Article" && <FileText className="h-5 w-5 text-green-500" />}
-                              {content.type === "Quiz" && <FileText className="h-5 w-5 text-amber-500" />}
+                              {content.type === "Video" && (
+                                <Film className="h-5 w-5 text-blue-500" />
+                              )}
+                              {content.type === "Article" && (
+                                <FileText className="h-5 w-5 text-green-500" />
+                              )}
+                              {content.type === "Quiz" && (
+                                <FileText className="h-5 w-5 text-amber-500" />
+                              )}
                               <div>
                                 <p className="font-medium">{content.title}</p>
-                                <p className="text-sm text-muted-foreground">{content.course}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {content.course}
+                                </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -407,8 +515,8 @@ export  function TutorHome() {
                                   content.status === "Published"
                                     ? "border-green-200 bg-green-50"
                                     : content.status === "Draft"
-                                      ? "border-amber-200 bg-amber-50"
-                                      : ""
+                                    ? "border-amber-200 bg-amber-50"
+                                    : ""
                                 }
                               >
                                 {content.status}
@@ -420,7 +528,9 @@ export  function TutorHome() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem>Edit</DropdownMenuItem>
-                                    <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                      Duplicate
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem>Archive</DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -434,7 +544,9 @@ export  function TutorHome() {
                       <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
                         <div className="flex flex-col items-center text-center">
                           <FileText className="h-10 w-10 text-muted-foreground/70" />
-                          <h3 className="mt-2 text-lg font-medium">No drafts yet</h3>
+                          <h3 className="mt-2 text-lg font-medium">
+                            No drafts yet
+                          </h3>
                           <p className="mt-1 text-sm text-muted-foreground">
                             Start creating new content for your courses
                           </p>
@@ -449,8 +561,12 @@ export  function TutorHome() {
                       <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
                         <div className="flex flex-col items-center text-center">
                           <FileText className="h-10 w-10 text-muted-foreground/70" />
-                          <h3 className="mt-2 text-lg font-medium">No pending content</h3>
-                          <p className="mt-1 text-sm text-muted-foreground">All your content has been reviewed</p>
+                          <h3 className="mt-2 text-lg font-medium">
+                            No pending content
+                          </h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            All your content has been reviewed
+                          </p>
                         </div>
                       </div>
                     </TabsContent>
@@ -495,7 +611,9 @@ export  function TutorHome() {
                             {event.duration}
                           </Badge>
                         </div>
-                        <p className="mt-1 text-sm text-muted-foreground">{event.course}</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {event.course}
+                        </p>
                         <div className="mt-2 flex items-center justify-between text-sm">
                           <div className="flex items-center gap-1">
                             <Clock className="h-3.5 w-3.5" />
@@ -521,6 +639,5 @@ export  function TutorHome() {
         </main>
       </div>
     </div>
-  )
+  );
 }
-

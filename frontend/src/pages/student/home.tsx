@@ -39,6 +39,8 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { authAxiosInstance } from "@/api/authAxiosInstance"; // Adjust path
 import { toast } from "sonner";
+import { useDispatch } from "react-redux";
+import { removeUser } from "@/redux/slice/userSlice";
 
 // Header Component
 function Header() {
@@ -46,6 +48,7 @@ function Header() {
     null
   );
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     authAxiosInstance.get("/users/me").then((response) => {
@@ -57,13 +60,20 @@ function Header() {
     });
   }, []);
 
-
-  // Logout function
   const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem("token");
-    toast.success("Signed out successfully");
-    navigate("/auth");
+    authAxiosInstance
+      .post("/logout")
+      .then((response) => {
+        console.log(response);
+        toast.success(response.data.message);
+
+        localStorage.removeItem("userData");
+        dispatch(removeUser());
+        navigate("/auth");
+      })
+      .catch((error) => {
+        console.error("Logout failed:", error);
+      });
   };
 
   return (

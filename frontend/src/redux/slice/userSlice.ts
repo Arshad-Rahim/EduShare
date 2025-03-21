@@ -45,10 +45,14 @@ const userSlice = createSlice({
       state.userDatas = action.payload;
       localStorage.setItem("userDatas", JSON.stringify(action.payload));
     },
+    removeUser:(state)=>{
+      state.userDatas = null;
+      localStorage.removeItem("userDatas")
+    }
   },
 });
 
 
-export const {addUser} = userSlice.actions;
+export const {addUser,removeUser} = userSlice.actions;
 
 export default userSlice.reducer;

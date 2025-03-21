@@ -21,7 +21,7 @@ export function Header({ setSidebarOpen, sidebarOpen }:any) {
             <Menu className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" />
+            <BookOpen className="h-6 w-6 text-primary" /> 
             <span className="text-xl font-bold">
               TechLearn{" "}
               <span className="text-sm font-normal text-muted-foreground">

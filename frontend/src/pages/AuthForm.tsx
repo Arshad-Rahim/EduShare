@@ -45,6 +45,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addUser } from "@/redux/slice/userSlice";
 import { PasswordResetModal } from "@/components/modal-components/passwordResetModal";
+import { GoogleAuth } from "@/components/googleAuth/googleAuthComponent";
 
 export type UserRole = "admin" | "user" | "tutor";
 
@@ -74,6 +75,7 @@ export default function AuthForm({
   const [forgetPasswordEmail, setForgetPasswordEmail] = useState("");
   const [isPasswordResetModalOpen, setIsPasswordResetModalOpen] =
     useState(false);
+    const [data, setData] = useState <LoginFormData>();
 
   const navigate = useNavigate();
 
@@ -125,9 +127,10 @@ export default function AuthForm({
       );
   };
 
-  const handleRegisterSubmit = async (data: RegisterFormData) => {
+   const handleRegisterSubmit = async (data: RegisterFormData) => {
     try {
       const res = await sendOtp(data);
+      setData(data)
       toast.success(res.message);
       setIsOTPModalOpen(true);
     } catch (error) {
@@ -140,6 +143,7 @@ export default function AuthForm({
   const handleRegisterUser = async () => {
     try {
       const data = registerForm.getValues();
+      // setData(data)
       const res = await registerUser({ ...data, role: activeRole });
       toast.success(res.message);
       onRegister?.(data, activeRole);
@@ -514,6 +518,7 @@ export default function AuthForm({
                       </div>
                     )}
                   </CardContent>
+
                   <CardFooter>
                     <Button
                       type="submit"
@@ -522,6 +527,7 @@ export default function AuthForm({
                     >
                       Register
                     </Button>
+                    <GoogleAuth role={activeRole} />
                   </CardFooter>
                 </form>
               </Card>
@@ -565,6 +571,8 @@ export default function AuthForm({
         onClose={() => setIsOTPModalOpen(false)}
         onVerify={handleOTPVerified}
         role={activeRole}
+        data={data}
+        setIsOTPMpdalOpen={setIsOTPModalOpen}
       />
       <PasswordResetModal
         open={isPasswordResetModalOpen}

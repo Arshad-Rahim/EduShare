@@ -4,7 +4,9 @@ import {
   injectedCreateUserController,
   injectedDeleteUserController,
   injectedFindUserByIdController,
+  injectedGoogleController,
   injectedLoginUserController,
+  injectedLogoutUserController,
   injectedPaginatedUserController,
   injectedRefreshTokenController,
   injectedResetPasswordController,
@@ -18,6 +20,7 @@ import { injectedCreateTutorController } from "../di/tutorInjection";
 import { adminAuthMiddleware } from "../middleware/adminAuthMiddleware";
 import { CheckBlockedStatus } from "../middleware/checkBlockedStatus";
 import { userAuthMiddleware } from "../middleware/userAuthMiddleware";
+import { LogoutUserController } from "../controller/userController/logoutUserController";
 // import {verifyToken} from '../middleware/adminAuthMiddleware'
 export class UserRoutes {
   public router: Router;
@@ -55,10 +58,11 @@ export class UserRoutes {
     this.router.post("/login", (req: Request, res: Response) =>
       injectedLoginUserController.loginUser(req, res)
     );
-
-
-    this.router.get("/users/me",userAuthMiddleware, (req: Request, res: Response) =>
-      injectedFindUserByIdController.handle(req, res)
+// ithil ninn authUserMiddleware idith kalenjarn because of the problem in the login persistance while google login
+    this.router.get(
+      "/users/me",userAuthMiddleware,
+      (req: Request, res: Response) =>
+        injectedFindUserByIdController.handle(req, res)
     );
 
     this.router.post("/verifyEmail", (req: Request, res: Response) =>
@@ -66,7 +70,7 @@ export class UserRoutes {
     );
 
     this.router.post("/refresh-token", (req: Request, res: Response) =>
-      injectedRefreshTokenController.handle(req,res)
+      injectedRefreshTokenController.handle(req, res)
     );
 
     // this.router.get(
@@ -76,41 +80,47 @@ export class UserRoutes {
     //     injectedFindAllUserController.handle(req, res)
     // );
 
+    this.router.get(
+      "/usersList",
 
-     this.router.get(
-       "/usersList",
-       adminAuthMiddleware,
-       (req: Request, res: Response) =>
-         injectedPaginatedUserController.handle(req, res)
-     );
+      (req: Request, res: Response) =>
+        injectedPaginatedUserController.handle(req, res)
+    );
 
-        this.router.delete(
-          "/users/:id",
-          adminAuthMiddleware,
-          (req: Request, res: Response) =>
-            injectedDeleteUserController.handle(req, res)
-        );
+    this.router.delete(
+      "/users/:id",
 
+      (req: Request, res: Response) =>
+        injectedDeleteUserController.handle(req, res)
+    );
 
+    this.router.patch(
+      "/users/:id/status",
 
-        this.router.patch(
-          "/users/:id/status",
-          adminAuthMiddleware,
-          (req: Request, res: Response) =>
-            injectedUpdateStatusUserController.handler(req, res)
-        );
+      (req: Request, res: Response) =>
+        injectedUpdateStatusUserController.handler(req, res)
+    );
 
-         this.router.patch(
-           "/tutors/:tutorId/approval",
-           adminAuthMiddleware,
-           (req: Request, res: Response) =>
-             injectedAcceptTutorController.handler(req, res)
-         );
+    this.router.patch(
+      "/tutors/:tutorId/approval",
+
+      (req: Request, res: Response) =>
+        injectedAcceptTutorController.handler(req, res)
+    );
 
     this.router.post("/resetPassword", (req: Request, res: Response) =>
       injectedResetPasswordController.resetPassword(req, res)
     );
- 
+
+
+      this.router.post("/google-auth", (req: Request, res: Response) =>
+        injectedGoogleController.handle(req, res)
+      );
+
+
+       this.router.post("/logout", (req: Request, res: Response) =>
+         injectedLogoutUserController.logoutUser(req, res)
+       );
 
     // Protected route
     // this.router.get("/profile", verifyToken, (req: Request, res: Response) => {

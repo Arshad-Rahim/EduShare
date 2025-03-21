@@ -11,19 +11,24 @@ import {
   CustomJwtPayload,
   CustomRequest,
 } from "../../middleware/userAuthMiddleware";
+import { IUserRepository } from "../../interfaces/repositoryInterfaces/IUserRepository";
 
 const tokenService = new JwtService();
 export class FindUserByIdController {
-  constructor(private findUsersByIdService: IFindUserByIdService) {}
+  constructor(
+    private findUsersByIdService: IFindUserByIdService,
+    private userRepository: IUserRepository
+  ) {}
 
   async handle(req: Request, res: Response) {
     try {
       const user = (req as CustomRequest).user;
-      console.log("USER IN FINDUSERCONTROLLER", user);
 
-      console.log("USERID", user.userId);
-      const users = await this.findUsersByIdService.findById(user?.userId);
-      console.log("USERS IN BACK Controller", users);
+      let users = await this.findUsersByIdService.findById(user?.userId);
+      if (!users) {
+        users = await this.userRepository.findByEmail(user?.email);
+      }
+
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,

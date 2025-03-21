@@ -10,26 +10,37 @@ export class LoginUserService implements ILoginUserService {
 
   async loginUser(data: TUserLogin): Promise<TUserModel | null> {
     const userData = await this.userRepository.findByEmail(data.email);
-    if(userData?.isBlocked){
+    if(!userData){
        throw new CustomError(
-         ERROR_MESSAGES.ADMIN_BLOCKED,
-         HTTP_STATUS.UNAUTHORIZED
-       );
+        ERROR_MESSAGES.EMAIL_NOT_FOUND,
+        HTTP_STATUS.UNAUTHORIZED
+       )
     }
-    let valid;
-    if (userData) {
-      valid = await comparePassword(data.password, userData.password);
-    }
-
-
-    const validRole = data.role == userData?.role ? true : false;
-    if (!valid || !validRole) {
+    if (userData?.isBlocked) {
       throw new CustomError(
-        ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+        ERROR_MESSAGES.ADMIN_BLOCKED,
         HTTP_STATUS.UNAUTHORIZED
       );
     }
+    if (userData && userData.password) {
+     const valid = await comparePassword(data.password, userData.password);
+      if (!valid) {
+        throw new CustomError(
+          ERROR_MESSAGES.INVALID_PASSWORD,
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+    }
+    const validRole = data.role == userData.role;
     
+
+    if (!validRole) {
+      throw new CustomError(
+        ERROR_MESSAGES.INVALID_ROLE,
+        HTTP_STATUS.UNAUTHORIZED
+      );
+    }
+
     return userData;
   }
 }
