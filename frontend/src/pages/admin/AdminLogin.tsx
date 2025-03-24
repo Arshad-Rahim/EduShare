@@ -42,7 +42,7 @@ const dispatch = useDispatch();
 
   const handleLoginSubmit = async (data: LoginFormData) => {
     try {
-      const response = await authAxiosInstance.post("/login", {
+      const response = await authAxiosInstance.post("/auth/login", {
         ...data,
         role: "admin",
       });

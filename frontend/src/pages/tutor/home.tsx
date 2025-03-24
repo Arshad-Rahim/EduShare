@@ -2,19 +2,16 @@
 
 import { useState } from "react";
 import {
-  BookOpen,
-  BarChart3,
+    BarChart3,
   Users,
   Video,
   FileText,
   Film,
-  Bell,
   Settings,
   LayoutDashboard,
   MessageSquare,
   Calendar,
   HelpCircle,
-  Menu,
   ChevronDown,
   Plus,
   Clock,
@@ -37,8 +34,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
+
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,6 +47,8 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { removeUser } from "@/redux/slice/userSlice";
 import { toast } from "sonner";
+import { Header } from "./components/Header";
+import { SideBar } from "./components/sideBar";
 
 export function TutorHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -76,126 +74,11 @@ export function TutorHome() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header/Navigation */}
-      <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="container flex h-16 items-center justify-between space-x-4 sm:space-x-0">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">TechLearn</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="icon">
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <MessageSquare className="h-4 w-4" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-2 px-2"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src="/placeholder.svg?height=32&width=32&text=T"
-                      alt="@tutor"
-                    />
-                    <AvatarFallback>T</AvatarFallback>
-                  </Avatar>
-                  <div className="hidden flex-col items-start text-sm md:flex">
-                    <span>Dr. Ryan Miller</span>
-                    <span className="text-xs text-muted-foreground">Tutor</span>
-                  </div>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Earnings</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    handleSignOut();
-                  }}
-                >
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <div className="flex">
         {/* Sidebar */}
-        <aside
-          className={`${
-            sidebarOpen ? "block" : "hidden"
-          } fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block`}
-        >
-          <div className="flex h-full flex-col">
-            <div className="px-4">
-              <Button className="w-full justify-start gap-2">
-                <Plus className="h-4 w-4" />
-                Create New Course
-              </Button>
-            </div>
-            <nav className="mt-6 grid gap-1 px-2">
-              {[
-                {
-                  icon: <LayoutDashboard className="h-4 w-4" />,
-                  name: "Dashboard",
-                  active: true,
-                },
-                { icon: <FileText className="h-4 w-4" />, name: "My Courses" },
-                {
-                  icon: <Video className="h-4 w-4" />,
-                  name: "Content Creation",
-                },
-                { icon: <Users className="h-4 w-4" />, name: "Students" },
-                {
-                  icon: <MessageSquare className="h-4 w-4" />,
-                  name: "Messages",
-                },
-                { icon: <BarChart3 className="h-4 w-4" />, name: "Analytics" },
-                { icon: <Calendar className="h-4 w-4" />, name: "Schedule" },
-              ].map((item) => (
-                <Button
-                  key={item.name}
-                  variant={item.active ? "secondary" : "ghost"}
-                  className="justify-start"
-                >
-                  {item.icon}
-                  <span className="ml-2">{item.name}</span>
-                </Button>
-              ))}
-            </nav>
-            <div className="mt-auto border-t px-4 py-4">
-              <Button variant="ghost" className="w-full justify-start">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-              <Button variant="ghost" className="w-full justify-start">
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help & Support
-              </Button>
-            </div>
-          </div>
-        </aside>
+        <SideBar sidebarOpen ={sidebarOpen}/>
 
         {/* Main Content */}
         <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : ""}`}>

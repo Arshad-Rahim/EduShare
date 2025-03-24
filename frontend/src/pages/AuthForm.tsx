@@ -103,7 +103,7 @@ export default function AuthForm({
 
   const handleLoginSubmit = (data: LoginFormData) => {
     authAxiosInstance
-      .post("/login", { ...data, role: activeRole })
+      .post("/auth/login", { ...data, role: activeRole })
       .then((response) => {
         let { user } = response.data;
         user = {
@@ -214,7 +214,7 @@ export default function AuthForm({
   const roleConfig = getRoleConfig(activeRole);
 
   const resetPassword = async (email: string, newPassword: string) => {
-    const response = await authAxiosInstance.post("/resetPassword", {
+    const response = await authAxiosInstance.post("/auth/resetPassword", {
       email,
       newPassword,
     });

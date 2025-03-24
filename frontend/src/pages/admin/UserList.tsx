@@ -44,7 +44,7 @@ const UserListing: React.FC = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await authAxiosInstance.get("/usersList", {
+        const response = await authAxiosInstance.get("/admin/usersList", {
           params: {
             page: currentPage,
             limit: rowsPerPage,

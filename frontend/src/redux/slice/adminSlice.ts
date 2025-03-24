@@ -38,7 +38,6 @@ const adminSlice = createSlice({
       localStorage.setItem("adminDatas", JSON.stringify(action.payload));
     },
     logoutAdmin: (state) => {
-      // Action parameter not needed
       state.adminDatas = null;
       localStorage.removeItem("adminDatas");
     },

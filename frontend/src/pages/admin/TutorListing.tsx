@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Pagination,
   PaginationContent,
@@ -12,12 +13,15 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Search, Trash, Edit, Check } from "lucide-react"; // Added Check icon
+import { Search, Trash, Edit, Check, X } from "lucide-react";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
 import Table from "@/components/modal-components/TableReusableStructure";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { Switch } from "@/components/ui/switch";
+import { DocumentViewModal } from "@/components/modal-components/DocumentViewModal";
+import { ApprovalConfirmationModal } from "@/components/modal-components/ApprovalConfirmationModal";
+import { RejectionReasonModal } from "@/components/modal-components/RejectionReasonModal";
 
 interface Tutor {
   _id: string;
@@ -26,7 +30,8 @@ interface Tutor {
   role: string;
   specialization: string;
   isBlocked: boolean;
-  isAccepted: boolean; // Added isAccepted field
+  verificationDocUrl?: string;
+  approvalStatus: "pending" | "approved" | "rejected";
   lastActive: string;
 }
 
@@ -38,14 +43,24 @@ const TutorListing: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const rowsPerPage = 3;
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tutorToDelete, setTutorToDelete] = useState<string | null>(null);
+
+  // Modal states
+  const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
+  const [selectedDocumentUrl, setSelectedDocumentUrl] = useState("");
+  const [selectedTutorName, setSelectedTutorName] = useState("");
+
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [tutorToApprove, setTutorToApprove] = useState<string | null>(null);
+
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [tutorToReject, setTutorToReject] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     const fetchTutors = async () => {
       try {
         setLoading(true);
-        const response = await authAxiosInstance.get("/usersList", {
+        const response = await authAxiosInstance.get("/admin/usersList", {
           params: {
             page: currentPage,
             limit: rowsPerPage,
@@ -53,7 +68,7 @@ const TutorListing: React.FC = () => {
             role: "tutor",
           },
         });
-        console.log("Fetched tutors:", response.data.users); // Debug
+        console.log("Fetched tutors:", response.data.users);
         setTutors(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
         toast.success("Tutors loaded successfully");
@@ -66,47 +81,6 @@ const TutorListing: React.FC = () => {
     };
     fetchTutors();
   }, [currentPage, searchQuery]);
-
-  const handleEdit = (tutor: Tutor) => {
-    toast.info(`Editing tutor: ${tutor.name}`);
-  };
-
-  const handleOpenDeleteModal = (id: string) => {
-    console.log("Opening modal with ID:", id);
-    setTutorToDelete(id);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleDelete = async () => {
-    if (!tutorToDelete) {
-      console.log("No tutorToDelete set");
-      return;
-    }
-
-    console.log("Starting delete for ID:", tutorToDelete);
-    try {
-      await authAxiosInstance.delete(`/users/${tutorToDelete}`);
-      setTutors(tutors.filter((tutor) => tutor._id !== tutorToDelete));
-      toast.success("Tutor deleted successfully");
-
-      if (tutors.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      } else {
-        const response = await authAxiosInstance.get("/usersList", {
-          params: { page: currentPage, limit: rowsPerPage, role: "tutor" },
-        });
-        setTutors(response.data.users);
-        setTotalPages(Math.ceil(response.data.total / rowsPerPage));
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("Failed to delete tutor");
-    } finally {
-      console.log("Finally block: Closing modal");
-      setIsDeleteModalOpen(false);
-      setTutorToDelete(null);
-    }
-  };
 
   const handleToggleStatus = async (
     tutorId: string,
@@ -131,21 +105,66 @@ const TutorListing: React.FC = () => {
     }
   };
 
-  const handleApproval = async (tutorId: string) => {
+  const handleOpenApprovalModal = (tutorId: string) => {
+    setTutorToApprove(tutorId);
+    setIsApprovalModalOpen(true);
+  };
+
+  const handleApprove = async () => {
+    if (!tutorToApprove) return;
+
     try {
-      await authAxiosInstance.patch(`/tutors/${tutorId}/approval`, {
-        isAccepted: true,
-      });
+      await authAxiosInstance.patch(`admin/${tutorToApprove}/approve`);
       setTutors(
         tutors.map((tutor) =>
-          tutor._id === tutorId ? { ...tutor, isAccepted: true } : tutor
+          tutor._id === tutorToApprove
+            ? { ...tutor, approvalStatus: "approved" }
+            : tutor
         )
       );
       toast.success("Tutor approved successfully");
+      setIsApprovalModalOpen(false);
+      setTutorToApprove(null);
     } catch (error) {
       console.error("Approval error:", error);
       toast.error("Failed to approve tutor");
     }
+  };
+
+  const handleOpenRejectionModal = (tutorId: string) => {
+    setTutorToReject(tutorId);
+    setRejectionReason("");
+    setIsRejectionModalOpen(true);
+  };
+
+  const handleReject = async () => {
+    if (!tutorToReject || !rejectionReason.trim()) return;
+
+    try {
+      await authAxiosInstance.patch(`admin/${tutorToReject}/reject`, {
+        reason: rejectionReason,
+      });
+      setTutors(
+        tutors.map((tutor) =>
+          tutor._id === tutorToReject
+            ? { ...tutor, approvalStatus: "rejected" }
+            : tutor
+        )
+      );
+      toast.success("Tutor rejected successfully");
+      setIsRejectionModalOpen(false);
+      setTutorToReject(null);
+      setRejectionReason("");
+    } catch (error) {
+      console.error("Rejection error:", error);
+      toast.error("Failed to reject tutor");
+    }
+  };
+
+  const handleViewDocument = (documentUrl: string, tutorName: string) => {
+    setSelectedDocumentUrl(documentUrl);
+    setSelectedTutorName(tutorName);
+    setIsDocumentModalOpen(true);
   };
 
   const headers = [
@@ -158,9 +177,22 @@ const TutorListing: React.FC = () => {
       render: (tutor: Tutor) => (tutor.isBlocked ? "Blocked" : "Active"),
     },
     {
-      key: "isAccepted",
-      label: "Approval",
-      render: (tutor: Tutor) => (tutor.isAccepted ? "Approved" : "Pending"),
+      key: "verificationDocUrl",
+      label: "Verification Document",
+      render: (tutor: Tutor) =>
+        tutor.verificationDocUrl ? (
+          <Button
+            variant="link"
+            className="text-blue-500 p-0 h-auto font-normal hover:underline"
+            onClick={() =>
+              handleViewDocument(tutor.verificationDocUrl!, tutor.name)
+            }
+          >
+            View Document
+          </Button>
+        ) : (
+          "No Document"
+        ),
     },
     { key: "lastActive", label: "Last Active" },
     {
@@ -168,33 +200,34 @@ const TutorListing: React.FC = () => {
       label: "Actions",
       render: (tutor: Tutor) => (
         <div className="flex gap-2 items-center">
-          {/* Uncomment if you want Edit/Delete back */}
-          {/* <Button variant="ghost" size="icon" onClick={() => handleEdit(tutor)}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleOpenDeleteModal(tutor._id)}
-          >
-            <Trash className="h-4 w-4" />
-          </Button> */}
-          {tutor.isAccepted ? (
+          {tutor.approvalStatus === "pending" ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleOpenApprovalModal(tutor._id)}
+                className="hover:bg-green-50"
+              >
+                <Check className="h-4 w-4 text-green-500" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleOpenRejectionModal(tutor._id)}
+                className="hover:bg-red-50"
+              >
+                <X className="h-4 w-4 text-red-500" />
+              </Button>
+            </>
+          ) : (
             <Switch
               checked={!tutor.isBlocked}
               onCheckedChange={() =>
                 handleToggleStatus(tutor._id, tutor.isBlocked)
               }
               className="ml-2"
+              disabled={tutor.approvalStatus === "rejected"} // Disable switch if rejected
             />
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleApproval(tutor._id)}
-            >
-              <Check className="h-4 w-4 text-green-500" />
-            </Button>
           )}
         </div>
       ),
@@ -288,17 +321,32 @@ const TutorListing: React.FC = () => {
               )}
             </>
           )}
-          <ConfirmationModal
-            isOpen={isDeleteModalOpen}
-            onClose={() => setIsDeleteModalOpen(false)}
-            onConfirm={handleDelete}
-            title="Delete Tutor"
-            description="Are you sure you want to delete this tutor? This action cannot be undone."
-            confirmText="Delete"
-            cancelText="Cancel"
-          />
         </main>
       </div>
+
+      {/* Document View Modal */}
+      <DocumentViewModal
+        isOpen={isDocumentModalOpen}
+        onClose={() => setIsDocumentModalOpen(false)}
+        documentUrl={selectedDocumentUrl}
+        tutorName={selectedTutorName}
+      />
+
+      {/* Approval Confirmation Modal */}
+      <ApprovalConfirmationModal
+        isOpen={isApprovalModalOpen}
+        onClose={() => setIsApprovalModalOpen(false)}
+        onConfirm={handleApprove}
+      />
+
+      {/* Rejection Reason Modal */}
+      <RejectionReasonModal
+        isOpen={isRejectionModalOpen}
+        onClose={() => setIsRejectionModalOpen(false)}
+        reason={rejectionReason}
+        onReasonChange={setRejectionReason}
+        onConfirm={handleReject}
+      />
     </>
   );
 };

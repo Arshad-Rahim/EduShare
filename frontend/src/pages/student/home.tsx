@@ -62,7 +62,7 @@ function Header() {
 
   const handleLogout = () => {
     authAxiosInstance
-      .post("/logout")
+      .post("/auth/logout")
       .then((response) => {
         console.log(response);
         toast.success(response.data.message);

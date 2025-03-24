@@ -23,7 +23,7 @@ authAxiosInstance.interceptors.response.use(
       if (!isRefreshing) {
         isRefreshing = true;
         try {
-          await authAxiosInstance.post("/refresh-token");
+          await authAxiosInstance.post("/auth/refresh-token");
           isRefreshing = false;
 
           return authAxiosInstance(originalRequest);

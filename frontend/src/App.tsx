@@ -14,6 +14,7 @@ import { PublicAdminRoute } from "./private/admin/PublicAdminRoute";
 import { ProtectedUserRoute } from "./private/user/ProtectedUserRoute";
 import { ProtectedAdminRoute } from "./private/admin/ProtectedAdminRoute";
 import { PublicUserRoute } from "./private/user/PublicUserRoute";
+import { TutorProfileDetails } from "./pages/tutor/TutorProfileDetails";
 
 function App() {
   return (
@@ -79,6 +80,16 @@ function App() {
                 </ProtectedAdminRoute>
               }
             />
+
+            <Route
+              path="/tutor/profileDetails"
+              element={
+                <ProtectedUserRoute>
+                  <TutorProfileDetails />
+                </ProtectedUserRoute>
+              }
+            />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

@@ -18,7 +18,7 @@ export const GoogleAuth = ({ role }: any) => {
           
 
           authAxiosInstance
-            .post("/google-auth", { credentialResponse, role })
+            .post("/auth/google-auth", { credentialResponse, role })
             .then((response) => {
               console.log("Success", response.data.userData);
               const role = response.data.userData.role;
