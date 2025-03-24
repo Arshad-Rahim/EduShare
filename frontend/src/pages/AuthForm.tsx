@@ -394,6 +394,7 @@ export default function AuthForm({
                   >
                     Forgot password?
                   </Button>
+                  <GoogleAuth role={activeRole} />
                 </CardFooter>
               </form>
             </Card>
@@ -507,7 +508,7 @@ export default function AuthForm({
                         </p>
                       )}
                     </div>
-                    {activeRole === "tutor" && (
+                    {/* {activeRole === "tutor" && (
                       <div className="space-y-2">
                         <Label htmlFor="specialization">Specialization</Label>
                         <Input
@@ -516,7 +517,7 @@ export default function AuthForm({
                           placeholder="e.g. Mathematics, Programming, etc."
                         />
                       </div>
-                    )}
+                    )} */}
                   </CardContent>
 
                   <CardFooter>

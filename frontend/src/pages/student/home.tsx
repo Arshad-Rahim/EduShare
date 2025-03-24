@@ -12,7 +12,6 @@ import {
   Server,
   Star,
   X,
-  Bell,
   ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,12 +36,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
-import { authAxiosInstance } from "@/api/authAxiosInstance"; // Adjust path
+import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { useDispatch } from "react-redux";
 import { removeUser } from "@/redux/slice/userSlice";
 
-// Header Component
+// Styled Header Component
 function Header() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
@@ -51,13 +50,18 @@ function Header() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    authAxiosInstance.get("/users/me").then((response) => {
-      console.log("RESPONSE IN FRONTEND", response);
-      setUser({
-        name: response.data.users.name,
-        email: response.data.users.email,
+    authAxiosInstance
+      .get("/users/me")
+      .then((response) => {
+        console.log("RESPONSE IN FRONTEND", response);
+        setUser({
+          name: response.data.users.name,
+          email: response.data.users.email,
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to fetch user:", error);
       });
-    });
   }, []);
 
   const handleLogout = () => {
@@ -66,13 +70,13 @@ function Header() {
       .then((response) => {
         console.log(response);
         toast.success(response.data.message);
-
         localStorage.removeItem("userData");
         dispatch(removeUser());
         navigate("/auth");
       })
       .catch((error) => {
         console.error("Logout failed:", error);
+        toast.error("Failed to sign out");
       });
   };
 
@@ -133,7 +137,7 @@ function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-2 px-2"
+                  className="flex items-center gap-2 px-2 hover:bg-muted/50"
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage
@@ -143,7 +147,7 @@ function Header() {
                     <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="hidden flex-col items-start text-sm md:flex">
-                    <span>{user.name}</span>
+                    <span className="font-medium">{user.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {user.email}
                     </span>
@@ -151,20 +155,29 @@ function Header() {
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 rounded-md border bg-background p-1 shadow-lg"
+              >
+                <DropdownMenuLabel className="px-2 py-1.5">
                   <div className="flex flex-col">
-                    <span>{user.name}</span>
+                    <span className="font-medium">{user.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {user.email}
                     </span>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
+                <DropdownMenuSeparator className="my-1 h-px bg-muted" />
+                <DropdownMenuItem
+                  onClick={() => navigate("/profile")}
+                  className="cursor-pointer px-2 py-1.5 text-sm hover:bg-muted focus:outline-none"
+                >
                   Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="cursor-pointer px-2 py-1.5 text-sm text-destructive hover:bg-muted focus:outline-none"
+                >
                   Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -208,23 +221,41 @@ export function UserHomePage() {
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
+  const dispatch = useDispatch();
+
   useEffect(() => {
     function fetchUser() {
-      authAxiosInstance.get("/users/me").then((response) => {
-        console.log("RESPONSE IN FRONTEND", response);
-        setUser({
-          name: response.data.users.name,
-          email: response.data.users.email,
+      authAxiosInstance
+        .get("/users/me")
+        .then((response) => {
+          console.log("RESPONSE IN FRONTEND", response);
+          setUser({
+            name: response.data.users.name,
+            email: response.data.users.email,
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user:", error);
         });
-      });
     }
     fetchUser();
   }, []);
+
   const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem("token");
-    toast.success("Signed out successfully");
-    navigate("/auth");
+    authAxiosInstance
+      .post("/auth/logout")
+      .then((response) => {
+        console.log(response);
+        setUser(null);
+        localStorage.removeItem("userData");
+        dispatch(removeUser());
+        toast.success("Signed out successfully");
+        navigate("/auth");
+      })
+      .catch((error) => {
+        console.error("Logout failed:", error);
+        toast.error("Failed to sign out");
+      });
   };
 
   return (

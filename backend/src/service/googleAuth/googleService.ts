@@ -14,7 +14,7 @@ export class GoogleService implements IGoogleService {
   }): Promise<TUserModel | void> {
     const user = await this.userRepository.findByEmail(data.email);
 
-    if (user?.isBlocked) {
+    if (user?.isBlocked ) {
       throw new CustomError(
         ERROR_MESSAGES.ADMIN_BLOCKED,
         HTTP_STATUS.UNAUTHORIZED
@@ -32,9 +32,9 @@ export class GoogleService implements IGoogleService {
       };
       userData = await this.userRepository.createUser(newUser);
     }
-if(user){
-  return user;
-}
+    if (user) {
+      return user;
+    }
     return userData;
   }
 }

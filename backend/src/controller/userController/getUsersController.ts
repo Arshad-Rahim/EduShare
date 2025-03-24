@@ -18,6 +18,7 @@ export class GetUsersController {
           search,
           role,
         });
+        // console.log("REsult",result)
         res.status(200).json(result);
         
     } catch (error) {

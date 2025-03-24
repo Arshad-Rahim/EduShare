@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { ITutorService } from "../interfaces/serviceInterfaces/tutorServiceInterface";
-import { TUserRegister } from "../types/user";
+import { ITutorService } from "../../interfaces/serviceInterfaces/tutor/tutorServiceInterface";
+import { TUserRegister } from "../../types/user";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,
   SUCCESS_MESSAGES,
-} from "../shared/constant";
-import { CustomError } from "../util/CustomError";
+} from "../../shared/constant";
+import { CustomError } from "../../util/CustomError";
 
 export class TutorController {
   constructor(private tutorService: ITutorService) {}

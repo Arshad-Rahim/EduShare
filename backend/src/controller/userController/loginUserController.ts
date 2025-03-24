@@ -20,13 +20,13 @@ export class LoginUserController {
 
       const user = await this.loginUserService.loginUser(data);
 
-      if (user?.isAccepted == false && user?.role == "tutor") {
-        res.status(HTTP_STATUS.UNAUTHORIZED).json({
-          success: false,
-          message: ERROR_MESSAGES.ADMIN_DONOT_ACCEPTED,
-        });
-        return;
-      }
+      // if (user?.isAccepted == false && user?.role == "tutor") {
+      //   res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      //     success: false,
+      //     message: ERROR_MESSAGES.ADMIN_DONOT_ACCEPTED,
+      //   });
+      //   return;
+      // }
 
       const accessToken = this.jwtService.generateAccessToken({
         id: user?._id?.toString()!,

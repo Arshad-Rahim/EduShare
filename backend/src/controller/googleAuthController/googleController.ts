@@ -2,14 +2,14 @@ import { Request, Response } from "express";
 import { IGoogleService } from "../../interfaces/googleAuth/googleService";
 import { CustomError } from "../../util/CustomError";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../../shared/constant";
-import { ITokenService } from "../../interfaces/tokenServiceInterface";
-import jwt, { Secret } from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
-import { string } from "zod";
-import ms from "ms";
+import { ITokenService } from "../../interfaces/tokenServiceInterface";
 
 export class googleController {
-  constructor(private googleService: IGoogleService) {}
+  constructor(
+    private googleService: IGoogleService,
+    private jwtService: ITokenService
+  ) {}
 
   async handle(req: Request, res: Response) {
     try {
@@ -17,37 +17,6 @@ export class googleController {
       const { credential, clientId } = credentialResponse;
 
       const client = new OAuth2Client();
-
-      const accessSecret = process.env.JWT_SECRET as Secret;
-      const accessExpiresIn = process.env.JWT_ACCESS_EXPIRES || "";
-      const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES || "";
-
-      const generateAccessToken = (payload: {
-        // id: string;
-        email: string;
-        given_name: string;
-        // family_name:string;
-        role: string;
-      }): string => {
-        return jwt.sign(
-          { email: payload.email, given_name: payload.given_name, role: role },
-          accessSecret,
-          {
-            expiresIn: accessExpiresIn as ms.StringValue,
-          }
-        );
-      };
-
-      const generateRefreshToken = (payload: {
-        // id: string;
-        email: string;
-        role: string;
-        given_name: string;
-      }): string => {
-        return jwt.sign(payload, accessSecret, {
-          expiresIn: refreshExpiresIn as ms.StringValue,
-        });
-      };
 
       const ticket = await client.verifyIdToken({
         idToken: credential,
@@ -63,24 +32,29 @@ export class googleController {
       ) {
         throw new Error("Invalid token payload");
       }
-      const { email, given_name }: any = payload;
 
-      const userData = await this.googleService.createUser({
-        name: given_name,
-        email: email,
-        role: role,
+      const user = await this.googleService.createUser({
+        name: payload.given_name,
+        email: payload.email,
+        role,
       });
+      console.log("USER:::::",user)
 
-      const accessToken = generateAccessToken({ email, given_name, role });
-
-      const refreshToken = generateRefreshToken({ email, role,given_name });
-
-      // Send the token as a cookie and response
+      const accessToken = this.jwtService.generateAccessToken({
+        id: user?._id?.toString()!,
+        email: user?.email!,
+        role: user?.role!,
+      });
+      const refreshToken = this.jwtService.generateRefreshToken({
+        id: user?._id?.toString()!,
+        email: user?.email!,
+        role: user?.role!,
+      });
 
       res.cookie(`${role}AccessToken`, accessToken, {
         httpOnly: true,
-        secure: false,
-        maxAge: 3600000,
+        sameSite: "strict",
+        secure: true,
       });
 
       res.cookie(`${role}RefreshToken`, refreshToken, {
@@ -91,7 +65,7 @@ export class googleController {
       res
         .status(200)
 
-        .json({ message: "Authentication successful ", userData: userData });
+        .json({ message: "Authentication successful ", userData: user });
     } catch (error) {
       if (error instanceof CustomError) {
         res

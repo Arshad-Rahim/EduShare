@@ -1,4 +1,4 @@
-import { TUserRegister } from "../../types/user";
+import { TUserRegister } from "../../../types/user";
 
 
 export interface ITutorService{

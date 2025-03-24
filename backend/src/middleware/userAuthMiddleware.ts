@@ -21,7 +21,7 @@ export const userAuthMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies.userAccessToken;
+    const token = req.cookies.userAccessToken ?? req.cookies.tutorAccessToken;
 
     if (!token) {
       console.log("no token");
@@ -32,7 +32,7 @@ export const userAuthMiddleware = async (
     }
 
     const user = tokenService.verifyAccessToken(token) as CustomJwtPayload;
-    console.log("USER IM USERAUTH",user)
+    // console.log("USER IM USERAUTH", user);
     if (!user) {
       res
         .status(HTTP_STATUS.UNAUTHORIZED)
@@ -66,7 +66,7 @@ export const decodeToken = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies.userAccessToken;
+    const token = req.cookies.userAccessToken ?? req.cookies.tutorAccessToken;
     if (!token) {
       console.log("no token");
       res
@@ -84,21 +84,37 @@ export const decodeToken = async (
       access_token: token.access_token,
       refresh_token: token.refresh_token,
     };
-    console.log("FINAL USER",user)
+    console.log("FINAL USER", user);
     next();
-  } catch (error:any) {
-     if (error.name === "TokenExpiredError") {
-       console.log("token is expired is worked");
-       res
-         .status(HTTP_STATUS.UNAUTHORIZED)
-         .json({ message: ERROR_MESSAGES.TOKEN_EXPIRED });
-       return;
-     }
-     console.log("token is invalid is worked");
+  } catch (error: any) {
+    if (error.name === "TokenExpiredError") {
+      console.log("token is expired is worked");
+      res
+        .status(HTTP_STATUS.UNAUTHORIZED)
+        .json({ message: ERROR_MESSAGES.TOKEN_EXPIRED });
+      return;
+    }
+    console.log("token is invalid is worked");
 
-     res
-       .status(HTTP_STATUS.UNAUTHORIZED)
-       .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
-     return;
+    res
+      .status(HTTP_STATUS.UNAUTHORIZED)
+      .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
+    return;
   }
+};
+
+export const authorizeRole = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as CustomRequest).user;
+
+    if (!user || !allowedRoles.includes(user.role)) {
+      console.log("role not allowed");
+      res.status(HTTP_STATUS.FORBIDDEN).json({
+        message: ERROR_MESSAGES.NOT_ALLOWED,
+        userRole: user ? user.role : "None",
+      });
+      return;
+    }
+    next();
+  };
 };

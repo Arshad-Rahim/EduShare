@@ -12,7 +12,7 @@ export class RefreshTokenService implements IRefreshTokenService {
     role: string;
     accessToken: string;
   } {
-    console.log('refresh token inside refrsh tokcen service', refreshToken)
+    // console.log('refresh token inside refrsh tokcen service', refreshToken)
     const payload = this.tokenService.verifyRefreshtoken(refreshToken);
     if (!payload)
       throw new CustomError("Invalid refresh token", HTTP_STATUS.BAD_REQUEST);

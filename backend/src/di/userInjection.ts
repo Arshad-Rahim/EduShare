@@ -30,6 +30,7 @@ const userRepository = new UserRepository();
 
 const tokenService = new JwtService();
 
+
 const createUserService = new CreateUserService(userRepository);
 const loginUserService = new LoginUserService(userRepository);
 const verifyEmailUserService = new VerifyEmailUserService(userRepository);
@@ -85,6 +86,7 @@ export const injectedRefreshTokenController = new RefreshTokenController(
 
 export const injectedGoogleController = new googleController(
   googleService,
+  tokenService
 );
 
 export const injectedLogoutUserController = new LogoutUserController();

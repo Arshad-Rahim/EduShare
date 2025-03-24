@@ -26,8 +26,8 @@ interface OTPModalProps {
   onClose: () => void;
   onVerify: (otp: string) => void;
   role?: UserRole;
-  data: RegisterFormData
-  setIsOTPModalOpen:boolean
+  data: RegisterFormData;
+  setIsOTPModalOpen: boolean;
 }
 
 export function OTPModal({
@@ -36,7 +36,7 @@ export function OTPModal({
   onVerify,
   role = "user",
   data,
-  setIsOTPModalOpen
+  setIsOTPModalOpen,
 }: OTPModalProps) {
   const [otp, setOtp] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(60);
@@ -81,7 +81,6 @@ export function OTPModal({
   }, [isOpen]);
 
   const handleVerify = () => {
-    // In a real app, you would verify the OTP with your backend
     if (otp.length === 6) {
       onVerify(otp);
     } else {
@@ -89,34 +88,29 @@ export function OTPModal({
     }
   };
 
-  const handleResendOTP = async() => {
-   
-    // In a real app, you would call your API to resend the OTP
-    // console.log("Resending OTP...");
-try {
-  // Reset timer and resend OTP
-  setTimeLeft(60);
-  setCanResend(false);
-    const res = await sendOtp(data);
-        toast.success(res.message);
-        // setIsOTPModalOpen(true);
-  // Start the timer again
-  const timer = setInterval(() => {
-    setTimeLeft((prev) => {
-      if (prev <= 1) {
-        clearInterval(timer);
-        setCanResend(true);
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
+  const handleResendOTP = async () => {
+    try {
+      // Reset timer and resend OTP
+      setTimeLeft(60);
+      setCanResend(false);
+      const res = await sendOtp(data);
+      toast.success(res.message);
 
-} catch (error) {
-  
-}
-
-   
+      // Start the timer again
+      const timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to resend OTP:", error);
+      toast.error("Failed to resend OTP");
+    }
   };
 
   // Format time as MM:SS
@@ -140,12 +134,13 @@ try {
         </DialogHeader>
 
         <div className="flex flex-col items-center space-y-6 py-4">
-          <div className="w-full space-y-2">
+          {/* Centered OTP Input */}
+          <div className="w-full space-y-2 flex flex-col items-center">
             <Label htmlFor="otp" className="text-center block">
               Enter verification code
             </Label>
             <InputOTP maxLength={6} value={otp} onChange={setOtp}>
-              <InputOTPGroup>
+              <InputOTPGroup className="flex justify-center">
                 <InputOTPSlot index={0} />
                 <InputOTPSlot index={1} />
                 <InputOTPSlot index={2} />

@@ -34,6 +34,21 @@ export type TUserModel = {
   isAccepted: boolean;
 };
 
+export type TTutorModel = {
+  name: string;
+  email: string;
+  password?: string | null | undefined;
+  role: string;
+  _id?: Types.ObjectId;
+  isBlocked: boolean;
+  // isAccepted: boolean;
+  specialization:string;
+  verificationDocUrl:string;
+  approvalStatus:string;
+  phone:string;
+  bio:string;
+};
+
 
 export type TUpdatePassword ={
   email:string;
@@ -48,7 +63,7 @@ export type TPaginationOptions ={
 }
 
 export type TPaginatedResult = {
-  users: TUserModel[]; 
+  users: TTutorModel[];
   total: number;
   page: number;
   limit: number;
