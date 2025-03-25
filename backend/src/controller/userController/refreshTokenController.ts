@@ -19,9 +19,17 @@ export class RefreshTokenController {
   ) {}
   async handle(req: Request, res: Response): Promise<void> {
     try {
+
+      const token =
+        req.cookies.userRefreshToken ||
+        req.cookies.adminRefreshToken ||
+        req.cookies.tutorRefreshToken;
+
+
+        console.log('inside refresh token controller======>')
       
       const newTokens = this.refreshTokenService.execute(
-        req.cookies.userRefreshToken
+        token 
       );
       const accessTokenName = `${newTokens.role}AccessToken`;
       updateCookieWithAccessToken(res, newTokens.accessToken, accessTokenName);

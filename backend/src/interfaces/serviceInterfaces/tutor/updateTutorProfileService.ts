@@ -4,6 +4,6 @@ export interface IUpdateTutorProfileService {
   updateTutorProfile(
     data: TUpdateTutorProfileBody,
     id: string,
-    verificationDocUrl: string
+    verificationDocUrl: string,
   ): Promise<void>;
 }

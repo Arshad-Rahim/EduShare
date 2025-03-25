@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -18,6 +17,7 @@ import { SideBar } from "./components/admin/SideBar";
 import Table from "@/components/modal-components/TableReusableStructure";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { Switch } from "@/components/ui/switch";
+import { authAxiosInstance } from "@/api/adminAxiosInstance";
 
 interface User {
   _id: string;
@@ -55,7 +55,7 @@ const UserListing: React.FC = () => {
         console.log("Fetched users:", response.data.users); // Debug
         setUsers(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
-        toast.success("Users loaded successfully");
+        // toast.success("Users loaded successfully");
       } catch (error) {
         toast.error("Failed to load users");
         console.error("Fetch error:", error);

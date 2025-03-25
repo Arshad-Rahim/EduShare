@@ -14,7 +14,8 @@ export class AdminRoutes{
     }
 
     initializeRoute(){
-      this.router.get("/usersList",adminAuthMiddleware,authorizeRole(['admin']), (req: Request, res: Response) =>
+      // ,adminAuthMiddleware,authorizeRole(['admin']), 
+      this.router.get("/usersList",(req: Request, res: Response) =>
         injectedPaginatedUserController.handle(req, res)
       );
       // // Approve a tutor

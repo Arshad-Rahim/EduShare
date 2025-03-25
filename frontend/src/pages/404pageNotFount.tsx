@@ -30,7 +30,7 @@ export const NotFound: React.FC = () => {
             been moved or doesn’t exist.
           </p>
           <Button
-            onClick={() => navigate("/auth")} // Redirects to home
+            onClick={() => navigate(-1)} // Redirects to home
             className="bg-primary hover:bg-primary/90 text-white px-6 py-2"
           >
             <Home className="h-5 w-5 mr-2" />

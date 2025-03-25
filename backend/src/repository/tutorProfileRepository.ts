@@ -20,6 +20,7 @@ export class TutorRepository implements ITutorRepository {
         specialization: data.specialization,
         bio: data.bio,
         verificationDocUrl,
+        approvalStatus: "pending",
       },
       { upsert: true }
     );

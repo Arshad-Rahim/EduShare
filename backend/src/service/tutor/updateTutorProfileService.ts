@@ -11,7 +11,7 @@ export class UpdateTutorProfileService implements IUpdateTutorProfileService {
   async updateTutorProfile(
     data: TUpdateTutorProfileBody,
     id: string,
-    verificationDocUrl: string
+    verificationDocUrl: string,
   ): Promise<void> {
     await this.tutorRepository.updateTutorProfile(data, id, verificationDocUrl);
   }

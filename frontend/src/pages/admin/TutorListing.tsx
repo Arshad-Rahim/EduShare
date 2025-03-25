@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -22,6 +21,7 @@ import { Switch } from "@/components/ui/switch";
 import { DocumentViewModal } from "@/components/modal-components/DocumentViewModal";
 import { ApprovalConfirmationModal } from "@/components/modal-components/ApprovalConfirmationModal";
 import { RejectionReasonModal } from "@/components/modal-components/RejectionReasonModal";
+import { authAxiosInstance } from "@/api/adminAxiosInstance";
 
 interface Tutor {
   _id: string;
@@ -71,7 +71,7 @@ const TutorListing: React.FC = () => {
         console.log("Fetched tutors:", response.data.users);
         setTutors(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
-        toast.success("Tutors loaded successfully");
+        // toast.success("Tutors loaded successfully");
       } catch (error) {
         toast.error("Failed to load tutors");
         console.error("Fetch error:", error);
