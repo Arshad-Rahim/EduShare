@@ -8,6 +8,7 @@ export interface ITutorRepository {
     verificationDocUrl: string
   ): Promise<void>;
   updateRejectedReason(id: string, reason: string): Promise<void>;
-  getNotifications(id:string):Promise<TNotification[] | null>;
-  getTutorDetails(id: string): Promise<TTutorModel | null>
+  getNotifications(id: string): Promise<TNotification[] | null>;
+  getTutorDetails(id: string): Promise<TTutorModel | null>;
+  markAllNotificationsAsRead(id: string): Promise<void>;
 }

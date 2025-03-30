@@ -102,4 +102,11 @@ export class TutorRepository implements ITutorRepository {
       rejectionReason: tutorData.tutorProfile?.rejectionReason || "",
     };
   }
+
+  async markAllNotificationsAsRead(id: string): Promise<void> {
+    await NotificationModel.updateMany(
+      { userId: id },
+      { $set: { read: true } }
+    );
+  }
 }

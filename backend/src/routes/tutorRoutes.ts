@@ -41,6 +41,15 @@ export class TutorRoutes {
         injectedTutorController.getTutorDetails(req, res)
     );
 
+
+     this.router.put(
+       "/notifications/read-all",
+       userAuthMiddleware,
+       authorizeRole(["tutor"]),
+       (req: Request, res: Response) =>
+         injectedTutorController.markAllNotificationsAsRead(req, res)
+     );
+
   }
 }
 
