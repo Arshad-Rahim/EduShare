@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,10 +6,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react"; // Import an icon from lucide-react
-import { cn } from "@/lib/utils"; // Assuming you have this utility for className merging
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react'; // Import an icon from lucide-react
+import { cn } from '@/lib/utils'; // Assuming you have this utility for className merging
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -25,21 +25,21 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  title = "Are you sure?",
-  description = "This action cannot be undone.",
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  title = 'Are you sure?',
+  description = 'This action cannot be undone.',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
         className={cn(
-          "sm:max-w-[425px] rounded-lg shadow-lg p-6 bg-white border border-gray-200",
-          "transition-all duration-300 ease-in-out"
+          'sm:max-w-[425px] rounded-lg shadow-lg p-6 bg-white border border-gray-200',
+          'transition-all duration-300 ease-in-out'
         )}
       >
         <DialogHeader className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-yellow-500" />{" "}
+          <AlertTriangle className="h-6 w-6 text-yellow-500" />{' '}
           {/* Warning icon */}
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {title}
@@ -53,8 +53,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             variant="outline"
             onClick={onClose}
             className={cn(
-              "px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400",
-              "transition-colors duration-200"
+              'px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400',
+              'transition-colors duration-200'
             )}
           >
             {cancelText}
@@ -63,8 +63,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             variant="destructive"
             onClick={onConfirm}
             className={cn(
-              "px-4 py-2 bg-red-600 hover:bg-red-700 text-white",
-              "transition-colors duration-200"
+              'px-4 py-2 bg-red-600 hover:bg-red-700 text-white',
+              'transition-colors duration-200'
             )}
           >
             {confirmText}

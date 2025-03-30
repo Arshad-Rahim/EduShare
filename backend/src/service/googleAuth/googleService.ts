@@ -5,14 +5,14 @@ import { TUserModel } from "../../types/user";
 import { CustomError } from "../../util/CustomError";
 
 export class GoogleService implements IGoogleService {
-  constructor(private userRepository: IUserRepository) {}
+  constructor(private _userRepository: IUserRepository) {}
 
   async createUser(data: {
     name: string;
     email: string;
     role: string;
   }): Promise<TUserModel | void> {
-    const user = await this.userRepository.findByEmail(data.email);
+    const user = await this._userRepository.findByEmail(data.email);
 
     if (user?.isBlocked ) {
       throw new CustomError(
@@ -30,7 +30,7 @@ export class GoogleService implements IGoogleService {
         isBlocked: false,
         isAccepted: data.role == "tutor" ? false : true,
       };
-      userData = await this.userRepository.createUser(newUser);
+      userData = await this._userRepository.createUser(newUser);
     }
     if (user) {
       return user;

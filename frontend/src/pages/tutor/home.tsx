@@ -1,17 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
-    BarChart3,
+  BarChart3,
   Users,
-  Video,
   FileText,
   Film,
-  Settings,
-  LayoutDashboard,
-  MessageSquare,
-  Calendar,
-  HelpCircle,
   ChevronDown,
   Plus,
   Clock,
@@ -19,9 +13,9 @@ import {
   ArrowUp,
   ArrowDown,
   Activity,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -29,47 +23,43 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { removeUser } from "@/redux/slice/userSlice";
-import { toast } from "sonner";
-import { Header } from "./components/Header";
-import { SideBar } from "./components/sideBar";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+// import { useDispatch } from 'react-redux';
+// import { useNavigate } from 'react-router-dom';
+import { Header } from './components/Header';
+import { SideBar } from './components/sideBar';
 
 export function TutorHome() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const [sidebarOpen] = useState(true);
+  // const dispatch = useDispatch();
+  // const navigate = useNavigate();
 
-  const handleSignOut = () => {
-    authAxiosInstance
-      .post("/logout")
-      .then((response) => {
-        console.log(response);
-        toast.success(response.data.message);
+  // const handleSignOut = () => {
+  //   authAxiosInstance
+  //     .post('/logout')
+  //     .then((response) => {
+  //       console.log(response);
+  //       toast.success(response.data.message);
 
-        localStorage.removeItem("userData");
-        dispatch(removeUser());
-        navigate("/auth");
-      })
-      .catch((error) => {
-        console.error("Logout failed:", error);
-      });
-  };
+  //       localStorage.removeItem('userData');
+  //       dispatch(removeUser());
+  //       navigate('/auth');
+  //     })
+  //     .catch((error) => {
+  //       console.error('Logout failed:', error);
+  //     });
+  // };
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,10 +68,10 @@ export function TutorHome() {
 
       <div className="flex">
         {/* Sidebar */}
-        <SideBar sidebarOpen ={sidebarOpen}/>
+        <SideBar sidebarOpen={sidebarOpen} />
 
         {/* Main Content */}
-        <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : ""}`}>
+        <main className={`flex-1 ${sidebarOpen ? 'md:ml-64' : ''}`}>
           <div className="container py-6">
             <div className="mb-10">
               <h1 className="text-3xl font-bold">Welcome back, Dr. Ryan</h1>
@@ -94,31 +84,31 @@ export function TutorHome() {
             <div className="mb-8 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
               {[
                 {
-                  title: "Active Students",
-                  value: "2,845",
-                  change: "+12%",
-                  status: "increase",
+                  title: 'Active Students',
+                  value: '2,845',
+                  change: '+12%',
+                  status: 'increase',
                   icon: <Users className="h-5 w-5" />,
                 },
                 {
-                  title: "Course Completion",
-                  value: "76%",
-                  change: "+4%",
-                  status: "increase",
+                  title: 'Course Completion',
+                  value: '76%',
+                  change: '+4%',
+                  status: 'increase',
                   icon: <CheckCircle2 className="h-5 w-5" />,
                 },
                 {
-                  title: "Revenue (This Month)",
-                  value: "$12,450",
-                  change: "+18%",
-                  status: "increase",
+                  title: 'Revenue (This Month)',
+                  value: '$12,450',
+                  change: '+18%',
+                  status: 'increase',
                   icon: <BarChart3 className="h-5 w-5" />,
                 },
                 {
-                  title: "Average Rating",
-                  value: "4.8/5",
-                  change: "+0.3",
-                  status: "increase",
+                  title: 'Average Rating',
+                  value: '4.8/5',
+                  change: '+0.3',
+                  status: 'increase',
                   icon: <Activity className="h-5 w-5" />,
                 },
               ].map((stat, index) => (
@@ -130,16 +120,14 @@ export function TutorHome() {
                       </p>
                       <p className="mt-1 text-2xl font-bold">{stat.value}</p>
                       <div className="mt-1 flex items-center">
-                        {stat.status === "increase" ? (
+                        {stat.status === 'increase' ? (
                           <ArrowUp className="mr-1 h-3 w-3 text-green-500" />
                         ) : (
                           <ArrowDown className="mr-1 h-3 w-3 text-red-500" />
                         )}
                         <span
                           className={
-                            stat.status === "increase"
-                              ? "text-green-500"
-                              : "text-red-500"
+                            stat.status === 'increase' ? 'text-green-500' : 'text-red-500'
                           }
                         >
                           {stat.change}
@@ -167,28 +155,28 @@ export function TutorHome() {
                   <div className="space-y-6">
                     {[
                       {
-                        title: "Advanced React Development",
+                        title: 'Advanced React Development',
                         students: 845,
                         completion: 82,
                         rating: 4.9,
-                        revenue: "$5,230",
-                        status: "Active",
+                        revenue: '$5,230',
+                        status: 'Active',
                       },
                       {
-                        title: "Node.js API Masterclass",
+                        title: 'Node.js API Masterclass',
                         students: 632,
                         completion: 75,
                         rating: 4.7,
-                        revenue: "$3,980",
-                        status: "Active",
+                        revenue: '$3,980',
+                        status: 'Active',
                       },
                       {
-                        title: "Full Stack Web Development",
+                        title: 'Full Stack Web Development',
                         students: 1207,
                         completion: 68,
                         rating: 4.8,
-                        revenue: "$8,740",
-                        status: "Active",
+                        revenue: '$8,740',
+                        status: 'Active',
                       },
                     ].map((course, index) => (
                       <div key={index} className="space-y-2">
@@ -254,32 +242,32 @@ export function TutorHome() {
                   <div className="space-y-4">
                     {[
                       {
-                        name: "Emma Johnson",
-                        action: "enrolled in",
-                        course: "Advanced React Development",
-                        time: "2 hours ago",
-                        avatar: "/placeholder.svg?height=40&width=40&text=EJ",
+                        name: 'Emma Johnson',
+                        action: 'enrolled in',
+                        course: 'Advanced React Development',
+                        time: '2 hours ago',
+                        avatar: '/placeholder.svg?height=40&width=40&text=EJ',
                       },
                       {
-                        name: "Michael Smith",
-                        action: "completed",
-                        course: "Node.js API Masterclass",
-                        time: "5 hours ago",
-                        avatar: "/placeholder.svg?height=40&width=40&text=MS",
+                        name: 'Michael Smith',
+                        action: 'completed',
+                        course: 'Node.js API Masterclass',
+                        time: '5 hours ago',
+                        avatar: '/placeholder.svg?height=40&width=40&text=MS',
                       },
                       {
-                        name: "Sophia Chen",
-                        action: "submitted assignment for",
-                        course: "Full Stack Web Development",
-                        time: "Yesterday",
-                        avatar: "/placeholder.svg?height=40&width=40&text=SC",
+                        name: 'Sophia Chen',
+                        action: 'submitted assignment for',
+                        course: 'Full Stack Web Development',
+                        time: 'Yesterday',
+                        avatar: '/placeholder.svg?height=40&width=40&text=SC',
                       },
                       {
-                        name: "James Williams",
-                        action: "asked a question in",
-                        course: "Advanced React Development",
-                        time: "Yesterday",
-                        avatar: "/placeholder.svg?height=40&width=40&text=JW",
+                        name: 'James Williams',
+                        action: 'asked a question in',
+                        course: 'Advanced React Development',
+                        time: 'Yesterday',
+                        avatar: '/placeholder.svg?height=40&width=40&text=JW',
                       },
                     ].map((activity, index) => (
                       <div key={index} className="flex items-start gap-3">
@@ -290,15 +278,15 @@ export function TutorHome() {
                           />
                           <AvatarFallback>
                             {activity.name
-                              .split(" ")
+                              .split(' ')
                               .map((n) => n[0])
-                              .join("")}
+                              .join('')}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="text-sm">
-                            <span className="font-medium">{activity.name}</span>{" "}
-                            {activity.action}{" "}
+                            <span className="font-medium">{activity.name}</span>{' '}
+                            {activity.action}{' '}
                             <span className="font-medium">
                               {activity.course}
                             </span>
@@ -345,25 +333,25 @@ export function TutorHome() {
                       <div className="space-y-4">
                         {[
                           {
-                            title: "Introduction to React Hooks",
-                            type: "Video",
-                            course: "Advanced React Development",
-                            updatedAt: "Today",
-                            status: "Published",
+                            title: 'Introduction to React Hooks',
+                            type: 'Video',
+                            course: 'Advanced React Development',
+                            updatedAt: 'Today',
+                            status: 'Published',
                           },
                           {
-                            title: "Building RESTful APIs with Express",
-                            type: "Article",
-                            course: "Node.js API Masterclass",
-                            updatedAt: "Yesterday",
-                            status: "Published",
+                            title: 'Building RESTful APIs with Express',
+                            type: 'Article',
+                            course: 'Node.js API Masterclass',
+                            updatedAt: 'Yesterday',
+                            status: 'Published',
                           },
                           {
-                            title: "State Management with Redux",
-                            type: "Quiz",
-                            course: "Advanced React Development",
-                            updatedAt: "3 days ago",
-                            status: "Published",
+                            title: 'State Management with Redux',
+                            type: 'Quiz',
+                            course: 'Advanced React Development',
+                            updatedAt: '3 days ago',
+                            status: 'Published',
                           },
                         ].map((content, index) => (
                           <div
@@ -371,13 +359,13 @@ export function TutorHome() {
                             className="flex items-center justify-between rounded-lg border p-3"
                           >
                             <div className="flex items-center gap-3">
-                              {content.type === "Video" && (
+                              {content.type === 'Video' && (
                                 <Film className="h-5 w-5 text-blue-500" />
                               )}
-                              {content.type === "Article" && (
+                              {content.type === 'Article' && (
                                 <FileText className="h-5 w-5 text-green-500" />
                               )}
-                              {content.type === "Quiz" && (
+                              {content.type === 'Quiz' && (
                                 <FileText className="h-5 w-5 text-amber-500" />
                               )}
                               <div>
@@ -395,11 +383,7 @@ export function TutorHome() {
                               <Badge
                                 variant="outline"
                                 className={
-                                  content.status === "Published"
-                                    ? "border-green-200 bg-green-50"
-                                    : content.status === "Draft"
-                                    ? "border-amber-200 bg-amber-50"
-                                    : ""
+                                  content.status === 'Published' ? 'border-green-200 bg-green-50' : content.status === 'Draft' ? 'border-amber-200 bg-amber-50' : ''
                                 }
                               >
                                 {content.status}
@@ -466,24 +450,24 @@ export function TutorHome() {
                   <div className="space-y-4">
                     {[
                       {
-                        title: "Live Q&A Session",
-                        course: "Advanced React Development",
-                        time: "Today, 3:00 PM",
-                        duration: "1 hour",
+                        title: 'Live Q&A Session',
+                        course: 'Advanced React Development',
+                        time: 'Today, 3:00 PM',
+                        duration: '1 hour',
                         attendees: 34,
                       },
                       {
-                        title: "Assignment Review",
-                        course: "Node.js API Masterclass",
-                        time: "Today, 5:30 PM",
-                        duration: "1.5 hours",
+                        title: 'Assignment Review',
+                        course: 'Node.js API Masterclass',
+                        time: 'Today, 5:30 PM',
+                        duration: '1.5 hours',
                         attendees: 14,
                       },
                       {
-                        title: "Code Review Session",
-                        course: "Full Stack Web Development",
-                        time: "Tomorrow, 10:00 AM",
-                        duration: "2 hours",
+                        title: 'Code Review Session',
+                        course: 'Full Stack Web Development',
+                        time: 'Tomorrow, 10:00 AM',
+                        duration: '2 hours',
                         attendees: 28,
                       },
                     ].map((event, index) => (

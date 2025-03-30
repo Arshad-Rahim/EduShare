@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   AlertCircle,
   BarChart3,
@@ -10,64 +10,64 @@ import {
   MessageSquare,
   Settings,
   Users,
-} from "lucide-react";
-import { Link } from "react-router-dom";
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-export function SideBar({}) {
+export function SideBar() {
   return (
     <div className="flex h-full flex-col">
       <nav className="grid gap-1 px-2">
         {[
           {
             icon: <LayoutDashboard className="h-4 w-4" />,
-            name: "Dashboard",
-            path: "/", // Define the route path
+            name: 'Dashboard',
+            path: '/', // Define the route path
             active: true, // Default active for Dashboard
           },
           {
             icon: <Users className="h-4 w-4" />,
-            name: "Students",
-            path: "/admin/userList",
+            name: 'Students',
+            path: '/admin/userList',
           },
           {
             icon: <Layers className="h-4 w-4" />,
-            name: "Courses",
-            path: "/courses",
+            name: 'Courses',
+            path: '/courses',
           },
           {
             icon: <Building className="h-4 w-4" />,
-            name: "Tutors",
-            path: "/admin/tutorList",
+            name: 'Tutors',
+            path: '/admin/tutorList',
           },
           {
             icon: <DollarSign className="h-4 w-4" />,
-            name: "Finances",
-            path: "/finances",
+            name: 'Finances',
+            path: '/finances',
           },
           {
             icon: <BarChart3 className="h-4 w-4" />,
-            name: "Analytics",
-            path: "/analytics",
+            name: 'Analytics',
+            path: '/analytics',
           },
           {
             icon: <MessageSquare className="h-4 w-4" />,
-            name: "Support Tickets",
-            path: "/support",
+            name: 'Support Tickets',
+            path: '/support',
           },
           {
             icon: <Database className="h-4 w-4" />,
-            name: "Content Management",
-            path: "/content",
+            name: 'Content Management',
+            path: '/content',
           },
           {
             icon: <AlertCircle className="h-4 w-4" />,
-            name: "Reports & Issues",
-            path: "/reports",
+            name: 'Reports & Issues',
+            path: '/reports',
           },
         ].map((item) => (
           <Button
             key={item.name}
-            variant={item.active ? "secondary" : "ghost"}
+            variant={item.active ? 'secondary' : 'ghost'}
             className="justify-start"
             asChild // Use asChild to wrap Link
           >

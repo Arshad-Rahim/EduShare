@@ -1,20 +1,20 @@
-import AdminLogin from "./pages/admin/AdminLogin";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AuthForm from "./pages/AuthForm";
-import { NotFound } from "./pages/404pageNotFount";
-import { UserHomePage } from "./pages/student/home";
-import { TutorHome } from "./pages/tutor/home";
-import { AdminHome } from "./pages/admin/Home";
-import UsersList from "./pages/admin/UserList";
-import TutorListing from "./pages/admin/TutorListing";
-import { Provider } from "react-redux";
-import { store } from "./redux/store";
+import AdminLogin from './pages/admin/AdminLogin';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AuthForm from './pages/AuthForm';
+import { NotFound } from './pages/404pageNotFount';
+import { UserHomePage } from './pages/student/home';
+import { TutorHome } from './pages/tutor/home';
+import { AdminHome } from './pages/admin/Home';
+import UsersList from './pages/admin/UserList';
+import TutorListing from './pages/admin/TutorListing';
+import { Provider } from 'react-redux';
+import { store } from './redux/store';
 
-import { PublicAdminRoute } from "./private/admin/PublicAdminRoute";
-import { ProtectedUserRoute } from "./private/user/ProtectedUserRoute";
-import { ProtectedAdminRoute } from "./private/admin/ProtectedAdminRoute";
-import { PublicUserRoute } from "./private/user/PublicUserRoute";
-import { TutorProfileDetails } from "./pages/tutor/TutorProfileDetails";
+import { PublicAdminRoute } from './private/admin/PublicAdminRoute';
+import { ProtectedUserRoute } from './private/user/ProtectedUserRoute';
+import { ProtectedAdminRoute } from './private/admin/ProtectedAdminRoute';
+import { PublicUserRoute } from './private/user/PublicUserRoute';
+import { TutorProfileDetails } from './pages/tutor/TutorProfileDetails';
 
 function App() {
   return (

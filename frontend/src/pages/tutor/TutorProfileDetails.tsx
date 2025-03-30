@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -25,25 +26,22 @@ import { Header } from "./components/Header";
 import { SideBar } from "./components/sideBar";
 import { FileIcon, UploadIcon, XIcon } from "lucide-react";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
 
 export function TutorProfileDetails() {
+  const [email, setEmail] = useState();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("John");
   const [phone, setPhone] = useState("+91 (555) 000-0000");
   const [specialization, setSpecialization] = useState("MERN");
+  const [existingDocUrl, setExistingDocUrl] = useState<string | null>(null);
   const [bio, setBio] = useState(
-    "I'm a dedicated MERN stack developer with a passion for building dynamic and scalable web applications. I specialize in MongoDB, Express.js, React, and Node.js, creating seamless user experiences and efficient backend systems."
+    "I'm a dedicated MERN stack developer with a passion for building dynamic and scalable web applications."
   );
-  const [selectedFile, setSelectedFile] = useState(null);
-  const fileInputRef = useRef(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (
-    event: React.ChangeEventHandler<HTMLInputElement> | undefined
-  ) => {
-    if (!event) return;
-    const file = event.target.files[0];
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error("File size should not exceed 5MB");
@@ -54,10 +52,36 @@ export function TutorProfileDetails() {
         return;
       }
       setSelectedFile(file);
+      setExistingDocUrl(null); // Clear existing doc when new file is selected
       toast.success("File selected successfully");
     }
   };
 
+ 
+    function fetchUser() {
+      authAxiosInstance
+        .get("/tutors/me")
+        .then((response) => {
+          console.log("RESPONSE IN FRONTEND", response);
+          setName(response.data.tutor.name);
+          setPhone(response.data.tutor.phone);
+          setSpecialization(response.data.tutor.specialization);
+          setBio(response.data.tutor.bio);
+          setEmail(response.data.tutor.email);
+          // Assuming the backend returns verificationDocUrl
+          if (response.data.tutor.verificationDocUrl) {
+            setExistingDocUrl(response.data.tutor.verificationDocUrl);
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user:", error);
+        });
+    }
+ 
+
+    useEffect(()=>{
+      fetchUser();
+    },[])
   const handleSave = async () => {
     if (!name || !phone || !specialization || !bio) {
       toast.error("Please fill out all required fields");
@@ -69,6 +93,7 @@ export function TutorProfileDetails() {
     formData.append("phone", phone);
     formData.append("specialization", specialization);
     formData.append("bio", bio);
+    // Only append file if a new one is selected
     if (selectedFile) {
       formData.append("file", selectedFile);
     }
@@ -82,8 +107,14 @@ export function TutorProfileDetails() {
         }
       );
       console.log("Response:", response.data);
+      // Update existingDocUrl if a new document was uploaded
+      if (response.data.tutor?.verificationDocUrl && selectedFile) {
+        setExistingDocUrl(response.data.tutor.verificationDocUrl);
+      }
+      setSelectedFile(null);
       toast.success("Profile updated successfully!");
       setIsEditing(false);
+      fetchUser();
     } catch (error) {
       console.error("Upload failed:", error);
       toast.error("Failed to update profile!");
@@ -98,12 +129,13 @@ export function TutorProfileDetails() {
 
   const removeFile = () => {
     setSelectedFile(null);
+    setExistingDocUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const getFileTypeIcon = (fileName) => {
+  const getFileTypeIcon = (fileName: string) => {
     const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
       case "pdf":
@@ -117,8 +149,12 @@ export function TutorProfileDetails() {
     }
   };
 
-  const getFileSize = (file) => {
-    return (file.size / 1024 / 1024).toFixed(2) + " MB";
+  const getFileSize = (file: File) => {
+    return `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+  };
+
+  const getFileNameFromUrl = (url: string) => {
+    return url.split("/").pop() || "Verification Document";
   };
 
   return (
@@ -168,7 +204,7 @@ export function TutorProfileDetails() {
                       id="email"
                       type="email"
                       placeholder="john.doe@example.com"
-                      defaultValue="john.doe@example.com"
+                      defaultValue={email}
                       disabled
                     />
                     <p className="text-xs text-muted-foreground">
@@ -285,6 +321,20 @@ export function TutorProfileDetails() {
                               </div>
                             </div>
                           </div>
+                        ) : existingDocUrl ? (
+                          <div className="w-full">
+                            <div className="flex items-center p-3 bg-muted/50 rounded-md">
+                              {getFileTypeIcon(existingDocUrl)}
+                              <div className="ml-3 flex-1 truncate">
+                                <p className="text-sm font-medium">
+                                  {getFileNameFromUrl(existingDocUrl)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Existing Document
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -312,7 +362,7 @@ export function TutorProfileDetails() {
                       </div>
                     </div>
 
-                    {selectedFile && isEditing && (
+                    {(selectedFile || existingDocUrl) && isEditing && (
                       <div className="flex justify-end">
                         <Button
                           variant="ghost"

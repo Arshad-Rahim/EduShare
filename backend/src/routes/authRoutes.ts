@@ -1,15 +1,11 @@
 import { Router, Request, Response } from "express";
 import {
-  injectedCreateUserController,
   injectedGoogleController,
-  injectedLoginUserController,
-  injectedLogoutUserController,
   injectedRefreshTokenController,
-  injectedResetPasswordController,
-  injectedVerifyUserController,
 } from "../di/userInjection";
 import { validateDTO } from "../middleware/validateDTO";
 import { withoutRoleRegisterSchema } from "../validation/userValidation";
+import { injectedAuthController } from "../di/authInjection";
 
 export class AuthRoutes {
   public router: Router;
@@ -25,17 +21,17 @@ export class AuthRoutes {
       "/register/user",
       validateDTO(withoutRoleRegisterSchema),
       (req: Request, res: Response) =>
-        injectedCreateUserController.handle(req, res)
+        injectedAuthController.registerUser(req, res)
     );
 
     // Login
     this.router.post("/login", (req: Request, res: Response) =>
-      injectedLoginUserController.loginUser(req, res)
+      injectedAuthController.loginUser(req, res)
     );
 
     // Logout
     this.router.post("/logout", (req: Request, res: Response) =>
-      injectedLogoutUserController.logoutUser(req, res)
+      injectedAuthController.logoutUser(req, res)
     );
 
     // Google authentication
@@ -50,12 +46,12 @@ export class AuthRoutes {
 
     // Reset password
     this.router.post("/resetPassword", (req: Request, res: Response) =>
-      injectedResetPasswordController.resetPassword(req, res)
+      injectedAuthController.resetPassword(req, res)
     );
 
     // Verify email
     this.router.post("/verifyEmail", (req: Request, res: Response) =>
-      injectedVerifyUserController.verifyEmail(req, res)
+      injectedAuthController.verifyEmail(req, res)
     );
   }
 }

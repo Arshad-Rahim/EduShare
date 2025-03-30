@@ -1,6 +1,3 @@
-
-
-// validation.ts
 import { z } from "zod";
 
 export const loginSchema = z.object({
@@ -13,16 +10,21 @@ export const registerSchema = z
     name: z
       .string()
       .min(3, "Name is required")
-      .max(50, "Name must be 50 charecter or less"),
+      .max(50, "Name must be 50 characters or less"),
     email: z
       .string()
       .email("Invalid email address")
       .min(3, "Email is required"),
     password: z
       .string()
-      .min(8, "Password must be atleast 8 charecters")
-      .regex(/[A-Za-z]/, "Password must contain at least one letter")
-      .regex(/[0-9]/, "Password must contain at least one number"),
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number")
+      .regex(
+        /[!@#$%^&*(),.?":{}|<>]/,
+        "Password must contain at least one special character (e.g., !@#$%^&*)"
+      ),
     confirmPassword: z.string().min(3, "Please confirm your password"),
     specialization: z.string().optional(),
   })

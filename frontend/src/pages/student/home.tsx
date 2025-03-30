@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   Code,
@@ -13,8 +13,8 @@ import {
   Star,
   X,
   ChevronDown,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -22,12 +22,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,11 +35,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { toast } from "sonner";
-import { useDispatch } from "react-redux";
-import { removeUser } from "@/redux/slice/userSlice";
+} from '@radix-ui/react-dropdown-menu';
+import { authAxiosInstance } from '@/api/authAxiosInstance';
+import { toast } from 'sonner';
+import { useDispatch } from 'react-redux';
+import { removeUser } from '@/redux/slice/userSlice';
 
 // Styled Header Component
 function Header() {
@@ -51,32 +51,32 @@ function Header() {
 
   useEffect(() => {
     authAxiosInstance
-      .get("/users/me")
+      .get('/users/me')
       .then((response) => {
-        console.log("RESPONSE IN FRONTEND", response);
+        console.log('RESPONSE IN FRONTEND', response);
         setUser({
           name: response.data.users.name,
           email: response.data.users.email,
         });
       })
       .catch((error) => {
-        console.error("Failed to fetch user:", error);
+        console.error('Failed to fetch user:', error);
       });
   }, []);
 
   const handleLogout = () => {
     authAxiosInstance
-      .post("/auth/logout")
+      .post('/auth/logout')
       .then((response) => {
         console.log(response);
         toast.success(response.data.message);
-        localStorage.removeItem("userData");
+        localStorage.removeItem('userData');
         dispatch(removeUser());
-        navigate("/auth");
+        navigate('/auth');
       })
       .catch((error) => {
-        console.error("Logout failed:", error);
-        toast.error("Failed to sign out");
+        console.error('Logout failed:', error);
+        toast.error('Failed to sign out');
       });
   };
 
@@ -169,7 +169,7 @@ function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-1 h-px bg-muted" />
                 <DropdownMenuItem
-                  onClick={() => navigate("/profile")}
+                  onClick={() => navigate('/profile')}
                   className="cursor-pointer px-2 py-1.5 text-sm hover:bg-muted focus:outline-none"
                 >
                   Profile
@@ -226,16 +226,16 @@ export function UserHomePage() {
   useEffect(() => {
     function fetchUser() {
       authAxiosInstance
-        .get("/users/me")
+        .get('/users/me')
         .then((response) => {
-          console.log("RESPONSE IN FRONTEND", response);
+          console.log('RESPONSE IN FRONTEND', response);
           setUser({
             name: response.data.users.name,
             email: response.data.users.email,
           });
         })
         .catch((error) => {
-          console.error("Failed to fetch user:", error);
+          console.error('Failed to fetch user:', error);
         });
     }
     fetchUser();
@@ -243,18 +243,18 @@ export function UserHomePage() {
 
   const handleLogout = () => {
     authAxiosInstance
-      .post("/auth/logout")
+      .post('/auth/logout')
       .then((response) => {
         console.log(response);
         setUser(null);
-        localStorage.removeItem("userData");
+        localStorage.removeItem('userData');
         dispatch(removeUser());
-        toast.success("Signed out successfully");
-        navigate("/auth");
+        toast.success('Signed out successfully');
+        navigate('/auth');
       })
       .catch((error) => {
-        console.error("Logout failed:", error);
-        toast.error("Failed to sign out");
+        console.error('Logout failed:', error);
+        toast.error('Failed to sign out');
       });
   };
 
@@ -349,7 +349,7 @@ export function UserHomePage() {
               Over 500+ courses available
             </Badge>
             <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl">
-              Learn the skills you need to{" "}
+              Learn the skills you need to{' '}
               <span className="text-primary">succeed</span>
             </h1>
             <p className="max-w-[700px] text-muted-foreground md:text-xl">
@@ -487,40 +487,40 @@ export function UserHomePage() {
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {[
                     {
-                      title: "Complete Web Development Bootcamp",
+                      title: 'Complete Web Development Bootcamp',
                       description:
-                        "Learn full-stack web development from scratch",
-                      image: "/placeholder.svg?height=200&width=300",
-                      instructor: "Sarah Johnson",
+                        'Learn full-stack web development from scratch',
+                      image: '/placeholder.svg?height=200&width=300',
+                      instructor: 'Sarah Johnson',
                       rating: 4.9,
                       reviews: 2453,
-                      price: "$89.99",
-                      level: "Beginner",
-                      duration: "48 hours",
+                      price: '$89.99',
+                      level: 'Beginner',
+                      duration: '48 hours',
                     },
                     {
-                      title: "Advanced React & Redux",
+                      title: 'Advanced React & Redux',
                       description:
-                        "Master modern React patterns and state management",
-                      image: "/placeholder.svg?height=200&width=300",
-                      instructor: "Michael Chen",
+                        'Master modern React patterns and state management',
+                      image: '/placeholder.svg?height=200&width=300',
+                      instructor: 'Michael Chen',
                       rating: 4.8,
                       reviews: 1872,
-                      price: "$94.99",
-                      level: "Intermediate",
-                      duration: "36 hours",
+                      price: '$94.99',
+                      level: 'Intermediate',
+                      duration: '36 hours',
                     },
                     {
-                      title: "Python for Data Science & Machine Learning",
+                      title: 'Python for Data Science & Machine Learning',
                       description:
-                        "Comprehensive guide to data analysis with Python",
-                      image: "/placeholder.svg?height=200&width=300",
-                      instructor: "Emily Rodriguez",
+                        'Comprehensive guide to data analysis with Python',
+                      image: '/placeholder.svg?height=200&width=300',
+                      instructor: 'Emily Rodriguez',
                       rating: 4.9,
                       reviews: 3241,
-                      price: "$99.99",
-                      level: "All Levels",
-                      duration: "52 hours",
+                      price: '$99.99',
+                      level: 'All Levels',
+                      duration: '52 hours',
                     },
                   ].map((course, index) => (
                     <Card
@@ -692,28 +692,28 @@ export function UserHomePage() {
             <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[
                 {
-                  name: "David Wilson",
-                  role: "Software Engineer",
-                  company: "TechCorp",
+                  name: 'David Wilson',
+                  role: 'Software Engineer',
+                  company: 'TechCorp',
                   testimonial:
-                    "The web development courses on LearnHub helped me transition from a junior to a senior developer in just 8 months.",
-                  avatar: "/placeholder.svg?height=100&width=100",
+                    'The web development courses on LearnHub helped me transition from a junior to a senior developer in just 8 months.',
+                  avatar: '/placeholder.svg?height=100&width=100',
                 },
                 {
-                  name: "Priya Sharma",
-                  role: "Data Scientist",
-                  company: "DataInsights",
+                  name: 'Priya Sharma',
+                  role: 'Data Scientist',
+                  company: 'DataInsights',
                   testimonial:
-                    "I started with zero knowledge in data science and now I'm working at my dream company.",
-                  avatar: "/placeholder.svg?height=100&width=100",
+                    'I started with zero knowledge in data science and now I\'m working at my dream company.',
+                  avatar: '/placeholder.svg?height=100&width=100',
                 },
                 {
-                  name: "Marcus Johnson",
-                  role: "Frontend Developer",
-                  company: "CreativeAgency",
+                  name: 'Marcus Johnson',
+                  role: 'Frontend Developer',
+                  company: 'CreativeAgency',
                   testimonial:
-                    "The React courses are exceptional. The project-based approach made all the difference.",
-                  avatar: "/placeholder.svg?height=100&width=100",
+                    'The React courses are exceptional. The project-based approach made all the difference.',
+                  avatar: '/placeholder.svg?height=100&width=100',
                 },
               ].map((testimonial, index) => (
                 <Card key={index} className="transition-all hover:shadow-md">

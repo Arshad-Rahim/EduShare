@@ -1,20 +1,19 @@
-import { Navigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import React from 'react';
 
 interface ProtectedAdminRouteProps {
-  children: React.ReactNode; 
+  children: React.ReactNode;
 }
 
 export function ProtectedAdminRoute({ children }: ProtectedAdminRouteProps) {
-  const adminData = useSelector((state:RootState) => {
+  const adminData = useSelector((state: RootState) => {
     return state?.admin?.adminDatas;
   });
-  console.log("AdminData:", adminData);
 
   if (!adminData) {
-    return <Navigate to={"/admin/login"} />;
+    return <Navigate to={'/admin/login'} />;
   }
   return children;
 }
-

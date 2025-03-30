@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { Bell, MessageSquare, ChevronDown, BookOpen, Menu } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Bell, MessageSquare, ChevronDown, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,17 +12,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { removeUser } from "@/redux/slice/userSlice";
-import { toast } from "sonner";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { authAxiosInstance } from '@/api/authAxiosInstance';
+import { removeUser } from '@/redux/slice/userSlice';
+import { toast } from 'sonner';
 
 // Define notification type
 interface Notification {
   _id: string;
-  type: "approval" | "rejection";
+  type: 'approval' | 'rejection';
   message: string;
   reason?: string; // Optional rejection reason
   createdAt: string;
@@ -35,26 +35,48 @@ export function Header() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+   const [user, setUser] = useState<{ name: string; email: string } | null>(
+      null
+    );
+
+  
+    useEffect(() => {
+      function fetchUser() {
+        authAxiosInstance
+          .get('/tutors/me')
+          .then((response) => {
+            console.log('RESPONSE IN FRONTEND', response);
+            setUser({
+              name: response.data.tutor.name,
+              email: response.data.tutor.email,
+            });
+          })
+          .catch((error) => {
+            console.error('Failed to fetch user:', error);
+          });
+      }
+      fetchUser();
+    }, []);
+  
+
   // Fetch notifications on mount
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await authAxiosInstance.get("/tutors/notifications");
-        console.log("RESPONSE", response);
+        const response = await authAxiosInstance.get('/tutors/notifications');
+        console.log('RESPONSE', response);
 
         // Handle both single object and array cases
         const fetchedNotifications = response.data.notifications;
-        const notificationsArray = Array.isArray(fetchedNotifications)
-          ? fetchedNotifications
-          : [fetchedNotifications]; // Convert single object to array
+        const notificationsArray = Array.isArray(fetchedNotifications) ? fetchedNotifications : [fetchedNotifications]; // Convert single object to array
 
         setNotifications(notificationsArray);
         setUnreadCount(
           notificationsArray.filter((n: Notification) => !n.read).length
         );
       } catch (error) {
-        console.error("Failed to fetch notifications:", error);
-        toast.error("Could not load notifications");
+        console.error('Failed to fetch notifications:', error);
+        toast.error('Could not load notifications');
       }
     };
     fetchNotifications();
@@ -62,25 +84,25 @@ export function Header() {
 
   const handleSignOut = () => {
     authAxiosInstance
-      .post("/auth/logout")
+      .post('/auth/logout')
       .then((response) => {
         toast.success(response.data.message);
-        localStorage.removeItem("userData");
+        localStorage.removeItem('userData');
         dispatch(removeUser());
-        navigate("/auth");
+        navigate('/auth');
       })
       .catch((error) => {
-        console.error("Logout failed:", error);
-        toast.error("Failed to sign out");
+        console.error('Logout failed:', error);
+        toast.error('Failed to sign out');
       });
   };
 
   const handleMyAccount = () => {
-    navigate("/tutor/profileDetails");
+    navigate('/tutor/profileDetails');
   };
 
   const handleUpdateProfile = () => {
-    navigate("/tutor/profileDetails"); // Redirect to profile update page
+    navigate('/tutor/profileDetails'); // Redirect to profile update page
   };
 
   return (
@@ -119,29 +141,27 @@ export function Header() {
                     className="flex flex-col items-start p-2"
                   >
                     <span className="text-sm font-medium">
-                      {notification.type === "approval"
-                        ? "Profile Approved"
-                        : "Profile Rejected"}
+                      {notification.type === 'approval' ? 'Profile Approved' : 'Profile Rejected'}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       {notification.message}
                     </span>
-                    {notification.type === "rejection" &&
+                    {notification.type === 'rejection' &&
                       notification.reason && (
-                        <>
-                          <span className="text-xs text-red-600 mt-1">
+                      <>
+                        <span className="text-xs text-red-600 mt-1">
                             Reason: {notification.reason}
-                          </span>
-                          <Button
-                            variant="link"
-                            size="sm"
-                            className="p-0 h-auto text-blue-500"
-                            onClick={handleUpdateProfile}
-                          >
+                        </span>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 h-auto text-blue-500"
+                          onClick={handleUpdateProfile}
+                        >
                             Update Profile
-                          </Button>
-                        </>
-                      )}
+                        </Button>
+                      </>
+                    )}
                     <span className="text-xs text-muted-foreground mt-1">
                       {new Date(notification.createdAt).toLocaleString()}
                     </span>
@@ -171,7 +191,7 @@ export function Header() {
                   <AvatarFallback>T</AvatarFallback>
                 </Avatar>
                 <div className="hidden flex-col items-start text-sm md:flex">
-                  <span>Dr. Ryan Miller</span>
+                  <span>{user?.name}</span>
                   <span className="text-xs text-muted-foreground">Tutor</span>
                 </div>
                 <ChevronDown className="h-4 w-4" />

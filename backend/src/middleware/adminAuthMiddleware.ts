@@ -2,6 +2,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { JwtService } from "../service/jwt/jwtService";
 import { NextFunction, Request, Response } from "express";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
+import { CustomError } from "../util/CustomError";
 
 const tokenService = new JwtService();
 
@@ -46,7 +47,8 @@ export const adminAuthMiddleware = async (
     (req as CustomRequest).user = user;
     // console.log("REQ.USER",(req as CustomRequest).user)
     next();
-  } catch (error: any) {
+  } catch (error : unknown) {
+     if (error instanceof CustomError) {
     if (error.name === "TokenExpiredError") {
       console.log("token is expired is worked");
       res
@@ -61,6 +63,7 @@ export const adminAuthMiddleware = async (
       .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
     return;
   }
+}
 };
 
 export const decodeToken = async (
@@ -88,5 +91,7 @@ export const decodeToken = async (
       refresh_token: token.refresh_token,
     };
     next();
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
 };

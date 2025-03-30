@@ -13,6 +13,8 @@ import authRoutes from "./routes/authRoutes";
 import otpRoutes from "./routes/otpRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import { v2 as cloudinary } from "cloudinary";
+import { CustomError } from "./util/CustomError";
+import morgan from "morgan";
 
 
   cloudinary.config({
@@ -26,6 +28,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 connectDB();
 const app = express();
+app.use(morgan('dev'))
 
 app.use(cors(corsOptions));
 
@@ -40,7 +43,7 @@ app.use("/auth", authRoutes);
 app.use("/otp", otpRoutes); 
 app.use("/admin", adminRoutes); 
 
-app.use((error: any, req: Request, res: Response, next: NextFunction) =>
+app.use((error: CustomError, req: Request, res: Response, next: NextFunction) =>
   handleError(error, req, res, next)
 );
 

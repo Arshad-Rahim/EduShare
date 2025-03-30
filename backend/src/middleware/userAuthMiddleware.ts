@@ -43,20 +43,19 @@ export const userAuthMiddleware = async (
 
     (req as CustomRequest).user = user;
     next();
-  } catch (error: any) {
-    if (error.name === "TokenExpiredError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "TokenExpiredError") {
       console.log("token is expired is worked");
       res
         .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ message: ERROR_MESSAGES.TOKEN_EXPIRED });
       return;
     }
-    console.log("token is invalid is worked");
 
+    console.log("token is invalid is worked");
     res
       .status(HTTP_STATUS.UNAUTHORIZED)
       .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
-    return;
   }
 };
 
@@ -86,20 +85,19 @@ export const decodeToken = async (
     };
     console.log("FINAL USER", user);
     next();
-  } catch (error: any) {
-    if (error.name === "TokenExpiredError") {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "TokenExpiredError") {
       console.log("token is expired is worked");
       res
         .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ message: ERROR_MESSAGES.TOKEN_EXPIRED });
       return;
     }
-    console.log("token is invalid is worked");
 
+    console.log("token is invalid is worked");
     res
       .status(HTTP_STATUS.UNAUTHORIZED)
       .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
-    return;
   }
 };
 

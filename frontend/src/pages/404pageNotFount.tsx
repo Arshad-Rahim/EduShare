@@ -1,12 +1,12 @@
 // src/pages/NotFound.tsx
-"use client";
+'use client';
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { Home } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // For React Router navigation
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // For React Router navigation
 
 export const NotFound: React.FC = () => {
   const navigate = useNavigate(); // Hook for navigation
@@ -14,7 +14,7 @@ export const NotFound: React.FC = () => {
   return (
     <div
       className={cn(
-        "flex justify-center items-center min-h-screen p-4 bg-background"
+        'flex justify-center items-center min-h-screen p-4 bg-background'
       )}
     >
       <Card className="w-full max-w-md border-t-4 border-black-500 shadow-lg">

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import type React from "react";
+import type React from 'react';
 
-import { useState } from "react";
-import { Check, X } from "lucide-react";
+import { useState } from 'react';
+import { Check, X } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface EmailModalProps {
   open: boolean;
@@ -28,7 +28,7 @@ export function EmailModal({
   onOpenChange,
   onEmailVerified,
 }: EmailModalProps) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
 
   const validateEmail = (email: string) => {
@@ -48,7 +48,7 @@ export function EmailModal({
     if (valid) {
       setTimeout(() => {
         onEmailVerified(email);
-        setEmail('')
+        setEmail('');
       }, 1000);
     }
   };
@@ -72,7 +72,7 @@ export function EmailModal({
                 placeholder="your@email.com"
                 value={email}
                 onChange={handleEmailChange}
-                className={isValid === false ? "border-destructive pr-10" : ""}
+                className={isValid === false ? 'border-destructive pr-10' : ''}
               />
               {isValid === true && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">

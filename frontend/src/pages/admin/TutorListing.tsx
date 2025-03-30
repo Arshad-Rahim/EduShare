@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useDebounce } from "use-debounce";
 import {
   Pagination,
   PaginationContent,
@@ -11,17 +11,16 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from "@/components/ui/pagination";
-import { Search, Trash, Edit, Check, X } from "lucide-react";
-import { Header } from "./components/admin/Header";
-import { SideBar } from "./components/admin/SideBar";
-import Table from "@/components/modal-components/TableReusableStructure";
-import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
-import { Switch } from "@/components/ui/switch";
-import { DocumentViewModal } from "@/components/modal-components/DocumentViewModal";
-import { ApprovalConfirmationModal } from "@/components/modal-components/ApprovalConfirmationModal";
-import { RejectionReasonModal } from "@/components/modal-components/RejectionReasonModal";
-import { authAxiosInstance } from "@/api/adminAxiosInstance";
+} from '@/components/ui/pagination';
+import { Search, Check, X } from 'lucide-react';
+import { Header } from './components/admin/Header';
+import { SideBar } from './components/admin/SideBar';
+import Table from '@/components/modal-components/TableReusableStructure';
+import { Switch } from '@/components/ui/switch';
+import { DocumentViewModal } from '@/components/modal-components/DocumentViewModal';
+import { ApprovalConfirmationModal } from '@/components/modal-components/ApprovalConfirmationModal';
+import { RejectionReasonModal } from '@/components/modal-components/RejectionReasonModal';
+import { authAxiosInstance } from '@/api/adminAxiosInstance';
 
 interface Tutor {
   _id: string;
@@ -31,13 +30,13 @@ interface Tutor {
   specialization: string;
   isBlocked: boolean;
   verificationDocUrl?: string;
-  approvalStatus: "pending" | "approved" | "rejected";
+  approvalStatus: 'pending' | 'approved' | 'rejected';
   lastActive: string;
 }
 
 const TutorListing: React.FC = () => {
   const [tutors, setTutors] = useState<Tutor[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,16 +45,16 @@ const TutorListing: React.FC = () => {
 
   // Modal states
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
-  const [selectedDocumentUrl, setSelectedDocumentUrl] = useState("");
-  const [selectedTutorName, setSelectedTutorName] = useState("");
+  const [selectedDocumentUrl, setSelectedDocumentUrl] = useState('');
+  const [selectedTutorName, setSelectedTutorName] = useState('');
 
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [tutorToApprove, setTutorToApprove] = useState<string | null>(null);
 
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [tutorToReject, setTutorToReject] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
-
+  const [rejectionReason, setRejectionReason] = useState('');
+const [debouncedValue] = useDebounce(searchQuery, 500);
   useEffect(() => {
     const fetchTutors = async () => {
       try {
@@ -80,7 +79,7 @@ const TutorListing: React.FC = () => {
       }
     };
     fetchTutors();
-  }, [currentPage, searchQuery]);
+  }, [currentPage, debouncedValue]);
 
   const handleToggleStatus = async (
     tutorId: string,
@@ -88,20 +87,20 @@ const TutorListing: React.FC = () => {
   ) => {
     const newBlocked = !currentBlocked;
     try {
-      await authAxiosInstance.patch(`/users/${tutorId}/status`, {
+      await authAxiosInstance.patch(`/admin/${tutorId}/status`, {
         status: newBlocked,
       });
       setTutors(
         tutors.map((tutor) =>
-          tutor._id === tutorId ? { ...tutor, isBlocked: newBlocked } : tutor
+          (tutor._id === tutorId ? { ...tutor, isBlocked: newBlocked } : tutor)
         )
       );
       toast.success(
-        `Tutor ${newBlocked ? "blocked" : "unblocked"} successfully`
+        `Tutor ${newBlocked ? 'blocked' : 'unblocked'} successfully`
       );
     } catch (error) {
-      console.error("Toggle status error:", error);
-      toast.error("Failed to update tutor status");
+      console.error('Toggle status error:', error);
+      toast.error('Failed to update tutor status');
     }
   };
 
@@ -117,23 +116,21 @@ const TutorListing: React.FC = () => {
       await authAxiosInstance.patch(`admin/${tutorToApprove}/approve`);
       setTutors(
         tutors.map((tutor) =>
-          tutor._id === tutorToApprove
-            ? { ...tutor, approvalStatus: "approved" }
-            : tutor
+          (tutor._id === tutorToApprove ? { ...tutor, approvalStatus: 'approved' } : tutor)
         )
       );
-      toast.success("Tutor approved successfully");
+      toast.success('Tutor approved successfully');
       setIsApprovalModalOpen(false);
       setTutorToApprove(null);
     } catch (error) {
-      console.error("Approval error:", error);
-      toast.error("Failed to approve tutor");
+      console.error('Approval error:', error);
+      toast.error('Failed to approve tutor');
     }
   };
 
   const handleOpenRejectionModal = (tutorId: string) => {
     setTutorToReject(tutorId);
-    setRejectionReason("");
+    setRejectionReason('');
     setIsRejectionModalOpen(true);
   };
 
@@ -146,18 +143,16 @@ const TutorListing: React.FC = () => {
       });
       setTutors(
         tutors.map((tutor) =>
-          tutor._id === tutorToReject
-            ? { ...tutor, approvalStatus: "rejected" }
-            : tutor
+          (tutor._id === tutorToReject ? { ...tutor, approvalStatus: 'rejected' } : tutor)
         )
       );
-      toast.success("Tutor rejected successfully");
+      toast.success('Tutor rejected successfully');
       setIsRejectionModalOpen(false);
       setTutorToReject(null);
-      setRejectionReason("");
+      setRejectionReason('');
     } catch (error) {
-      console.error("Rejection error:", error);
-      toast.error("Failed to reject tutor");
+      console.error('Rejection error:', error);
+      toast.error('Failed to reject tutor');
     }
   };
 
@@ -168,19 +163,19 @@ const TutorListing: React.FC = () => {
   };
 
   const headers = [
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "specialization", label: "Specialization" },
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'specialization', label: 'Specialization' },
     {
-      key: "isBlocked",
-      label: "Status",
-      render: (tutor: Tutor) => (tutor.isBlocked ? "Blocked" : "Active"),
+      key: 'isBlocked',
+      label: 'Status',
+      render: (tutor: Tutor) => (tutor.isBlocked ? 'Blocked' : 'Active'),
     },
     {
-      key: "verificationDocUrl",
-      label: "Verification Document",
+      key: 'verificationDocUrl',
+      label: 'Verification Document',
       render: (tutor: Tutor) =>
-        tutor.verificationDocUrl ? (
+        (tutor.verificationDocUrl ? (
           <Button
             variant="link"
             className="text-blue-500 p-0 h-auto font-normal hover:underline"
@@ -191,16 +186,16 @@ const TutorListing: React.FC = () => {
             View Document
           </Button>
         ) : (
-          "No Document"
-        ),
+          'No Document'
+        )),
     },
-    { key: "lastActive", label: "Last Active" },
+    { key: 'lastActive', label: 'Last Active' },
     {
-      key: "actions",
-      label: "Actions",
+      key: 'actions',
+      label: 'Actions',
       render: (tutor: Tutor) => (
         <div className="flex gap-2 items-center">
-          {tutor.approvalStatus === "pending" ? (
+          {tutor.approvalStatus === 'pending' ? (
             <>
               <Button
                 variant="ghost"
@@ -226,7 +221,7 @@ const TutorListing: React.FC = () => {
                 handleToggleStatus(tutor._id, tutor.isBlocked)
               }
               className="ml-2"
-              disabled={tutor.approvalStatus === "rejected"} // Disable switch if rejected
+              disabled={tutor.approvalStatus === 'rejected'} // Disable switch if rejected
             />
           )}
         </div>
@@ -240,9 +235,9 @@ const TutorListing: React.FC = () => {
       <div className="flex min-h-screen w-full pt-16">
         <aside
           className={cn(
-            "inset-y-0 left-0 top-16 w-64 border-r bg-background",
-            sidebarOpen ? "block" : "hidden",
-            "md:block"
+            'inset-y-0 left-0 top-16 w-64 border-r bg-background',
+            sidebarOpen ? 'block' : 'hidden',
+            'md:block'
           )}
         >
           <SideBar />
@@ -282,9 +277,7 @@ const TutorListing: React.FC = () => {
                           setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                         className={
-                          currentPage === 1
-                            ? "pointer-events-none opacity-50"
-                            : ""
+                          currentPage === 1 ? 'pointer-events-none opacity-50' : ''
                         }
                       />
                     </PaginationItem>
@@ -310,9 +303,7 @@ const TutorListing: React.FC = () => {
                           )
                         }
                         className={
-                          currentPage === totalPages
-                            ? "pointer-events-none opacity-50"
-                            : ""
+                          currentPage === totalPages ? 'pointer-events-none opacity-50' : ''
                         }
                       />
                     </PaginationItem>

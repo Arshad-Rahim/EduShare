@@ -1,6 +1,7 @@
-import { Navigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import React from 'react';
 
 interface PublicAdminRouteProps {
   children: React.ReactNode; 
@@ -12,7 +13,7 @@ export function PublicAdminRoute({ children }: PublicAdminRouteProps) {
   });
 
   if (adminData) {
-    return <Navigate to={"/admin/home"} />;
+    return <Navigate to={'/admin/home'} />;
   }
   return children;
 }

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
  
   Users,
@@ -20,23 +20,23 @@ import {
   PauseCircle,
   Ban,
   ChevronRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Header } from "./components/admin/Header";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@radix-ui/react-select";
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Separator } from "@radix-ui/react-separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
-import { SideBar } from "./components/admin/SideBar";
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Header } from './components/admin/Header';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@radix-ui/react-select';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Separator } from '@radix-ui/react-separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
+import { SideBar } from './components/admin/SideBar';
 
 export function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -50,14 +50,14 @@ export function AdminHome() {
         {/* Sidebar */}
         <aside
           className={`${
-            sidebarOpen ? "block" : "hidden"
+            sidebarOpen ? 'block' : 'hidden'
           } fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block`}
         >
           <SideBar />
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : ""}`}>
+        <main className={`flex-1 ${sidebarOpen ? 'md:ml-64' : ''}`}>
           <div className="container py-6">
             <div className="mb-8">
               <h1 className="text-3xl font-bold">Platform Dashboard</h1>
@@ -70,35 +70,35 @@ export function AdminHome() {
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
-                  title: "Total Users",
-                  value: "24,827",
-                  change: "+342",
-                  changePercent: "+12.3%",
-                  status: "increase",
+                  title: 'Total Users',
+                  value: '24,827',
+                  change: '+342',
+                  changePercent: '+12.3%',
+                  status: 'increase',
                   icon: <Users className="h-5 w-5" />,
                 },
                 {
-                  title: "Active Courses",
-                  value: "432",
-                  change: "+28",
-                  changePercent: "+6.4%",
-                  status: "increase",
+                  title: 'Active Courses',
+                  value: '432',
+                  change: '+28',
+                  changePercent: '+6.4%',
+                  status: 'increase',
                   icon: <Layers className="h-5 w-5" />,
                 },
                 {
-                  title: "Total Revenue",
-                  value: "$628,540",
-                  change: "$48,230",
-                  changePercent: "+15.9%",
-                  status: "increase",
+                  title: 'Total Revenue',
+                  value: '$628,540',
+                  change: '$48,230',
+                  changePercent: '+15.9%',
+                  status: 'increase',
                   icon: <DollarSign className="h-5 w-5" />,
                 },
                 {
-                  title: "Avg. Completion Rate",
-                  value: "68.5%",
-                  change: "-2.4%",
-                  changePercent: "-2.4%",
-                  status: "decrease",
+                  title: 'Avg. Completion Rate',
+                  value: '68.5%',
+                  change: '-2.4%',
+                  changePercent: '-2.4%',
+                  status: 'decrease',
                   icon: <Percent className="h-5 w-5" />,
                 },
               ].map((stat, index) => (
@@ -110,12 +110,10 @@ export function AdminHome() {
                       </div>
                       <span
                         className={
-                          stat.status === "increase"
-                            ? "flex items-center text-sm font-medium text-green-500"
-                            : "flex items-center text-sm font-medium text-red-500"
+                          stat.status === 'increase' ? 'flex items-center text-sm font-medium text-green-500' : 'flex items-center text-sm font-medium text-red-500'
                         }
                       >
-                        {stat.status === "increase" ? (
+                        {stat.status === 'increase' ? (
                           <ArrowUpRight className="mr-1 h-4 w-4" />
                         ) : (
                           <ArrowDownRight className="mr-1 h-4 w-4" />
@@ -129,7 +127,7 @@ export function AdminHome() {
                       </p>
                       <p className="mt-1 text-2xl font-bold">{stat.value}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {stat.status === "increase" ? "+" : ""}
+                        {stat.status === 'increase' ? '+' : ''}
                         {stat.change} this month
                       </p>
                     </div>
@@ -182,49 +180,49 @@ export function AdminHome() {
                   <TableBody>
                     {[
                       {
-                        name: "John Smith",
-                        email: "john.smith@example.com",
-                        role: "Student",
-                        status: "Active",
-                        joined: "Mar 12, 2023",
-                        lastLogin: "Today, 2:45 PM",
-                        avatar: "/placeholder.svg?height=40&width=40&text=JS",
+                        name: 'John Smith',
+                        email: 'john.smith@example.com',
+                        role: 'Student',
+                        status: 'Active',
+                        joined: 'Mar 12, 2023',
+                        lastLogin: 'Today, 2:45 PM',
+                        avatar: '/placeholder.svg?height=40&width=40&text=JS',
                       },
                       {
-                        name: "Dr. Sarah Johnson",
-                        email: "sarah.j@example.com",
-                        role: "Tutor",
-                        status: "Active",
-                        joined: "Jan 05, 2022",
-                        lastLogin: "Yesterday, 8:12 AM",
-                        avatar: "/placeholder.svg?height=40&width=40&text=SJ",
+                        name: 'Dr. Sarah Johnson',
+                        email: 'sarah.j@example.com',
+                        role: 'Tutor',
+                        status: 'Active',
+                        joined: 'Jan 05, 2022',
+                        lastLogin: 'Yesterday, 8:12 AM',
+                        avatar: '/placeholder.svg?height=40&width=40&text=SJ',
                       },
                       {
-                        name: "Michael Brown",
-                        email: "m.brown@example.com",
-                        role: "Student",
-                        status: "Inactive",
-                        joined: "Jun 18, 2023",
-                        lastLogin: "Mar 08, 2023, 11:30 AM",
-                        avatar: "/placeholder.svg?height=40&width=40&text=MB",
+                        name: 'Michael Brown',
+                        email: 'm.brown@example.com',
+                        role: 'Student',
+                        status: 'Inactive',
+                        joined: 'Jun 18, 2023',
+                        lastLogin: 'Mar 08, 2023, 11:30 AM',
+                        avatar: '/placeholder.svg?height=40&width=40&text=MB',
                       },
                       {
-                        name: "Emma Wilson",
-                        email: "emma.w@example.com",
-                        role: "Admin",
-                        status: "Active",
-                        joined: "Nov 30, 2021",
-                        lastLogin: "Today, 9:05 AM",
-                        avatar: "/placeholder.svg?height=40&width=40&text=EW",
+                        name: 'Emma Wilson',
+                        email: 'emma.w@example.com',
+                        role: 'Admin',
+                        status: 'Active',
+                        joined: 'Nov 30, 2021',
+                        lastLogin: 'Today, 9:05 AM',
+                        avatar: '/placeholder.svg?height=40&width=40&text=EW',
                       },
                       {
-                        name: "David Chen",
-                        email: "dchen@example.com",
-                        role: "Tutor",
-                        status: "Pending",
-                        joined: "Apr 02, 2023",
-                        lastLogin: "Apr 02, 2023, 3:40 PM",
-                        avatar: "/placeholder.svg?height=40&width=40&text=DC",
+                        name: 'David Chen',
+                        email: 'dchen@example.com',
+                        role: 'Tutor',
+                        status: 'Pending',
+                        joined: 'Apr 02, 2023',
+                        lastLogin: 'Apr 02, 2023, 3:40 PM',
+                        avatar: '/placeholder.svg?height=40&width=40&text=DC',
                       },
                     ].map((user, index) => (
                       <TableRow key={index}>
@@ -234,9 +232,9 @@ export function AdminHome() {
                               <AvatarImage src={user.avatar} alt={user.name} />
                               <AvatarFallback>
                                 {user.name
-                                  .split(" ")
+                                  .split(' ')
                                   .map((n) => n[0])
-                                  .join("")}
+                                  .join('')}
                               </AvatarFallback>
                             </Avatar>
                             <div>
@@ -251,11 +249,7 @@ export function AdminHome() {
                           <Badge
                             variant="outline"
                             className={
-                              user.role === "Admin"
-                                ? "border-purple-200 bg-purple-50"
-                                : user.role === "Tutor"
-                                ? "border-blue-200 bg-blue-50"
-                                : "border-green-200 bg-green-50"
+                              user.role === 'Admin' ? 'border-purple-200 bg-purple-50' : user.role === 'Tutor' ? 'border-blue-200 bg-blue-50' : 'border-green-200 bg-green-50'
                             }
                           >
                             {user.role}
@@ -263,22 +257,18 @@ export function AdminHome() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            {user.status === "Active" && (
+                            {user.status === 'Active' && (
                               <CheckCircle2 className="h-4 w-4 text-green-500" />
                             )}
-                            {user.status === "Inactive" && (
+                            {user.status === 'Inactive' && (
                               <XCircle className="h-4 w-4 text-red-500" />
                             )}
-                            {user.status === "Pending" && (
+                            {user.status === 'Pending' && (
                               <Clock className="h-4 w-4 text-yellow-500" />
                             )}
                             <span
                               className={
-                                user.status === "Active"
-                                  ? "text-green-600"
-                                  : user.status === "Inactive"
-                                  ? "text-red-600"
-                                  : "text-yellow-600"
+                                user.status === 'Active' ? 'text-green-600' : user.status === 'Inactive' ? 'text-red-600' : 'text-yellow-600'
                               }
                             >
                               {user.status}
@@ -337,30 +327,30 @@ export function AdminHome() {
                   <div className="grid grid-cols-2 gap-4">
                     {[
                       {
-                        title: "Active",
+                        title: 'Active',
                         value: 342,
                         icon: (
                           <CheckCircle2 className="h-5 w-5 text-green-500" />
                         ),
-                        color: "bg-green-50 border-green-200",
+                        color: 'bg-green-50 border-green-200',
                       },
                       {
-                        title: "Pending Review",
+                        title: 'Pending Review',
                         value: 54,
                         icon: <Clock className="h-5 w-5 text-yellow-500" />,
-                        color: "bg-yellow-50 border-yellow-200",
+                        color: 'bg-yellow-50 border-yellow-200',
                       },
                       {
-                        title: "Paused",
+                        title: 'Paused',
                         value: 28,
                         icon: <PauseCircle className="h-5 w-5 text-blue-500" />,
-                        color: "bg-blue-50 border-blue-200",
+                        color: 'bg-blue-50 border-blue-200',
                       },
                       {
-                        title: "Rejected",
+                        title: 'Rejected',
                         value: 12,
                         icon: <Ban className="h-5 w-5 text-red-500" />,
-                        color: "bg-red-50 border-red-200",
+                        color: 'bg-red-50 border-red-200',
                       },
                     ].map((status, index) => (
                       <Card key={index} className={`border ${status.color}`}>
@@ -381,22 +371,22 @@ export function AdminHome() {
                     <h4 className="font-medium">Recent Course Submissions</h4>
                     {[
                       {
-                        title: "Advanced Cybersecurity Fundamentals",
-                        author: "Michael Chen",
-                        submitted: "2 hours ago",
-                        status: "Pending Review",
+                        title: 'Advanced Cybersecurity Fundamentals',
+                        author: 'Michael Chen',
+                        submitted: '2 hours ago',
+                        status: 'Pending Review',
                       },
                       {
-                        title: "Cloud Infrastructure Design Patterns",
-                        author: "Sophia Rodriguez",
-                        submitted: "Yesterday",
-                        status: "Pending Review",
+                        title: 'Cloud Infrastructure Design Patterns',
+                        author: 'Sophia Rodriguez',
+                        submitted: 'Yesterday',
+                        status: 'Pending Review',
                       },
                       {
-                        title: "Mobile App Development with React Native",
-                        author: "David Smith",
-                        submitted: "2 days ago",
-                        status: "Pending Review",
+                        title: 'Mobile App Development with React Native',
+                        author: 'David Smith',
+                        submitted: '2 days ago',
+                        status: 'Pending Review',
                       },
                     ].map((course, index) => (
                       <div
@@ -462,19 +452,19 @@ export function AdminHome() {
                         <h4 className="text-sm font-medium">Top Categories</h4>
                         {[
                           {
-                            name: "Web Development",
-                            growth: "+18%",
-                            value: "34%",
+                            name: 'Web Development',
+                            growth: '+18%',
+                            value: '34%',
                           },
                           {
-                            name: "Data Science & AI",
-                            growth: "+32%",
-                            value: "28%",
+                            name: 'Data Science & AI',
+                            growth: '+32%',
+                            value: '28%',
                           },
                           {
-                            name: "Cloud Computing",
-                            growth: "+12%",
-                            value: "15%",
+                            name: 'Cloud Computing',
+                            growth: '+12%',
+                            value: '15%',
                           },
                         ].map((category, index) => (
                           <div

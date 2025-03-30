@@ -1,13 +1,11 @@
-import React from "react";
+import React from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface DocumentViewModalProps {
   isOpen: boolean;
@@ -29,7 +27,7 @@ export const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
           <DialogTitle>{tutorName}'s Verification Document</DialogTitle>
         </DialogHeader>
         <div className="mt-4 mx-auto overflow-hidden rounded-md">
-          {documentUrl.toLowerCase().endsWith(".pdf") ? (
+          {documentUrl.toLowerCase().endsWith('.pdf') ? (
             <iframe
               src={documentUrl}
               title="Verification Document"
@@ -43,14 +41,14 @@ export const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
                 className="max-h-[80vh] object-contain rounded-md shadow-md"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder.svg";
-                  target.alt = "Error loading document";
+                  target.src = '/placeholder.svg';
+                  target.alt = 'Error loading document';
                 }}
               />
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => window.open(documentUrl, "_blank")}
+                onClick={() => window.open(documentUrl, '_blank')}
               >
                 Open Full Size
               </Button>

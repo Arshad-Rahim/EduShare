@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,11 +6,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { ShieldX } from "lucide-react";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { ShieldX } from 'lucide-react';
 
 interface RejectionReasonModalProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ export const RejectionReasonModal: React.FC<RejectionReasonModalProps> = ({
   reason,
   onReasonChange,
   onConfirm,
-  tutorName = "this tutor",
+  tutorName = 'this tutor',
 }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -8,7 +8,7 @@ import { CustomError } from "../../util/CustomError";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../../shared/constant";
 
 export class OtpService implements IOtpService {
-  constructor(private otpRepository: IOtpRepository) {}
+  constructor(private _otpRepository: IOtpRepository) {}
   async otpGenerate(data: Omit<TOtp, "otp">): Promise<void> {
     const otp = generateOtp();
     console.log("OTP sended:", otp);
@@ -18,7 +18,7 @@ export class OtpService implements IOtpService {
       expiredAt: new Date(Date.now() + 60 * 1000),
     };
 
-    await this.otpRepository.otpGenerate(newOtp);
+    await this._otpRepository.otpGenerate(newOtp);
 
     const mailOptions = {
       from: "edushare.org@gmail.com",
@@ -29,8 +29,7 @@ export class OtpService implements IOtpService {
     };
 
     try {
-      const info = await transporter.sendMail(mailOptions);
-      // console.log("Email sent :", info.response);
+      await transporter.sendMail(mailOptions);
     } catch (error) {
       console.error("Error sending email :", error);
       throw error;
@@ -38,7 +37,7 @@ export class OtpService implements IOtpService {
   }
 
   async verifyOtp(data: TVerifyOtpToRegister): Promise<boolean> {
-    const otpEntry = await this.otpRepository.findByEmailAnOtp(data);
+    const otpEntry = await this._otpRepository.findByEmailAnOtp(data);
 
     if (!otpEntry) {
       throw new CustomError(
@@ -50,7 +49,7 @@ export class OtpService implements IOtpService {
     if (!otpEntry.expiredAt || otpEntry.expiredAt < new Date()) {
       throw new CustomError(ERROR_MESSAGES.OTP_EXPIRED, HTTP_STATUS.GONE);
     }
-    await this.otpRepository.deleteOtp(data.email);
+    await this._otpRepository.deleteOtp(data.email);
     return true;
   }
 }

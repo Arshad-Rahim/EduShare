@@ -1,5 +1,5 @@
 // src/store/slice/adminSlice.ts
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Define the shape of adminDatas
 interface AdminData {
@@ -16,12 +16,12 @@ interface AdminState {
 
 const initialState: AdminState = {
   adminDatas: (() => {
-    const storedData = localStorage.getItem("adminDatas");
+    const storedData = localStorage.getItem('adminDatas');
     if (storedData) {
       try {
         return JSON.parse(storedData) as AdminData;
       } catch (error) {
-        console.error("Failed to parse adminDatas from localStorage:", error);
+        console.error('Failed to parse adminDatas from localStorage:', error);
         return null;
       }
     }
@@ -30,16 +30,16 @@ const initialState: AdminState = {
 };
 
 const adminSlice = createSlice({
-  name: "admin",
+  name: 'admin',
   initialState,
   reducers: {
     addAdmin: (state, action: PayloadAction<AdminData>) => {
       state.adminDatas = action.payload;
-      localStorage.setItem("adminDatas", JSON.stringify(action.payload));
+      localStorage.setItem('adminDatas', JSON.stringify(action.payload));
     },
     logoutAdmin: (state) => {
       state.adminDatas = null;
-      localStorage.removeItem("adminDatas");
+      localStorage.removeItem('adminDatas');
     },
   },
 });

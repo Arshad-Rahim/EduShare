@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,8 +8,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ShieldCheck } from "lucide-react";
+} from '@/components/ui/alert-dialog';
+import { ShieldCheck } from 'lucide-react';
 
 interface ApprovalConfirmationModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ interface ApprovalConfirmationModalProps {
 
 export const ApprovalConfirmationModal: React.FC<
   ApprovalConfirmationModalProps
-> = ({ isOpen, onClose, onConfirm, tutorName = "this tutor" }) => {
+> = ({ isOpen, onClose, onConfirm, tutorName = 'this tutor' }) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="max-w-md">

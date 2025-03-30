@@ -1,9 +1,7 @@
 import { Request, Response, Router } from "express";
 import { adminAuthMiddleware } from "../middleware/adminAuthMiddleware";
-import { injectedAcceptTutorController, injectedPaginatedUserController } from "../di/userInjection";
-import { injectedUpdateRejectedReasonTutorService } from "../di/tutorInjection";
-import { injectedLogoutAdminController } from "../di/adminInjection";
 import { authorizeRole } from "../middleware/userAuthMiddleware";
+import { injectedAdminController } from "../di/adminInjection";
 
 export class AdminRoutes{
     public router = Router();
@@ -14,9 +12,8 @@ export class AdminRoutes{
     }
 
     initializeRoute(){
-      // ,adminAuthMiddleware,authorizeRole(['admin']), 
-      this.router.get("/usersList",(req: Request, res: Response) =>
-        injectedPaginatedUserController.handle(req, res)
+      this.router.get("/usersList",adminAuthMiddleware,authorizeRole(['admin']),(req: Request, res: Response) =>
+        injectedAdminController.usersList(req, res)
       );
       // // Approve a tutor
       this.router.patch(
@@ -24,7 +21,7 @@ export class AdminRoutes{
         adminAuthMiddleware,
         authorizeRole(["admin"]),
         (req: Request, res: Response) =>
-          injectedAcceptTutorController.handler(req, res)
+          injectedAdminController.acceptTutor(req, res)
       );
 
        this.router.patch(
@@ -32,8 +29,16 @@ export class AdminRoutes{
          adminAuthMiddleware,
          authorizeRole(["admin"]),
          (req: Request, res: Response) =>
-           injectedUpdateRejectedReasonTutorService.handle(req, res)
+           injectedAdminController.rejectTutor(req, res)
        );
+
+         this.router.patch(
+           "/:id/status",
+           adminAuthMiddleware,
+           authorizeRole(["admin"]),
+           (req: Request, res: Response) =>
+             injectedAdminController.updateStatus(req, res)
+         );
 
         // Logout
            this.router.post(
@@ -41,7 +46,7 @@ export class AdminRoutes{
              adminAuthMiddleware,
              authorizeRole(["admin"]),
              (req: Request, res: Response) =>
-               injectedLogoutAdminController.logoutAdmin(req, res)
+               injectedAdminController.logoutAdmin(req, res)
            );
     }
 }

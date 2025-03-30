@@ -1,14 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { BarChart3, Calendar, FileText, HelpCircle, LayoutDashboard, MessageSquare, Plus, Settings, Users, Video } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { BarChart3, Calendar, FileText, HelpCircle, LayoutDashboard, MessageSquare, Plus, Settings, Users, Video } from 'lucide-react';
 
 
-import React from 'react'
+import React from 'react';
 
 export  function SideBar({sidebarOpen}) {
   return (
     <aside
       className={`${
-        sidebarOpen ? "block" : "hidden"
+        sidebarOpen ? 'block' : 'hidden'
       } fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block`}
     >
       <div className="flex h-full flex-col">
@@ -22,25 +22,25 @@ export  function SideBar({sidebarOpen}) {
           {[
             {
               icon: <LayoutDashboard className="h-4 w-4" />,
-              name: "Dashboard",
+              name: 'Dashboard',
               active: true,
             },
-            { icon: <FileText className="h-4 w-4" />, name: "My Courses" },
+            { icon: <FileText className="h-4 w-4" />, name: 'My Courses' },
             {
               icon: <Video className="h-4 w-4" />,
-              name: "Content Creation",
+              name: 'Content Creation',
             },
-            { icon: <Users className="h-4 w-4" />, name: "Students" },
+            { icon: <Users className="h-4 w-4" />, name: 'Students' },
             {
               icon: <MessageSquare className="h-4 w-4" />,
-              name: "Messages",
+              name: 'Messages',
             },
-            { icon: <BarChart3 className="h-4 w-4" />, name: "Analytics" },
-            { icon: <Calendar className="h-4 w-4" />, name: "Schedule" },
+            { icon: <BarChart3 className="h-4 w-4" />, name: 'Analytics' },
+            { icon: <Calendar className="h-4 w-4" />, name: 'Schedule' },
           ].map((item) => (
             <Button
               key={item.name}
-              variant={item.active ? "secondary" : "ghost"}
+              variant={item.active ? 'secondary' : 'ghost'}
               className="justify-start"
             >
               {item.icon}

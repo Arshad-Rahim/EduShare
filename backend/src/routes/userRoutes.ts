@@ -1,10 +1,6 @@
 import { Router, Request, Response } from "express";
 import {
-  injectedDeleteUserController,
-  injectedFindUserByIdController,
-  injectedLoginUserController,
-  injectedPaginatedUserController,
-  injectedUpdateStatusUserController,
+  injectedUserController,
 } from "../di/userInjection";
 import {
   authorizeRole,
@@ -24,28 +20,12 @@ export class UserRoutes {
     this.router.get(
       "/me",
       userAuthMiddleware,
-      authorizeRole(["user"]),
+      authorizeRole(["user","tutor"]),
       (req: Request, res: Response) =>
-        injectedFindUserByIdController.handle(req, res)
+        injectedUserController.logedInUserData(req, res)
     );
 
-    // Get paginated list of users
-    this.router.get(
-      "/list",
-      userAuthMiddleware,
-      authorizeRole(["user"]),
-      (req: Request, res: Response) =>
-        injectedPaginatedUserController.handle(req, res)
-    );
 
-    // Update user status
-    this.router.patch(
-      "/:id/status",
-      userAuthMiddleware,
-      authorizeRole(["user"]),
-      (req: Request, res: Response) =>
-        injectedUpdateStatusUserController.handler(req, res)
-    );
   }
 }
 

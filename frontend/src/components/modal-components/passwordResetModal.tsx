@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Check, Eye, EyeOff } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,12 +35,44 @@ export function PasswordResetModal({
   const [isValid, setIsValid] = useState(false);
 
   const validatePasswords = () => {
+    // Minimum length check
     if (newPassword.length < 8) {
       setError("Password must be at least 8 characters long");
       setIsValid(false);
       return false;
     }
 
+    // Uppercase letter check
+    if (!/[A-Z]/.test(newPassword)) {
+      setError("Password must contain at least one uppercase letter");
+      setIsValid(false);
+      return false;
+    }
+
+    // Lowercase letter check
+    if (!/[a-z]/.test(newPassword)) {
+      setError("Password must contain at least one lowercase letter");
+      setIsValid(false);
+      return false;
+    }
+
+    // Number check
+    if (!/[0-9]/.test(newPassword)) {
+      setError("Password must contain at least one number");
+      setIsValid(false);
+      return false;
+    }
+
+    // Special character check
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      setError(
+        "Password must contain at least one special character (e.g., !@#$%^&*)"
+      );
+      setIsValid(false);
+      return false;
+    }
+
+    // Password match check
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
       setIsValid(false);
@@ -57,7 +88,7 @@ export function PasswordResetModal({
     if (validatePasswords()) {
       setTimeout(() => {
         onPasswordReset(newPassword);
-        setNewPassword(""); 
+        setNewPassword("");
         setConfirmPassword("");
         setIsValid(false);
       }, 1000);
@@ -85,9 +116,10 @@ export function PasswordResetModal({
                 value={newPassword}
                 onChange={(e) => {
                   setNewPassword(e.target.value);
-                  setError(null);
+                  setError(null); // Clear error on change
                 }}
                 className={error ? "border-destructive pr-10" : "pr-10"}
+                onBlur={validatePasswords} // Validate on blur for immediate feedback
               />
               <Button
                 variant="ghost"
@@ -116,10 +148,10 @@ export function PasswordResetModal({
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
-                  setError(null);
+                  setError(null); // Clear error on change
                 }}
                 className={error ? "border-destructive pr-10" : "pr-10"}
-                onBlur={validatePasswords}
+                onBlur={validatePasswords} // Validate on blur for immediate feedback
               />
               <Button
                 variant="ghost"

@@ -1,10 +1,6 @@
 
 import { Router, Request, Response } from "express";
-import {
-  injectedCreateTutorController,
-  injectedFindNotificationController,
-  injectedUpdateTutorController,
-} from "../di/tutorInjection";
+import { injectedTutorController } from "../di/tutorInjection";
 import { upload } from "../util/multer";
 import { authorizeRole, userAuthMiddleware } from "../middleware/userAuthMiddleware";
 
@@ -19,15 +15,13 @@ export class TutorRoutes {
   }
 
   initializeRoutes() {
-    this.router.post("/register", (req: Request, res: Response) =>
-      injectedCreateTutorController.handle(req, res)
-    );
+
 
     this.router.post(
       "/profileUpdate",
       upload.single("file"),userAuthMiddleware,authorizeRole(['tutor']),
       (req: Request, res: Response) =>
-        injectedUpdateTutorController.handle(req, res)
+        injectedTutorController.updateProfile(req, res)
     );
 
     this.router.get(
@@ -35,13 +29,18 @@ export class TutorRoutes {
       userAuthMiddleware,
       authorizeRole(["tutor"]),
       (req: Request, res: Response) =>
-        injectedFindNotificationController.handler(req, res)
+        injectedTutorController.getNotification(req, res)
     );
 
-    // // Approve a tutor
-    // this.router.patch("/:tutorId/approval", (req: Request, res: Response) =>
-    //   injectedAcceptTutorController.handler(req, res)
-    // );
+
+    this.router.get(
+      "/me",
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      (req: Request, res: Response) =>
+        injectedTutorController.getTutorDetails(req, res)
+    );
+
   }
 }
 

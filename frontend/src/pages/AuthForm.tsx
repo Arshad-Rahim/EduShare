@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import axios, { AxiosError } from "axios";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import  { AxiosError } from 'axios';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Card,
   CardContent,
@@ -12,10 +12,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import {
   EyeIcon,
   EyeOffIcon,
@@ -23,46 +23,44 @@ import {
   Users,
   GraduationCap,
   ShieldCheck,
-} from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { cn } from "@/lib/utils";
-import { OTPModal } from "@/components/modal-components/OTPModal";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
+import { OTPModal } from '@/components/modal-components/OTPModal';
+import { toast } from 'sonner';
 import {
   loginSchema,
   registerSchema,
   LoginFormData,
   RegisterFormData,
-} from "@/validation";
-import { EmailModal } from "@/components/modal-components/EmailModal";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { sendOtp } from "@/services/otpService/axiosOTPSend";
-import { verifyEmail } from "@/services/userService/verfiyEmail";
-import { sendOtpForgetPassword } from "@/services/otpService/axiosOtpSendForForgetPassword";
-import { verifyOtp } from "@/services/otpService/verifyOtp";
-import { registerUser } from "@/services/userService/registerUser";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addUser } from "@/redux/slice/userSlice";
-import { PasswordResetModal } from "@/components/modal-components/passwordResetModal";
-import { GoogleAuth } from "@/components/googleAuth/googleAuthComponent";
+} from '@/validation';
+import { EmailModal } from '@/components/modal-components/EmailModal';
+import { authAxiosInstance } from '@/api/authAxiosInstance';
+import { sendOtp } from '@/services/otpService/axiosOTPSend';
+import { verifyEmail } from '@/services/userService/verfiyEmail';
+import { sendOtpForgetPassword } from '@/services/otpService/axiosOtpSendForForgetPassword';
+import { verifyOtp } from '@/services/otpService/verifyOtp';
+import { registerUser } from '@/services/userService/registerUser';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { addUser } from '@/redux/slice/userSlice';
+import { PasswordResetModal } from '@/components/modal-components/passwordResetModal';
+import { GoogleAuth } from '@/components/googleAuth/googleAuthComponent';
 
-export type UserRole = "admin" | "user" | "tutor";
+export type UserRole = 'admin' | 'user' | 'tutor';
 
 interface AuthFormProps {
   role?: UserRole;
   allowRoleSelection?: boolean;
   showRegistration?: boolean;
-  onLogin?: (data: LoginFormData, role: UserRole) => void;
   onRegister?: (data: RegisterFormData, role: UserRole) => void;
   className?: string;
 }
 
 export default function AuthForm({
-  role = "user",
+  role = 'user',
   allowRoleSelection = true, //ith true aakiyal selection option varum user and tutor
   showRegistration = true,
-  onLogin,
   onRegister,
   className,
 }: AuthFormProps) {
@@ -72,10 +70,10 @@ export default function AuthForm({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [forgetPasswordEmail, setForgetPasswordEmail] = useState("");
+  const [forgetPasswordEmail, setForgetPasswordEmail] = useState('');
   const [isPasswordResetModalOpen, setIsPasswordResetModalOpen] =
     useState(false);
-    const [data, setData] = useState <LoginFormData>();
+  const [data, setData] = useState <LoginFormData>();
 
   const navigate = useNavigate();
 
@@ -83,8 +81,8 @@ export default function AuthForm({
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
   });
 
@@ -92,18 +90,18 @@ export default function AuthForm({
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      specialization: "",
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      specialization: '',
     },
   });
   const dispatch = useDispatch();
 
   const handleLoginSubmit = (data: LoginFormData) => {
     authAxiosInstance
-      .post("/auth/login", { ...data, role: activeRole })
+      .post('/auth/login', { ...data, role: activeRole })
       .then((response) => {
         let { user } = response.data;
         user = {
@@ -113,11 +111,11 @@ export default function AuthForm({
         dispatch(addUser(user));
         toast.success(response.data.message);
         loginForm.reset();
-        console.log("ActiveRole:", activeRole);
-        if (activeRole == "tutor") {
+        console.log('ActiveRole:', activeRole);
+        if (activeRole == 'tutor') {
           navigate(`/${activeRole}/home`);
         } else {
-          navigate(`/`);
+          navigate('/');
         }
       })
       .catch((error) =>
@@ -127,15 +125,15 @@ export default function AuthForm({
       );
   };
 
-   const handleRegisterSubmit = async (data: RegisterFormData) => {
+  const handleRegisterSubmit = async (data: RegisterFormData) => {
     try {
       const res = await sendOtp(data);
-      setData(data)
+      setData(data);
       toast.success(res.message);
       setIsOTPModalOpen(true);
     } catch (error) {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data?.message || "Error sending OTP");
+        toast.error(error.response?.data?.message || 'Error sending OTP');
       }
     }
   };
@@ -150,7 +148,7 @@ export default function AuthForm({
       registerForm.reset();
     } catch (error) {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data?.message || "Registration failed");
+        toast.error(error.response?.data?.message || 'Registration failed');
       }
     }
   };
@@ -170,43 +168,43 @@ export default function AuthForm({
       }
     } catch (error) {
       if (error instanceof AxiosError) {
-        toast.error(error.response?.data?.message || "Error sending OTP");
+        toast.error(error.response?.data?.message || 'Error sending OTP');
       }
     }
   };
 
   const getRoleConfig = (role: UserRole) => {
     switch (role) {
-      case "admin":
+      case 'admin':
         return {
           icon: <ShieldCheck className="h-6 w-6" />,
-          title: "Admin Portal",
-          color: "bg-red-500",
-          textColor: "text-red-500",
-          borderColor: "border-red-500",
-          hoverColor: "hover:bg-red-50",
-          activeColor: "bg-red-100",
+          title: 'Admin Portal',
+          color: 'bg-red-500',
+          textColor: 'text-red-500',
+          borderColor: 'border-red-500',
+          hoverColor: 'hover:bg-red-50',
+          activeColor: 'bg-red-100',
         };
-      case "tutor":
+      case 'tutor':
         return {
           icon: <GraduationCap className="h-6 w-6" />,
-          title: "Tutor Portal",
-          color: "bg-purple-500",
-          textColor: "text-purple-500",
-          borderColor: "border-purple-500",
-          hoverColor: "hover:bg-purple-50",
-          activeColor: "bg-purple-100",
+          title: 'Tutor Portal',
+          color: 'bg-purple-500',
+          textColor: 'text-purple-500',
+          borderColor: 'border-purple-500',
+          hoverColor: 'hover:bg-purple-50',
+          activeColor: 'bg-purple-100',
         };
-      case "user":
+      case 'user':
       default:
         return {
           icon: <Users className="h-6 w-6" />,
-          title: "Student Portal",
-          color: "bg-primary",
-          textColor: "text-primary",
-          borderColor: "border-primary",
-          hoverColor: "hover:bg-primary/10",
-          activeColor: "bg-primary/20",
+          title: 'Student Portal',
+          color: 'bg-primary',
+          textColor: 'text-primary',
+          borderColor: 'border-primary',
+          hoverColor: 'hover:bg-primary/10',
+          activeColor: 'bg-primary/20',
         };
     }
   };
@@ -214,7 +212,7 @@ export default function AuthForm({
   const roleConfig = getRoleConfig(activeRole);
 
   const resetPassword = async (email: string, newPassword: string) => {
-    const response = await authAxiosInstance.post("/auth/resetPassword", {
+    const response = await authAxiosInstance.post('/auth/resetPassword', {
       email,
       newPassword,
     });
@@ -224,13 +222,13 @@ export default function AuthForm({
   const handlePasswordReset = async (newPassword: string) => {
     try {
       const res = await resetPassword(forgetPasswordEmail, newPassword);
-      toast.success(res.message || "Password reset successfully");
+      toast.success(res.message || 'Password reset successfully');
       setIsPasswordResetModalOpen(false);
-      setForgetPasswordEmail("");
+      setForgetPasswordEmail('');
     } catch (error) {
       if (error instanceof AxiosError) {
         toast.error(
-          error.response?.data?.message || "Failed to reset password"
+          error.response?.data?.message || 'Failed to reset password'
         );
       }
     }
@@ -239,7 +237,7 @@ export default function AuthForm({
   return (
     <div
       className={cn(
-        "flex justify-center items-center min-h-screen p-4 bg-background",
+        'flex justify-center items-center min-h-screen p-4 bg-background',
         className
       )}
     >
@@ -248,7 +246,7 @@ export default function AuthForm({
         <div className="mb-6 text-center">
           <div
             className={cn(
-              "inline-flex items-center justify-center p-2 rounded-full",
+              'inline-flex items-center justify-center p-2 rounded-full',
               roleConfig.color
             )}
           >
@@ -256,15 +254,11 @@ export default function AuthForm({
           </div>
           <h1 className="mt-4 text-2xl font-bold">{roleConfig.title}</h1>
           <p className="text-muted-foreground">
-            {activeRole === "admin"
-              ? "Access the admin dashboard"
-              : activeRole === "tutor"
-              ? "Teach and manage your courses"
-              : "Learn and grow with our platform"}
+            {activeRole === 'admin' ? 'Access the admin dashboard' : activeRole === 'tutor' ? 'Teach and manage your courses' : 'Learn and grow with our platform'}
           </p>
         </div>
 
-        {allowRoleSelection && activeRole !== "admin" && (
+        {allowRoleSelection && activeRole !== 'admin' && (
           <Card className="mb-6">
             <CardContent className="pt-6">
               <RadioGroup
@@ -274,10 +268,8 @@ export default function AuthForm({
               >
                 <div
                   className={cn(
-                    "flex-1 flex items-center space-x-2 rounded-md border p-4 cursor-pointer transition-all",
-                    activeRole === "user"
-                      ? getRoleConfig("user").activeColor
-                      : getRoleConfig("user").hoverColor
+                    'flex-1 flex items-center space-x-2 rounded-md border p-4 cursor-pointer transition-all',
+                    activeRole === 'user' ? getRoleConfig('user').activeColor : getRoleConfig('user').hoverColor
                   )}
                 >
                   <RadioGroupItem value="user" id="user" />
@@ -290,10 +282,8 @@ export default function AuthForm({
                 </div>
                 <div
                   className={cn(
-                    "flex-1 flex items-center space-x-2 rounded-md border p-4 cursor-pointer transition-all",
-                    activeRole === "tutor"
-                      ? getRoleConfig("tutor").activeColor
-                      : getRoleConfig("tutor").hoverColor
+                    'flex-1 flex items-center space-x-2 rounded-md border p-4 cursor-pointer transition-all',
+                    activeRole === 'tutor' ? getRoleConfig('tutor').activeColor : getRoleConfig('tutor').hoverColor
                   )}
                 >
                   <RadioGroupItem value="tutor" id="tutor" />
@@ -310,7 +300,7 @@ export default function AuthForm({
         )}
 
         <Tabs defaultValue="login" className="w-full">
-          {showRegistration && activeRole !== "admin" ? (
+          {showRegistration && activeRole !== 'admin' ? (
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
@@ -321,15 +311,11 @@ export default function AuthForm({
 
           {/* Login Form */}
           <TabsContent value="login">
-            <Card className={cn("border-t-4", roleConfig.borderColor)}>
+            <Card className={cn('border-t-4', roleConfig.borderColor)}>
               <CardHeader>
                 <CardTitle>Login</CardTitle>
                 <CardDescription>
-                  {activeRole === "admin"
-                    ? "Enter your admin credentials"
-                    : activeRole === "tutor"
-                    ? "Access your tutor dashboard"
-                    : "Continue your learning journey"}
+                  {activeRole === 'admin' ? 'Enter your admin credentials' : activeRole === 'tutor' ? 'Access your tutor dashboard' : 'Continue your learning journey'}
                 </CardDescription>
               </CardHeader>
               <form onSubmit={loginForm.handleSubmit(handleLoginSubmit)}>
@@ -338,7 +324,7 @@ export default function AuthForm({
                     <Label htmlFor="login-email">Email</Label>
                     <Input
                       id="login-email"
-                      {...loginForm.register("email")}
+                      {...loginForm.register('email')}
                       type="email"
                       placeholder="your.email@example.com"
                     />
@@ -353,8 +339,8 @@ export default function AuthForm({
                     <div className="relative">
                       <Input
                         id="login-password"
-                        {...loginForm.register("password")}
-                        type={showLoginPassword ? "text" : "password"}
+                        {...loginForm.register('password')}
+                        type={showLoginPassword ? 'text' : 'password'}
                         placeholder="••••••••"
                       />
                       <Button
@@ -401,15 +387,13 @@ export default function AuthForm({
           </TabsContent>
 
           {/* Register Form */}
-          {showRegistration && activeRole !== "admin" && (
+          {showRegistration && activeRole !== 'admin' && (
             <TabsContent value="register">
-              <Card className={cn("border-t-4", roleConfig.borderColor)}>
+              <Card className={cn('border-t-4', roleConfig.borderColor)}>
                 <CardHeader>
                   <CardTitle>Create an account</CardTitle>
                   <CardDescription>
-                    {activeRole === "tutor"
-                      ? "Join as a tutor and start teaching"
-                      : "Start your learning journey today"}
+                    {activeRole === 'tutor' ? 'Join as a tutor and start teaching' : 'Start your learning journey today'}
                   </CardDescription>
                 </CardHeader>
                 <form
@@ -420,7 +404,7 @@ export default function AuthForm({
                       <Label htmlFor="name">Full Name</Label>
                       <Input
                         id="name"
-                        {...registerForm.register("name")}
+                        {...registerForm.register('name')}
                         placeholder="John Doe"
                       />
                       {registerForm.formState.errors.name && (
@@ -433,7 +417,7 @@ export default function AuthForm({
                       <Label htmlFor="register-email">Email</Label>
                       <Input
                         id="register-email"
-                        {...registerForm.register("email")}
+                        {...registerForm.register('email')}
                         type="email"
                         placeholder="your.email@example.com"
                       />
@@ -448,8 +432,8 @@ export default function AuthForm({
                       <div className="relative">
                         <Input
                           id="register-password"
-                          {...registerForm.register("password")}
-                          type={showRegisterPassword ? "text" : "password"}
+                          {...registerForm.register('password')}
+                          type={showRegisterPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                         />
                         <Button
@@ -479,8 +463,8 @@ export default function AuthForm({
                       <div className="relative">
                         <Input
                           id="confirm-password"
-                          {...registerForm.register("confirmPassword")}
-                          type={showConfirmPassword ? "text" : "password"}
+                          {...registerForm.register('confirmPassword')}
+                          type={showConfirmPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                         />
                         <Button
@@ -562,7 +546,7 @@ export default function AuthForm({
             setIsEmailModalOpen(false);
           } catch (error) {
             if (error instanceof AxiosError) {
-              toast.error(error.response?.data?.message || "Error sending OTP");
+              toast.error(error.response?.data?.message || 'Error sending OTP');
             }
           }
         }}

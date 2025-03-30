@@ -1,6 +1,7 @@
-import { RootState } from "@/redux/store";
-import { useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { RootState } from '@/redux/store';
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { Navigate } from 'react-router-dom';
 
 interface PublicUserRouteProps {
   children: React.ReactNode;
@@ -11,12 +12,10 @@ export function PublicUserRoute({ children }: PublicUserRouteProps) {
     return state?.user?.userDatas;
   });
 
-  if (userData?.role == "tutor") {
-    console.log("tutor");
+  if (userData?.role === 'tutor') {
     return <Navigate to={`/${userData.role}/home`} />;
-  } else if (userData?.role == "user") {
-    console.log("user");
-    return <Navigate to={"/"} />;
+  } else if (userData?.role === 'user') {
+    return <Navigate to={'/'} />;
   }
 
   return children;
