@@ -48,20 +48,11 @@ export class AuthController {
     }
   }
 
-  // Login User
   async loginUser(req: Request, res: Response) {
     try {
       const data = req.body;
 
       const user = await this._authService.loginUser(data);
-
-      // if (user?.isAccepted == false && user?.role == "tutor") {
-      //   res.status(HTTP_STATUS.UNAUTHORIZED).json({
-      //     success: false,
-      //     message: ERROR_MESSAGES.ADMIN_DONOT_ACCEPTED,
-      //   });
-      //   return;
-      // }
 
       if (!user || !user._id || !user.email || !user.role) {
         throw new Error("User data is missing or incomplete");

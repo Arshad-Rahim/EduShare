@@ -20,7 +20,7 @@ export class UserRoutes {
     this.router.get(
       "/me",
       userAuthMiddleware,
-      authorizeRole(["user","tutor"]),
+      authorizeRole(["user"]),
       (req: Request, res: Response) =>
         injectedUserController.logedInUserData(req, res)
     );

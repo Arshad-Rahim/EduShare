@@ -16,8 +16,6 @@ export class UserController {
     private _userRepository: IUserRepository
   ) {}
 
-  // loged in user data
-
   async logedInUserData(req: Request, res: Response) {
     try {
       const user = (req as CustomRequest).user;

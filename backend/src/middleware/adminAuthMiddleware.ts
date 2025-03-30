@@ -34,7 +34,7 @@ export const adminAuthMiddleware = async (
     }
 
     const user =  tokenService.verifyAccessToken(token) as CustomJwtPayload;
-    console.log("USER MIDDLEWARE ADMIN",user)
+    // console.log("USER MIDDLEWARE ADMIN",user)
     if (!user || !user.userId) {
 
       res

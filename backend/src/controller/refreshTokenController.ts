@@ -9,13 +9,11 @@ import {
   clearAuthCookies,
   updateCookieWithAccessToken,
 } from "../util/cookieHelper";
-import { ITokenService } from "../interfaces/tokenServiceInterface";
 import { IRefreshTokenService } from "../interfaces/serviceInterfaces/refreshTokenService";
 
 export class RefreshTokenController {
   constructor(
     private _refreshTokenService: IRefreshTokenService,
-    private _jwtService: ITokenService
   ) {}
   async handle(req: Request, res: Response): Promise<void> {
     try {

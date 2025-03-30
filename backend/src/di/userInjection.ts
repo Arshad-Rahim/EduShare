@@ -22,8 +22,7 @@ export const injectedUserController = new UserController(
 );
 
 export const injectedRefreshTokenController = new RefreshTokenController(
-  refreshTokenService,
-  tokenService
+  refreshTokenService
 );
 
 export const injectedGoogleController = new googleController(
