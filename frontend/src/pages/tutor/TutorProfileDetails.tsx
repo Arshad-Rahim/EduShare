@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
-import { SideBar } from "./components/sideBar";
+import { SideBar } from "./components/SideBar";
 import { FileIcon, UploadIcon, XIcon } from "lucide-react";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 
@@ -62,7 +62,6 @@ export function TutorProfileDetails() {
       authAxiosInstance
         .get("/tutors/me")
         .then((response) => {
-          console.log("RESPONSE IN FRONTEND", response);
           setName(response.data.tutor.name);
           setPhone(response.data.tutor.phone);
           setSpecialization(response.data.tutor.specialization);

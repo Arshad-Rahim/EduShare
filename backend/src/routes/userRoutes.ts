@@ -1,11 +1,10 @@
 import { Router, Request, Response } from "express";
-import {
-  injectedUserController,
-} from "../di/userInjection";
+import { injectedUserController } from "../di/userInjection";
 import {
   authorizeRole,
   userAuthMiddleware,
 } from "../middleware/userAuthMiddleware";
+import { injectedAuthController } from "../di/authInjection";
 
 export class UserRoutes {
   public router: Router;
@@ -25,7 +24,33 @@ export class UserRoutes {
         injectedUserController.logedInUserData(req, res)
     );
 
+    this.router.post(
+      "/profileUpdate",
+      userAuthMiddleware,
+      authorizeRole(["user"]),
+      (req: Request, res: Response) =>
+        injectedUserController.updateUserProfile(req, res)
+    );
 
+
+
+    this.router.post(
+      "/verify-password",
+      userAuthMiddleware,
+      authorizeRole(["user"]),
+      (req: Request, res: Response) =>
+        injectedAuthController.verifyPassword(req, res)
+    );
+
+
+
+     this.router.post(
+       "/update-password",
+       userAuthMiddleware,
+       authorizeRole(["user"]),
+       (req: Request, res: Response) =>
+         injectedUserController.updatePassword(req, res)
+     );
   }
 }
 

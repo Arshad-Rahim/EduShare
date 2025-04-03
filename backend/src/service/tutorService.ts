@@ -3,8 +3,6 @@ import { ITutorService } from "../interfaces/serviceInterfaces/tutorServiceInter
 import { TNotification } from "../types/notification";
 import { TTutorModel, TUpdateTutorProfileBody } from "../types/tutor";
 
-
-
 export class TutorService implements ITutorService {
   constructor(private _tutorRepository: ITutorRepository) {}
   async getNotification(id: string): Promise<TNotification[] | null> {

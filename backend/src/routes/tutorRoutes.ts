@@ -1,10 +1,11 @@
-
 import { Router, Request, Response } from "express";
 import { injectedTutorController } from "../di/tutorInjection";
 import { upload } from "../util/multer";
-import { authorizeRole, userAuthMiddleware } from "../middleware/userAuthMiddleware";
-
-
+import {
+  authorizeRole,
+  userAuthMiddleware,
+} from "../middleware/userAuthMiddleware";
+import { checkUserBlocked } from "../middleware/checkUserBlocked";
 
 export class TutorRoutes {
   public router: Router;
@@ -15,11 +16,13 @@ export class TutorRoutes {
   }
 
   initializeRoutes() {
-
-
     this.router.post(
       "/profileUpdate",
-      upload.single("file"),userAuthMiddleware,authorizeRole(['tutor']),
+      upload.single("file"),
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      checkUserBlocked,
+
       (req: Request, res: Response) =>
         injectedTutorController.updateProfile(req, res)
     );
@@ -28,28 +31,30 @@ export class TutorRoutes {
       "/notifications",
       userAuthMiddleware,
       authorizeRole(["tutor"]),
+      checkUserBlocked,
+
       (req: Request, res: Response) =>
         injectedTutorController.getNotification(req, res)
     );
-
 
     this.router.get(
       "/me",
       userAuthMiddleware,
       authorizeRole(["tutor"]),
+      checkUserBlocked,
       (req: Request, res: Response) =>
         injectedTutorController.getTutorDetails(req, res)
     );
 
+    this.router.put(
+      "/notifications/read-all",
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      checkUserBlocked,
 
-     this.router.put(
-       "/notifications/read-all",
-       userAuthMiddleware,
-       authorizeRole(["tutor"]),
-       (req: Request, res: Response) =>
-         injectedTutorController.markAllNotificationsAsRead(req, res)
-     );
-
+      (req: Request, res: Response) =>
+        injectedTutorController.markAllNotificationsAsRead(req, res)
+    );
   }
 }
 

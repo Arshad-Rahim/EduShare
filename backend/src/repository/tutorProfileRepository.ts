@@ -12,18 +12,23 @@ export class TutorRepository implements ITutorRepository {
     id: string,
     verificationDocUrl: string
   ): Promise<void> {
-    await tutorProfileModel.updateOne(
-      { tutorId: id },
-      {
-        tutorId: id,
-        phone: data.phone,
-        specialization: data.specialization,
-        bio: data.bio,
-        verificationDocUrl,
-        approvalStatus: "pending",
-      },
-      { upsert: true }
-    );
+    const updateData: any = {
+      tutorId: id,
+      phone: data.phone,
+      specialization: data.specialization,
+      bio: data.bio,
+      approvalStatus: "pending",
+    };
+
+    // Only add `verificationDocUrl` if it's not an empty string
+    if (verificationDocUrl.trim() !== "") {
+      updateData.verificationDocUrl = verificationDocUrl;
+    }
+
+    await tutorProfileModel.updateOne({ tutorId: id }, updateData, {
+      upsert: true,
+    });
+
     await userModel.findOneAndUpdate({ _id: id }, { name: data.name });
   }
 

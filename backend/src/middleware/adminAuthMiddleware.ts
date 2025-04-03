@@ -23,7 +23,6 @@ export const adminAuthMiddleware = async (
 ) => {
   try {
     const token = req.cookies.adminAccessToken;
-    // console.log("TOKEN:::",token)
 
     if (!token) {
       console.log("no token");

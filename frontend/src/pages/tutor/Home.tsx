@@ -38,7 +38,7 @@ import { Badge } from '@/components/ui/badge';
 // import { useDispatch } from 'react-redux';
 // import { useNavigate } from 'react-router-dom';
 import { Header } from './components/Header';
-import { SideBar } from './components/sideBar';
+import { SideBar } from './components/SideBar';
 
 export function TutorHome() {
   const [sidebarOpen] = useState(true);

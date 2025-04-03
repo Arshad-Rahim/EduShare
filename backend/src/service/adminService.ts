@@ -35,5 +35,6 @@ export class AdminService implements IAdminService {
 
   async updateStatus(id: string, status: boolean): Promise<void> {
     await this._userRepository.updateStatus(id, status);
+    
   }
 }

@@ -2,8 +2,8 @@ import AdminLogin from './pages/admin/AdminLogin';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AuthForm from './pages/AuthForm';
 import { NotFound } from './pages/404pageNotFount';
-import { UserHomePage } from './pages/student/home';
-import { TutorHome } from './pages/tutor/home';
+import { UserHomePage } from './pages/student/Home';
+import { TutorHome } from './pages/tutor/Home';
 import { AdminHome } from './pages/admin/Home';
 import UsersList from './pages/admin/UserList';
 import TutorListing from './pages/admin/TutorListing';
@@ -15,6 +15,9 @@ import { ProtectedUserRoute } from './private/user/ProtectedUserRoute';
 import { ProtectedAdminRoute } from './private/admin/ProtectedAdminRoute';
 import { PublicUserRoute } from './private/user/PublicUserRoute';
 import { TutorProfileDetails } from './pages/tutor/TutorProfileDetails';
+import StudentProfile from './pages/student/UserProfile';
+import { TutorCourses } from './pages/tutor/TutorCourses';
+import { CourseListingPage } from './pages/student/CourseListing';
 
 function App() {
   return (
@@ -27,6 +30,24 @@ function App() {
               element={
                 <ProtectedUserRoute>
                   <UserHomePage />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedUserRoute>
+                  <StudentProfile />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/courses"
+              element={
+                <ProtectedUserRoute>
+                  <CourseListingPage />
                 </ProtectedUserRoute>
               }
             />
@@ -53,6 +74,15 @@ function App() {
               element={
                 <ProtectedUserRoute>
                   <TutorHome />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/tutor/courses"
+              element={
+                <ProtectedUserRoute>
+                  <TutorCourses />
                 </ProtectedUserRoute>
               }
             />

@@ -8,6 +8,7 @@ import {
 } from "../shared/constant";
 import { CustomError } from "../util/CustomError";
 import { ITokenService } from "../interfaces/tokenServiceInterface";
+import { CustomRequest } from "../middleware/userAuthMiddleware";
 
 export class AuthController {
   constructor(
@@ -87,6 +88,30 @@ export class AuthController {
       });
     } catch (error) {
       if (error instanceof CustomError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      console.log(error);
+      res
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+    }
+  }
+
+  async verifyPassword(req:Request,res:Response){
+    try {
+      const {password} = req.body;
+      console.log("REQBODY",req.body)
+       const user = (req as CustomRequest).user;
+       const valid = await this._authService.verifyPassword(user?.userId,password);
+
+        res.status(HTTP_STATUS.OK).json({
+               success: true,
+               message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+               valid,
+             });
+    } catch (error) {
+       if (error instanceof CustomError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }

@@ -1,5 +1,5 @@
+import { TPaginatedResult } from "../../types/tutor";
 import {
-  TPaginatedResult,
   TPaginationOptions,
   TUpdatePassword,
   TUserModel,
@@ -14,4 +14,5 @@ export interface IUserRepository {
   updateStatus(id: string, status: boolean): Promise<void>;
   acceptTutor(tutorId: string): Promise<void>;
   findById(id: string): Promise<TUserModel|null>;
+  updatePassword(id:string,newPassword:string):Promise<void>;
 }

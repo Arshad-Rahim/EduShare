@@ -4,11 +4,13 @@ import {
   TUpdatePassword,
   TUserModel,
   TUserRegister,
+  TUserWithProfile,
 } from "../types/user";
 import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
 import { NotificationModel } from "../models/notificationModel";
 import { tutorProfileModel } from "../models/tutorProfileModel";
 import { TPaginatedResult } from "../types/tutor";
+import { Types } from "mongoose";
 
 export class UserRepository implements IUserRepository {
   async createUser(data: TUserRegister): Promise<TUserModel> {
@@ -21,9 +23,69 @@ export class UserRepository implements IUserRepository {
     return user;
   }
 
-  async findById(id: string): Promise<TUserModel | null> {
-    const user = await userModel.findById(id);
-    return user;
+  // async findById(id: string): Promise<TUserModel | null> {
+  //   const user = await userModel.findById(id);
+  //   return user;
+  // }
+
+  async findById(id: string): Promise<TUserWithProfile | null> {
+    // Validate the ID
+    if (!Types.ObjectId.isValid(id)) return null;
+
+    // Use aggregation to join user and userProfile collections
+    const user = await userModel
+      .aggregate([
+        { $match: { _id: new Types.ObjectId(id) } }, // Match the user by ID
+        {
+          $lookup: {
+            from: "userprofiles", // Collection name in MongoDB (lowercase + 's' typically)
+            localField: "_id",
+            foreignField: "userId",
+            as: "userProfile",
+          },
+        },
+        {
+          $unwind: {
+            path: "$userProfile",
+            preserveNullAndEmptyArrays: true, // Keep user even if no profile exists
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            email: 1,
+            password: 1,
+            role: 1,
+            isBlocked: 1,
+            isAccepted: 1,
+            "userProfile.education": 1,
+            "userProfile.aboutMe": 1,
+            "userProfile.interests": 1,
+          },
+        },
+      ])
+      .exec();
+
+    // If no user is found, return null
+    if (!user || user.length === 0) return null;
+
+    // Extract the first result from the aggregation
+    const userData = user[0];
+
+    // Return a formatted object with defaults for optional fields
+    return {
+      _id: userData._id,
+      name: userData.name,
+      email: userData.email,
+      password: userData.password || null,
+      role: userData.role || "user",
+      isBlocked: userData.isBlocked || false,
+      isAccepted: userData.isAccepted || false,
+      education: userData.userProfile?.education || "",
+      aboutMe: userData.userProfile?.aboutMe || "",
+      interests: userData.userProfile?.interests || "",
+    };
   }
 
   async resetPassword(data: TUpdatePassword): Promise<boolean> {
@@ -44,7 +106,7 @@ export class UserRepository implements IUserRepository {
     search,
     role,
   }: TPaginationOptions): Promise<TPaginatedResult> {
-   const query: Record<string, unknown> = {}; 
+    const query: Record<string, unknown> = {};
     if (role) query.role = role;
     if (search) {
       query.$or = [
@@ -106,8 +168,6 @@ export class UserRepository implements IUserRepository {
     return { users: flattenedUsers, total, page, limit };
   }
 
-
-
   async updateStatus(id: string, status: boolean): Promise<void> {
     await userModel.findByIdAndUpdate({ _id: id }, { isBlocked: status });
   }
@@ -123,5 +183,9 @@ export class UserRepository implements IUserRepository {
       type: "approval",
       message: "Your tutor profile has been approved by the admin.",
     });
+  }
+
+  async updatePassword(id:string,newPassword:string):Promise<void>{
+    await userModel.findByIdAndUpdate({_id:id},{password:newPassword})
   }
 }

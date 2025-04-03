@@ -49,3 +49,22 @@ export type TPaginationOptions ={
   role?: string;
 }
 
+
+
+export type TUpdateUserProfile = {
+  userId: string;
+  name: string;
+  education: string;
+  aboutMe: string;
+  interests: string;
+};
+
+
+type TUserProfileFields = {
+  education?: string;
+  aboutMe?: string;
+  interests?: string;
+};
+
+
+export type TUserWithProfile = TUserModel & TUserProfileFields;

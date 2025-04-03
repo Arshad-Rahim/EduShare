@@ -64,6 +64,30 @@ export class AuthService implements IAuthService {
     return userData;
   }
 
+
+  async verifyPassword(id:string,password:string):Promise<boolean>{
+    const userData = await this._userRepository.findById(id);
+    console.log("USERDATA",userData)
+    if (!userData) {
+      throw new CustomError(
+        ERROR_MESSAGES.USER_NOT_FOUND,
+        HTTP_STATUS.UNAUTHORIZED
+      );
+    }
+
+    if (userData && userData.password) {
+      const valid = await comparePassword(password, userData.password);
+      if (!valid) {
+        throw new CustomError(
+          ERROR_MESSAGES.INVALID_PASSWORD,
+          HTTP_STATUS.UNAUTHORIZED
+        );
+      }
+      return valid
+    }
+    return false;
+  }
+
   async resetPassword(data: TUpdatePassword): Promise<boolean> {
     const hashedPassword = await hashPassword(data.newPassword);
     data.newPassword = hashedPassword;

@@ -21,7 +21,7 @@ export class OtpService implements IOtpService {
     await this._otpRepository.otpGenerate(newOtp);
 
     const mailOptions = {
-      from: "edushare.org@gmail.com",
+      from: process.env.SENDING_MAIL,
       to: data.email,
       subject: "Sending Email using Nodemailer",
 

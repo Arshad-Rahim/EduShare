@@ -21,7 +21,7 @@ export function SideBar() {
           {
             icon: <LayoutDashboard className="h-4 w-4" />,
             name: 'Dashboard',
-            path: '/', // Define the route path
+            path: '/admin/home', // Define the route path
             active: true, // Default active for Dashboard
           },
           {

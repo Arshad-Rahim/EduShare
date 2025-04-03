@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import { CustomError } from "../util/CustomError";
-import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../shared/constant";
+import {
+  ERROR_MESSAGES,
+  HTTP_STATUS,
+  SUCCESS_MESSAGES,
+} from "../shared/constant";
 import { IAdminService } from "../interfaces/serviceInterfaces/adminService";
-
-
 
 export class AdminController {
   constructor(private _adminService: IAdminService) {}
@@ -33,7 +35,12 @@ export class AdminController {
   async acceptTutor(req: Request, res: Response) {
     try {
       const { tutorId } = req.params;
-
+      if (!tutorId) {
+        res
+          .status(HTTP_STATUS.BAD_REQUEST)
+          .json({ success: false, message: ERROR_MESSAGES.ID_NOT_PROVIDED });
+          return
+      }
       await this._adminService.acceptTutor(tutorId);
       res.status(HTTP_STATUS.OK).json({
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
@@ -88,7 +95,6 @@ export class AdminController {
         search,
         role,
       });
-      // console.log("REsult",result)
       res.status(200).json(result);
     } catch (error) {
       if (error instanceof CustomError) {
@@ -104,16 +110,13 @@ export class AdminController {
     }
   }
 
-
-
   async updateStatus(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      console.log("STATUS", status);
 
       await this._adminService.updateStatus(id, status);
-      
+
       res.status(HTTP_STATUS.OK).json({
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
       });

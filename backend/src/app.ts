@@ -15,6 +15,8 @@ import adminRoutes from "./routes/adminRoutes";
 import { v2 as cloudinary } from "cloudinary";
 import { CustomError } from "./util/CustomError";
 import morgan from "morgan";
+import courseRoutes from "./routes/courseRoutes";
+import lessonRoutes from "./routes/lessonRoutes";
 
 
   cloudinary.config({
@@ -42,6 +44,8 @@ app.use("/tutors", tutorRoutes);
 app.use("/auth", authRoutes);
 app.use("/otp", otpRoutes); 
 app.use("/admin", adminRoutes); 
+app.use("/courses",courseRoutes)
+app.use("/lessons", lessonRoutes);
 
 app.use((error: CustomError, req: Request, res: Response, next: NextFunction) =>
   handleError(error, req, res, next)

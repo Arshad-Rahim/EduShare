@@ -6,19 +6,22 @@ import { GoogleService } from "../service/googleAuth/googleService";
 import { JwtService } from "../service/jwt/jwtService";
 import { RefreshTokenService } from "../service/refreshTokenService";
 import { UserService } from "../service/userService";
+import { UserProfileRepository } from "../repository/userProfileRepository";
 
 const userRepository = new UserRepository();
+const userProfileRepository = new UserProfileRepository();
 
 const tokenService = new JwtService();
 
-const userService = new UserService(userRepository);
+const userService = new UserService(userRepository,userProfileRepository);
 
 const refreshTokenService = new RefreshTokenService(tokenService);
 const googleService = new GoogleService(userRepository);
 
 export const injectedUserController = new UserController(
   userService,
-  userRepository
+  userRepository,
+  userProfileRepository
 );
 
 export const injectedRefreshTokenController = new RefreshTokenController(
