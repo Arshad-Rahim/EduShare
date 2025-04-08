@@ -1,11 +1,12 @@
-// import { Model, Document } from "mongoose";
+import { Model, Document } from "mongoose";
+import { IBaseRepository } from "../interfaces/repositoryInterfaces/IBaseRepository";
 
-// export class BaseRepository<T extends Document> implements IBaseRepository<T> {
-//   private model: Model<T>;
+export class BaseRepository<T extends Document> implements IBaseRepository<T> {
+  private model: Model<T>;
 
-//   constructor(model: Model<T>) {
-//     this.model = model;
-//   }
+  constructor(model: Model<T>) {
+    this.model = model;
+  }
 
 //   async createUser(data: Partial<T>): Promise<T> {
 //     const newRecord = new this.model(data);
@@ -31,4 +32,4 @@
 //   async findOne(query: any): Promise<T | null> {
 //     return await this.model.findOne(query);
 //   }
-// }
+}

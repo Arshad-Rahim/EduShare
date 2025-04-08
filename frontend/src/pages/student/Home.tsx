@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -5,13 +7,8 @@ import {
   Code,
   Database,
   Globe,
-  Menu,
-  Search,
   Server,
-  X,
-  ChevronDown,
   Tag,
-  DollarSign,
   Star,
   Laptop,
   Clock,
@@ -19,12 +16,9 @@ import {
   Award,
   Zap,
   ArrowRight,
-  Bookmark,
   Heart,
   TrendingUp,
   CheckCircle,
-  User,
-  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,17 +32,13 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
-import { useDispatch } from "react-redux";
 import { Header } from "./components/Header";
-
-
 
 // Category Card Component
 const CategoryCard = ({ icon: Icon, title, count }) => (
-  <Card className="group overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 hover:border-primary/20 h-full">
+  <Card className="group  group overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 hover:border-primary/20 h-full">
     <CardContent className="p-6 flex flex-col items-center text-center">
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
         <Icon className="h-8 w-8 text-primary" />
@@ -85,7 +75,7 @@ const TestimonialCard = ({ name, role, image, quote, rating }) => (
           />
         ))}
       </div>
-      <p className="text-slate-600 italic">&ldquo;{quote}&rdquo;</p>
+      <p className="text-slate-600 italic">“{quote}”</p>
     </CardContent>
   </Card>
 );
@@ -101,24 +91,55 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
   </div>
 );
 
-
 // Main UserHomePage Component
 export function UserHomePage() {
   const [courses, setCourses] = useState([]);
+  const [wishlist, setWishlist] = useState([]); // State to store wishlisted course IDs
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   useEffect(() => {
     fetchCourses();
+    fetchWishlistCourses();
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const response = await authAxiosInstance.get("/courses//my-courses"); // Assuming this endpoint returns all courses
-      setCourses(response.data.courses || []);
+      const response = await authAxiosInstance.get("/courses/all-courses");
+      setCourses(response.data.courses.courses || []);
+      console.log("Courses in Home", response.data.courses);
     } catch (error) {
       console.error("Failed to fetch courses:", error);
       toast.error("Failed to load courses");
+    }
+  };
+
+  const fetchWishlistCourses = async () => {
+    try {
+      const response = await authAxiosInstance.get("/wishlist");
+      const wishlistData = response.data.courses || []; // Adjust based on your API response structure
+      const wishlistIds = wishlistData.map((course) => course._id);
+      setWishlist(wishlistIds);
+    } catch (error) {
+      console.error("Failed to fetch wishlist courses:", error);
+      toast.error("Failed to load wishlist");
+    }
+  };
+
+  const handleWishlistToggle = async (courseId: string) => {
+    const isWishlisted = wishlist.includes(courseId);
+    try {
+      if (isWishlisted) {
+        await authAxiosInstance.delete(`/wishlist/${courseId}`);
+        setWishlist((prev) => prev.filter((id) => id !== courseId));
+        toast.success("Course removed from wishlist");
+      } else {
+        const response = await authAxiosInstance.post(`/wishlist/${courseId}`);
+        setWishlist((prev) => [...prev, courseId]);
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      console.error("Failed to toggle wishlist:", error);
+      toast.error(error.response?.data?.message || "Failed to update wishlist");
     }
   };
 
@@ -135,8 +156,8 @@ export function UserHomePage() {
     }
   };
 
-  const handleEnroll = (courseId) => {
-    navigate(`/course/${courseId}/enroll`); // Navigate to enrollment page
+  const handleEnroll = (courseId: string) => {
+    navigate(`/courses/${courseId}`);
   };
 
   // Sample data for categories
@@ -203,7 +224,6 @@ export function UserHomePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Integrated Header */}
       <Header />
 
       <main className="flex-1">
@@ -258,36 +278,16 @@ export function UserHomePage() {
                   </div>
                 </div>
               </div>
-              {/* <div className="relative hidden lg:block">
-                <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
-                <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-                  <img
-                    src="/placeholder.svg?height=600&width=600&text=Learning+Platform"
-                    alt="Learning Platform"
-                    className="w-full h-auto"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
-                    <h3 className="text-white font-bold text-xl mb-2">
-                      Start Learning Today
-                    </h3>
-                    <p className="text-white/90 text-sm">
-                      Join thousands of students worldwide
-                    </p>
-                  </div>
-                </div>
-                <div className="absolute -bottom-8 -left-8 w-48 h-48 bg-primary/5 rounded-full blur-2xl"></div>
-              </div> */}
-
               <div className="relative hidden lg:block">
                 <div className="absolute -top-12 -right-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
                 <div className="relative bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
                   <video
-                    src="../../../public/CN4By7T88Hg2dj5lqo.mp4" // Replace with your video URL or file path
+                    src="../../../public/CN4By7T88Hg2dj5lqo.mp4"
                     className="w-full h-auto"
                     autoPlay
                     loop
                     muted
-                    playsInline // Ensures it works on mobile devices without full-screen
+                    playsInline
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-6">
                     <h3 className="text-white font-bold text-xl mb-2">
@@ -406,77 +406,92 @@ export function UserHomePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {courses.map((course) => (
-                    <Card
-                      key={course._id}
-                      className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
-                    >
-                      <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                        {course.thumbnail ? (
-                          <img
-                            src={course.thumbnail || "/placeholder.svg"}
-                            alt={course.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                            <BookOpen className="h-12 w-12 text-slate-400" />
+                  {courses.map((course) => {
+                    const isWishlisted = wishlist.includes(course._id);
+                    return (
+                      <Card
+                        key={course._id}
+                        className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
+                      >
+                        <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                          {course.thumbnail ? (
+                            <img
+                              src={course.thumbnail || "/placeholder.svg"}
+                              alt={course.title}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                              <BookOpen className="h-12 w-12 text-slate-400" />
+                            </div>
+                          )}
+                          <div className="absolute top-3 right-3 flex gap-2">
+                            <Badge
+                              className={getDifficultyColor(course.difficulty)}
+                            >
+                              {course.difficulty}
+                            </Badge>
                           </div>
-                        )}
-                        <div className="absolute top-3 right-3 flex gap-2">
-                          <Badge
-                            className={getDifficultyColor(course.difficulty)}
+                          <Button
+                            onClick={() => handleWishlistToggle(course._id)}
+                            size="icon"
+                            variant="ghost"
+                            className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
+                              isWishlisted
+                                ? "text-red-500 hover:text-red-700"
+                                : "text-slate-700 hover:text-primary"
+                            }`}
                           >
-                            {course.difficulty}
-                          </Badge>
+                            <Heart
+                              className={`h-4 w-4 ${
+                                isWishlisted ? "fill-red-500" : ""
+                              }`}
+                            />
+                            <span className="sr-only">
+                              {isWishlisted
+                                ? "Remove from wishlist"
+                                : "Add to wishlist"}
+                            </span>
+                          </Button>
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 text-slate-700 hover:bg-white hover:text-primary"
-                        >
-                          <Heart className="h-4 w-4" />
-                          <span className="sr-only">Add to wishlist</span>
-                        </Button>
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                          {course.title}
-                        </CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {course.tagline}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2 flex-grow">
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                              <Tag className="h-4 w-4" />
-                              <span>{course.category}</span>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                            {course.title}
+                          </CardTitle>
+                          <CardDescription className="line-clamp-2">
+                            {course.tagline}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pb-2 flex-grow">
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div className="flex items-center gap-1.5 text-slate-600">
+                                <Tag className="h-4 w-4" />
+                                <span>{course.category}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-slate-600">
+                                <span className="font-medium">
+                                  ₹{course.price}
+                                </span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                              <DollarSign className="h-4 w-4" />
-                              <span className="font-medium">
-                                ${course.price}
-                              </span>
-                            </div>
+                            <Separator />
+                            <p className="text-sm text-slate-600 line-clamp-3">
+                              {course.about}
+                            </p>
                           </div>
-                          <Separator />
-                          <p className="text-sm text-slate-600 line-clamp-3">
-                            {course.about}
-                          </p>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-2">
-                        <Button
-                          className="w-full bg-primary hover:bg-primary/90"
-                          onClick={() => handleEnroll(course._id)}
-                        >
-                          Enroll Now
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                        </CardContent>
+                        <CardFooter className="pt-2">
+                          <Button
+                            className="w-full bg-primary hover:bg-primary/90"
+                            onClick={() => handleEnroll(course._id)}
+                          >
+                            Enroll Now
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
               {courses.length > 0 && (
@@ -542,73 +557,98 @@ export function UserHomePage() {
             </div>
             {courses.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.slice(0, 3).map((course) => (
-                  <Card
-                    key={course._id}
-                    className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
-                  >
-                    <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                      {course.thumbnail ? (
-                        <img
-                          src={course.thumbnail || "/placeholder.svg"}
-                          alt={course.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                          <BookOpen className="h-12 w-12 text-slate-400" />
+                {courses.slice(0, 3).map((course) => {
+                  const isWishlisted = wishlist.includes(course._id);
+                  return (
+                    <Card
+                      key={course._id}
+                      className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
+                    >
+                      <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                        {course.thumbnail ? (
+                          <img
+                            src={course.thumbnail || "/placeholder.svg"}
+                            alt={course.title}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                            <BookOpen className="h-12 w-12 text-slate-400" />
+                          </div>
+                        )}
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <Badge
+                            className={getDifficultyColor(course.difficulty)}
+                          >
+                            {course.difficulty}
+                          </Badge>
                         </div>
-                      )}
-                      <div className="absolute top-3 right-3 flex gap-2">
-                        <Badge
-                          className={getDifficultyColor(course.difficulty)}
+                        <div className="absolute top-3 left-3">
+                          <Badge className="bg-primary/90 text-white">
+                            <TrendingUp className="mr-1 h-3 w-3" />
+                            Popular
+                          </Badge>
+                        </div>
+                        <Button
+                          onClick={() => handleWishlistToggle(course._id)}
+                          size="icon"
+                          variant="ghost"
+                          className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
+                            isWishlisted
+                              ? "text-red-500 hover:text-red-700"
+                              : "text-slate-700 hover:text-primary"
+                          }`}
                         >
-                          {course.difficulty}
-                        </Badge>
+                          <Heart
+                            className={`h-4 w-4 ${
+                              isWishlisted ? "fill-red-500" : ""
+                            }`}
+                          />
+                          <span className="sr-only">
+                            {isWishlisted
+                              ? "Remove from wishlist"
+                              : "Add to wishlist"}
+                          </span>
+                        </Button>
                       </div>
-                      <div className="absolute top-3 left-3">
-                        <Badge className="bg-primary/90 text-white">
-                          <TrendingUp className="mr-1 h-3 w-3" />
-                          Popular
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                        {course.title}
-                      </CardTitle>
-                      <CardDescription className="line-clamp-2">
-                        {course.tagline}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pb-2 flex-grow">
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="flex items-center gap-1.5 text-slate-600">
-                            <Tag className="h-4 w-4" />
-                            <span>{course.category}</span>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                          {course.title}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {course.tagline}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="pb-2 flex-grow">
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="flex items-center gap-1.5 text-slate-600">
+                              <Tag className="h-4 w-4" />
+                              <span>{course.category}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-slate-600">
+                              <span className="font-medium">
+                                ₹{course.price}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1.5 text-slate-600">
-                            <DollarSign className="h-4 w-4" />
-                            <span className="font-medium">${course.price}</span>
-                          </div>
+                          <Separator />
+                          <p className="text-sm text-slate-600 line-clamp-3">
+                            {course.about}
+                          </p>
                         </div>
-                        <Separator />
-                        <p className="text-sm text-slate-600 line-clamp-3">
-                          {course.about}
-                        </p>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="pt-2">
-                      <Button
-                        className="w-full bg-primary hover:bg-primary/90"
-                        onClick={() => handleEnroll(course._id)}
-                      >
-                        Enroll Now
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
+                      </CardContent>
+                      <CardFooter className="pt-2">
+                        <Button
+                          className="w-full bg-primary hover:bg-primary/90"
+                          onClick={() => handleEnroll(course._id)}
+                        >
+                          Enroll Now
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>

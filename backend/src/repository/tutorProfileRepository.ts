@@ -4,7 +4,7 @@ import { NotificationModel } from "../models/notificationModel";
 import { tutorProfileModel } from "../models/tutorProfileModel";
 import { userModel } from "../models/userModels";
 import { TNotification } from "../types/notification";
-import { TTutorModel, TUpdateTutorProfileBody } from "../types/tutor";
+import { TTutorModel, TUpdateData, TUpdateTutorProfileBody } from "../types/tutor";
 
 export class TutorRepository implements ITutorRepository {
   async updateTutorProfile(
@@ -12,7 +12,7 @@ export class TutorRepository implements ITutorRepository {
     id: string,
     verificationDocUrl: string
   ): Promise<void> {
-    const updateData: any = {
+    const updateData: TUpdateData = {
       tutorId: id,
       phone: data.phone,
       specialization: data.specialization,

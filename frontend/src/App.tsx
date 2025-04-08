@@ -18,6 +18,10 @@ import { TutorProfileDetails } from './pages/tutor/TutorProfileDetails';
 import StudentProfile from './pages/student/UserProfile';
 import { TutorCourses } from './pages/tutor/TutorCourses';
 import { CourseListingPage } from './pages/student/CourseListing';
+import { CourseDetails } from './pages/tutor/CourseDetails';
+import { CourseDetailsPage } from './pages/student/CourseDetails';
+import WishlistPage from './pages/student/Wishlist';
+import { CourseEnrollPage } from './pages/student/CourseEnrollPage';
 
 function App() {
   return (
@@ -48,6 +52,33 @@ function App() {
               element={
                 <ProtectedUserRoute>
                   <CourseListingPage />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedUserRoute>
+                  <WishlistPage />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/courses/:courseId"
+              element={
+                <ProtectedUserRoute>
+                  <CourseDetailsPage />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/course/:courseId/enroll"
+              element={
+                <ProtectedUserRoute>
+                  <CourseEnrollPage />
                 </ProtectedUserRoute>
               }
             />
@@ -83,6 +114,15 @@ function App() {
               element={
                 <ProtectedUserRoute>
                   <TutorCourses />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/tutor/courses/:courseId"
+              element={
+                <ProtectedUserRoute>
+                  <CourseDetails />
                 </ProtectedUserRoute>
               }
             />

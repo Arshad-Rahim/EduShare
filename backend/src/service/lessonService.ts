@@ -12,4 +12,12 @@ export class LessonService implements ILessonService{
     async getLessons(courseId:string):Promise<TLessonModel[] |null>{
         return await this._lessonRepository.getLessons(courseId)
     }
+
+    async deleteLesson(lessonId:string):Promise<void>{
+        await this._lessonRepository.deleteLesson(lessonId)
+    }
+
+     async editLesson(data: TLessonAdd, thumbnail: string, lessonId: string): Promise<void> {
+        await this._lessonRepository.editLesson(data,thumbnail,lessonId)
+    }
 }

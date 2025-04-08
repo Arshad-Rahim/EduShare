@@ -4,6 +4,7 @@ import { CustomError } from "../util/CustomError";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 import { OAuth2Client } from "google-auth-library";
 import { ITokenService } from "../interfaces/tokenServiceInterface";
+import { setAuthCookies } from "../util/cookieHelper";
 
 export class googleController {
   constructor(
@@ -54,17 +55,14 @@ export class googleController {
         role: user.role,
       });
 
-      res.cookie(`${role}AccessToken`, accessToken, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: true,
-      });
+      setAuthCookies(
+        res,
+        accessToken,
+        refreshToken,
+        `${role}AccessToken`,
+        `${role}RefreshToken`
+      );
 
-      res.cookie(`${role}RefreshToken`, refreshToken, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: true,
-      });
       res
         .status(200)
 

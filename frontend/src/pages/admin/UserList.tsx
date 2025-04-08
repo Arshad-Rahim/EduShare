@@ -14,7 +14,7 @@ import {
 import { Search } from 'lucide-react';
 import { Header } from './components/admin/Header';
 import { SideBar } from './components/admin/SideBar';
-import Table from '@/components/modal-components/TableReusableStructure';
+import Table from '@/components/tableStructure/TableReusableStructure';
 import { Switch } from '@/components/ui/switch';
 import { authAxiosInstance } from '@/api/adminAxiosInstance';
 

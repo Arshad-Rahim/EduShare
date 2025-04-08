@@ -32,7 +32,7 @@ export function SideBar() {
           {
             icon: <Layers className="h-4 w-4" />,
             name: 'Courses',
-            path: '/courses',
+            path: '/admin/courses',
           },
           {
             icon: <Building className="h-4 w-4" />,

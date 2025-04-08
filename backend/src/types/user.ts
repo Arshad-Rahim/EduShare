@@ -49,6 +49,17 @@ export type TPaginationOptions ={
   role?: string;
 }
 
+export type TCourseFilterOptions={
+  page:number;
+  limit:number,
+  search?:string;
+  category?:string;
+  difficulty?:string;
+  minPrice?:number;
+  maxPrice?:number;
+  sort?:string
+}
+
 
 
 export type TUpdateUserProfile = {

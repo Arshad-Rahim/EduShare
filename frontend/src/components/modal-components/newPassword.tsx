@@ -88,7 +88,7 @@ export const NewPasswordModal = ({
       onPasswordUpdated();
       toast.success("Password updated successfully!");
       form.reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errorMessage =
         err.response?.data?.message ||
         "An error occurred while updating your password.";

@@ -19,9 +19,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import {
   BookOpen,
-  ChevronDown,
-  Menu,
-  Search,
   X,
   User,
   Edit,
@@ -29,10 +26,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { useDispatch } from "react-redux";
-import { removeUser } from "@/redux/slice/userSlice";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -140,6 +134,7 @@ const CurrentPasswordModal = ({
         setError("Incorrect password. Please try again.");
       }
     } catch (err) {
+      console.log(err)
       setError("An error occurred. Please try again later.");
     }
   };
@@ -230,8 +225,7 @@ export default function StudentProfile() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newPasswordModalOpen, setNewPasswordModalOpen] = useState(false);
 
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
+
 
   useEffect(() => {
     authAxiosInstance
@@ -278,7 +272,7 @@ export default function StudentProfile() {
       .then((response) => {
         setUser({ ...formData });
         setIsEditing(false);
-        toast.success("Profile updated successfully!");
+        toast.success(response.data.message||"Profile updated successfully!");
       })
       .catch((error) => {
         console.error("Update failed:", error);

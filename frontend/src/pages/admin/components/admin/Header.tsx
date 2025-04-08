@@ -19,7 +19,7 @@ import { useDispatch } from 'react-redux';
 import { authAxiosInstance } from '@/api/authAxiosInstance';
 import { logoutAdmin } from '@/redux/slice/adminSlice';
 
-export function Header({ setSidebarOpen, sidebarOpen }: any) {
+export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
   const [user] = useState<{ name: string; email: string } | null>(
     null
   );

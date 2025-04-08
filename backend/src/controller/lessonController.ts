@@ -73,4 +73,73 @@ export class LessonController{
            .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
       }
     }
+
+
+    async deleteLesson(req:Request,res:Response){
+      try {
+
+        const {lessonId} = req.params;
+        await this._lessonService.deleteLesson(lessonId);
+
+         res.status(HTTP_STATUS.OK).json({
+           success: true,
+           message: SUCCESS_MESSAGES.DELETE_SUCCESS,
+         });
+        
+      } catch (error) {
+          if (error instanceof CustomError) {
+            res
+              .status(error.statusCode)
+              .json({ success: false, message: error.message });
+            return;
+          }
+          console.log(error);
+          res
+            .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+            .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+      }
+    }
+
+    async editLesson(req:Request,res:Response){
+      try {
+        const {lessonId} = req.params;
+         let thumbnail: string = "";
+         if (req.file) {
+           const uploadResult = await new Promise((resolve, reject) => {
+             const stream = cloudinary.uploader.upload_stream(
+               {
+                 resource_type: "auto",
+                 folder: "lessons video",
+               },
+               (error, result) => {
+                 if (error) return reject(error);
+                 resolve(result as UploadApiResponse);
+               }
+             );
+             stream.end(req.file?.buffer);
+           });
+
+           thumbnail = (uploadResult as UploadApiResponse).secure_url;
+           console.log("Cloudinary URL:", thumbnail);
+         }
+        await this._lessonService.editLesson(req.body,thumbnail,lessonId);
+          res.status(HTTP_STATUS.OK).json({
+            success: true,
+            message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
+          });
+            
+        
+      } catch (error) {
+         if (error instanceof CustomError) {
+           res
+             .status(error.statusCode)
+             .json({ success: false, message: error.message });
+           return;
+         }
+         console.log(error);
+         res
+           .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+           .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+      }
+    }
 }

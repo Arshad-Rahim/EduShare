@@ -17,20 +17,19 @@ import { CustomError } from "./util/CustomError";
 import morgan from "morgan";
 import courseRoutes from "./routes/courseRoutes";
 import lessonRoutes from "./routes/lessonRoutes";
+import wishlistRoute from "./routes/wishlistRoute";
+import paymentRoutes from "./routes/paymentRoutes";
+import purchaseRoutes from "./routes/purchaseRoutes";
 
-
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET, 
-  });
-
-  
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 connectDB();
 const app = express();
-app.use(morgan('dev'))
+app.use(morgan("dev"));
 
 app.use(cors(corsOptions));
 
@@ -38,18 +37,21 @@ app.use(cookieParser());
 
 app.use(express.json());
 
-
-app.use("/users", userRoutes); 
+app.use("/users", userRoutes);
 app.use("/tutors", tutorRoutes);
 app.use("/auth", authRoutes);
-app.use("/otp", otpRoutes); 
-app.use("/admin", adminRoutes); 
-app.use("/courses",courseRoutes)
+app.use("/otp", otpRoutes);
+app.use("/admin", adminRoutes);
+app.use("/courses", courseRoutes);
 app.use("/lessons", lessonRoutes);
+app.use("/wishlist", wishlistRoute);
+app.use("/payment", paymentRoutes);
+app.use("/purchase", purchaseRoutes);
 
 app.use((error: CustomError, req: Request, res: Response, next: NextFunction) =>
   handleError(error, req, res, next)
 );
 
 app.use("/", new UserRoutes().router);
+
 export default app;

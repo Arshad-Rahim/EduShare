@@ -24,7 +24,10 @@ export const SUCCESS_MESSAGES = {
   DELETE_SUCCESS: "Deleted successfully.",
   PASSWORD_RESET_SUCCESS: "Password reset successfully.",
   VERIFICATION_SUCCESS: "Verification completed successfully.",
-  DATA_RETRIEVED_SUCCESS :"Data fetched successfully"
+  DATA_RETRIEVED_SUCCESS :"Data fetched successfully",
+  ADDED_WHISHLIST:"Item added to whishlist",
+  ALREADY_WISHLIST:"Item alredy in wishlist",
+  REMOVED_WHISHLIST:"Item removed from wishlist"
 };
 
 

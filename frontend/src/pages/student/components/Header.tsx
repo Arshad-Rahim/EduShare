@@ -7,7 +7,15 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { BookOpen, ChevronDown, Menu, Search } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  Heart,
+  LogOut,
+  Menu,
+  Search,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { Link as RouterLink } from "react-router-dom"; // Rename to avoid confusion
@@ -105,46 +113,67 @@ export function Header() {
             <div className="relative group">
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 px-2 hover:bg-muted/50"
+                className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 rounded-lg transition-colors duration-200"
               >
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-8 w-8 border border-muted">
                   <AvatarImage
                     src="/placeholder.svg?height=32&width=32&text=U"
                     alt={user.name}
                   />
-                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="bg-muted text-foreground font-medium">
+                    {user.name.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="hidden flex-col items-start text-sm md:flex">
-                  <span className="font-medium">{user.name}</span>
+                  <span className="font-semibold text-foreground">
+                    {user.name}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
-                <ChevronDown className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-hover:rotate-180" />
               </Button>
-              <div className="absolute right-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="rounded-md border bg-background p-1 shadow-lg">
-                  <div className="px-2 py-1.5">
+              <div className="absolute right-0 top-full mt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out transform group-hover:scale-100 scale-95 origin-top-right z-50">
+                <div className="rounded-xl border border-muted/50 bg-background p-2 shadow-xl ring-1 ring-black/5">
+                  {/* Profile Header */}
+                  <div className="px-3 py-2 border-b border-muted/20">
                     <div className="flex flex-col">
-                      <span className="font-medium">{user.name}</span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground text-sm">
+                        {user.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
                         {user.email}
                       </span>
                     </div>
                   </div>
-                  <div className="h-px bg-muted my-1" />
-                  <button
-                    onClick={() => navigate("/profile")}
-                    className="w-full text-left px-2 py-1.5 text-sm hover:bg-muted rounded-sm"
-                  >
-                    Profile
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-2 py-1.5 text-sm text-destructive hover:bg-muted rounded-sm"
-                  >
-                    Sign out
-                  </button>
+
+                  {/* Menu Items */}
+                  <div className="py-1">
+                    <button
+                      onClick={() => navigate("/profile")}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/70 rounded-md transition-colors duration-150"
+                    >
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      Profile
+                    </button>
+
+                    <button
+                      onClick={() => navigate("/wishlist")}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted/70 rounded-md transition-colors duration-150"
+                    >
+                      <Heart className="h-4 w-4 text-muted-foreground" />
+                      Wishlist
+                    </button>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors duration-150"
+                    >
+                      <LogOut className="h-4 w-4 text-destructive" />
+                      Sign out
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -15,7 +15,7 @@ import {
 import { Search, Check, X } from "lucide-react";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
-import Table from "@/components/modal-components/TableReusableStructure";
+import Table from "@/components/tableStructure/TableReusableStructure";
 import { Switch } from "@/components/ui/switch";
 import { DocumentViewModal } from "@/components/modal-components/DocumentViewModal";
 import { ApprovalConfirmationModal } from "@/components/modal-components/ApprovalConfirmationModal";

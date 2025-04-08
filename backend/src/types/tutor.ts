@@ -30,3 +30,12 @@ export type TPaginatedResult = {
   page: number;
   limit: number;
 };
+
+export type TUpdateData = {
+  tutorId: string;
+  phone: string;
+  specialization: string;
+  bio: string;
+  approvalStatus: string;
+  verificationDocUrl?:string;
+};

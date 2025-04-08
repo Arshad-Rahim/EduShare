@@ -9,6 +9,7 @@ import {
 import { CustomError } from "../util/CustomError";
 import { ITokenService } from "../interfaces/tokenServiceInterface";
 import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { setAuthCookies } from "../util/cookieHelper";
 
 export class AuthController {
   constructor(
@@ -70,17 +71,13 @@ export class AuthController {
         role: user.role,
       });
 
-      res.cookie(`${data.role}AccessToken`, accessToken, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: true,
-      });
-
-      res.cookie(`${data.role}RefreshToken`, refreshToken, {
-        httpOnly: true,
-        sameSite: "strict",
-        secure: true,
-      });
+      setAuthCookies(
+        res,
+        accessToken,
+        refreshToken,
+        `${data.role}AccessToken`,
+        `${data.role}RefreshToken`
+      );
 
       res.status(HTTP_STATUS.OK).json({
         message: SUCCESS_MESSAGES.LOGIN_SUCCESS,
@@ -98,20 +95,23 @@ export class AuthController {
     }
   }
 
-  async verifyPassword(req:Request,res:Response){
+  async verifyPassword(req: Request, res: Response) {
     try {
-      const {password} = req.body;
-      console.log("REQBODY",req.body)
-       const user = (req as CustomRequest).user;
-       const valid = await this._authService.verifyPassword(user?.userId,password);
+      const { password } = req.body;
+      console.log("REQBODY", req.body);
+      const user = (req as CustomRequest).user;
+      const valid = await this._authService.verifyPassword(
+        user?.userId,
+        password
+      );
 
-        res.status(HTTP_STATUS.OK).json({
-               success: true,
-               message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-               valid,
-             });
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        valid,
+      });
     } catch (error) {
-       if (error instanceof CustomError) {
+      if (error instanceof CustomError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }

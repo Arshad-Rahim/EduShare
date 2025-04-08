@@ -19,45 +19,56 @@ export class CourseRoutes {
     this.router.post(
       "/add",
       upload.single("thumbnail"),
-      // userAuthMiddleware,
-      // authorizeRole(["tutor"]),
-      // checkUserBlocked,
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      checkUserBlocked,
 
       (req: Request, res: Response) =>
         injectedCourseController.addCourse(req, res)
     );
 
+    this.router.get(
+      "/my-courses",
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      checkUserBlocked,
 
-      this.router.get(
-        "/my-courses",
-        // userAuthMiddleware,
-        // authorizeRole(["tutor"]),
-        // checkUserBlocked,
+      (req: Request, res: Response) =>
+        injectedCourseController.getTutorCourses(req, res)
+    );
 
-        (req: Request, res: Response) =>
-          injectedCourseController.getAllCourses(req, res)
-      );
+    this.router.put(
+      "/update/:courseId",
+      upload.single("thumbnail"),
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      checkUserBlocked,
 
-         this.router.put(
-           "/update/:courseId",
-           upload.single("thumbnail"),
-           // userAuthMiddleware,
-           // authorizeRole(["tutor"]),
-           // checkUserBlocked,
+      (req: Request, res: Response) =>
+        injectedCourseController.updateCourse(req, res)
+    );
 
-           (req: Request, res: Response) =>
-             injectedCourseController.updateCourse(req, res)
-         );
+    this.router.delete(
+      "/delete/:courseId",
+      userAuthMiddleware,
+      authorizeRole(["tutor"]),
+      checkUserBlocked,
 
-          this.router.delete(
-            "/delete/:courseId",
-            // userAuthMiddleware,
-            // authorizeRole(["tutor"]),
-            // checkUserBlocked,
+      (req: Request, res: Response) =>
+        injectedCourseController.deleteCourse(req, res)
+    );
 
-            (req: Request, res: Response) =>
-              injectedCourseController.deleteCourse(req, res)
-          );
+
+     this.router.get(
+       "/all-courses",
+       userAuthMiddleware,
+       authorizeRole(["user"]),
+       checkUserBlocked,
+
+       (req: Request, res: Response) =>
+         injectedCourseController.getAllCourses(req, res)
+     );
+
   }
 }
 
