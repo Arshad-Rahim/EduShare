@@ -1,8 +1,12 @@
 import { ICourseRepository } from "../interfaces/repositoryInterfaces/ICourseRepository";
 import { courseModel } from "../models/courseModel";
-import { FilterQuery, IUpdateData, SortOption, TCourseAdd } from "../types/course";
+import {
+  FilterQuery,
+  IUpdateData,
+  SortOption,
+  TCourseAdd,
+} from "../types/course";
 import { TCourseFilterOptions } from "../types/user";
-
 
 export class CourseRepository implements ICourseRepository {
   async addCourse(
@@ -10,6 +14,13 @@ export class CourseRepository implements ICourseRepository {
     thumbnail: string,
     tutorId: string
   ): Promise<void> {
+    // const courses = courseModel.findOne({tutorId,category:data.category});
+
+    //  const existing = courses.map((course) => course.category == data.category);
+    //  if(existing){
+    //   throw new Error('The course alredy ei')
+    //  }
+
     await courseModel.create({
       title: data.title,
       tagline: data.tagline,
@@ -22,10 +33,20 @@ export class CourseRepository implements ICourseRepository {
     });
   }
 
-  async getTutorCourses(tutorId: string): Promise<TCourseAdd[] | null> {
-    return await courseModel.find({ tutorId });
-  }
+  async getTutorCourses(
+    tutorId: string,
+    page: number,
+    limit: number
+  ): Promise<{courses:TCourseAdd[] | null,totalCourses:number}> {
+    const courses = await courseModel
+      .find({ tutorId })
+      .skip((page - 1) * limit)
+      .limit(limit);
 
+    const totalCourses = await courseModel.countDocuments();
+
+      return {courses, totalCourses};
+  }
 
   async editCourse(
     data: TCourseAdd,

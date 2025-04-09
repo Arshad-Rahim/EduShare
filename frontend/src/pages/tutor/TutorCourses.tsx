@@ -34,7 +34,6 @@ import {
   Trash2,
   BookOpen,
   Tag,
-  DollarSign,
   PlusCircle,
   Video,
 } from "lucide-react";
@@ -45,6 +44,7 @@ import { SideBar } from "./components/SideBar";
 import { Link } from "react-router-dom";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { ClipLoader } from "react-spinners";
+import { Progress } from "@/components/ui/progress";
 
 export function TutorCourses() {
   const [courses, setCourses] = useState([]);
@@ -59,16 +59,26 @@ export function TutorCourses() {
   const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
   const [lessonToDelete, setLessonToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [coursesPerPage] = useState(3); // Number of courses per page
+  const [totalCourses, setTotalCourses] = useState(0); // Total courses from backend
 
   useEffect(() => {
-    fetchCourses();
-  }, []);
+    fetchCourses(currentPage);
+  }, [currentPage]); // Fetch courses whenever the page changes
 
-  const fetchCourses = async () => {
+  const fetchCourses = async (page) => {
     setIsLoading(true);
     try {
-      const response = await authAxiosInstance.get("/courses/my-courses");
+      const response = await authAxiosInstance.get("/courses/my-courses", {
+        params: {
+          page,
+          limit: coursesPerPage,
+        },
+      });
       setCourses(response.data.courses || []);
+      setTotalCourses(response.data.totalCourses || 0); // Assuming backend returns totalCourses
     } catch (error) {
       console.error("Failed to fetch courses:", error);
       toast.error("Failed to load courses");
@@ -105,8 +115,13 @@ export function TutorCourses() {
       const response = await authAxiosInstance.delete(
         `/courses/delete/${courseToDelete}`
       );
-      setCourses(courses.filter((course) => course._id !== courseToDelete));
       toast.success(response.data.message);
+      // Refetch courses for the current page
+      fetchCourses(currentPage);
+      // If the page becomes empty and it's not the first page, go to the previous page
+      if (courses.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
     } catch (error) {
       console.error("Failed to delete course:", error);
       toast.error("Failed to delete course");
@@ -152,6 +167,15 @@ export function TutorCourses() {
         return "bg-rose-100 text-rose-800";
       default:
         return "bg-slate-100 text-slate-800";
+    }
+  };
+
+  // Calculate total pages based on totalCourses from backend
+  const totalPages = Math.ceil(totalCourses / coursesPerPage);
+
+  const paginate = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
     }
   };
 
@@ -332,7 +356,7 @@ export function TutorCourses() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="price">Price ($)</Label>
+              <Label htmlFor="price">Price (₹)</Label>
               <Input
                 id="price"
                 type="text"
@@ -468,13 +492,35 @@ export function TutorCourses() {
     const [duration, setDuration] = useState("");
     const [order, setOrder] = useState("");
     const [formLoading, setFormLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [displayProgress, setDisplayProgress] = useState(0); // Smoothed progress
+    const [isProcessing, setIsProcessing] = useState(false);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+      if (!formLoading || uploadProgress === 0) return;
+
+      const interval = setInterval(() => {
+        setDisplayProgress((prev) => {
+          const diff = uploadProgress - prev;
+          if (diff <= 0) return prev;
+          const step = Math.min(diff, 0.5); // Adjust this for speed
+          const newProgress = prev + step;
+          if (newProgress >= 100 && uploadProgress === 100) {
+            setIsProcessing(true);
+          }
+          return newProgress;
+        });
+      }, 100);
+
+      return () => clearInterval(interval);
+    }, [formLoading, uploadProgress]);
 
     const handleFileChange = (event) => {
       const selectedFile = event.target.files?.[0];
       if (selectedFile) {
-        if (selectedFile.size > 10 * 1024 * 1024) {
-          toast.error("Lesson file size should not exceed 10MB");
+        if (selectedFile.size > 50 * 1024 * 1024) {
+          toast.error("Lesson file size should not exceed 50MB");
           return;
         }
         if (!["video/mp4", "video/webm"].includes(selectedFile.type)) {
@@ -492,6 +538,9 @@ export function TutorCourses() {
 
     const removeFile = () => {
       setFile(null);
+      setUploadProgress(0);
+      setDisplayProgress(0);
+      setIsProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
@@ -515,6 +564,11 @@ export function TutorCourses() {
       try {
         await authAxiosInstance.post("/lessons/add", formData, {
           headers: { "Content-Type": "multipart/form-data" },
+          onUploadProgress: (progressEvent) => {
+            const { loaded, total } = progressEvent;
+            const percent = Math.floor((loaded * 100) / total);
+            setUploadProgress(percent);
+          },
         });
         toast.success("Lesson added successfully!");
         onOpenChange(false);
@@ -524,12 +578,16 @@ export function TutorCourses() {
         setFile(null);
         setDuration("");
         setOrder("");
+        setUploadProgress(0);
+        setDisplayProgress(0);
+        setIsProcessing(false);
         if (fileInputRef.current) fileInputRef.current.value = "";
       } catch (error) {
         console.error("Failed to add lesson:", error);
         toast.error("Failed to add lesson");
       } finally {
         setFormLoading(false);
+        setIsProcessing(false);
       }
     };
 
@@ -598,7 +656,7 @@ export function TutorCourses() {
                           or drag and drop
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          MP4 or WebM (max 10MB)
+                          MP4 or WebM (max 50MB)
                         </p>
                       </div>
                     </>
@@ -606,20 +664,44 @@ export function TutorCourses() {
                 </div>
               </div>
               {file && (
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile();
-                    }}
-                    disabled={formLoading}
-                  >
-                    <XIcon className="h-3 w-3 mr-1" />
-                    Remove
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile();
+                      }}
+                      disabled={formLoading}
+                    >
+                      <XIcon className="h-3 w-3 mr-1" />
+                      Remove
+                    </Button>
+                  </div>
+                  {formLoading && (
+                    <div className="space-y-1">
+                      {displayProgress < 100 ? (
+                        <>
+                          <Progress
+                            value={displayProgress}
+                            className="w-full"
+                          />
+                          <p className="text-xs text-muted-foreground text-center">
+                            Uploading: {Math.floor(displayProgress)}%
+                          </p>
+                        </>
+                      ) : isProcessing ? (
+                        <div className="flex items-center justify-center gap-2">
+                          <ClipLoader size={20} color="#3b82f6" />
+                          <p className="text-xs text-muted-foreground">
+                            Processing on server...
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -696,7 +778,7 @@ export function TutorCourses() {
                 </div>
               </CardHeader>
               <CardContent className="pt-6 w-full">
-                {courses.length === 0 ? (
+                {courses.length === 0 && currentPage === 1 ? (
                   <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
                     <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-slate-700 mb-2">
@@ -716,120 +798,159 @@ export function TutorCourses() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                    {courses.map((course) => (
-                      <Card
-                        key={course._id}
-                        className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col w-full"
-                      >
-                        <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                          {course.thumbnail ? (
-                            <img
-                              src={course.thumbnail || "/placeholder.svg"}
-                              alt={course.title}
-                              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                              <BookOpen className="h-12 w-12 text-slate-400" />
-                            </div>
-                          )}
-                          <div className="absolute top-3 right-3 flex gap-2">
-                            <Badge
-                              className={getDifficultyColor(course.difficulty)}
-                            >
-                              {course.difficulty}
-                            </Badge>
-                          </div>
-                        </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-xl font-bold line-clamp-1">
-                            {course.title}
-                          </CardTitle>
-                          <CardDescription className="line-clamp-2">
-                            {course.tagline}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pb-2 flex-grow">
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <Tag className="h-4 w-4" />
-                                <span>{course.category}</span>
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+                      {courses.map((course) => (
+                        <Card
+                          key={course._id}
+                          className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col w-full"
+                        >
+                          <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                            {course.thumbnail ? (
+                              <img
+                                src={course.thumbnail || "/placeholder.svg"}
+                                alt={course.title}
+                                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                                <BookOpen className="h-12 w-12 text-slate-400" />
                               </div>
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <DollarSign className="h-4 w-4" />
-                                <span className="font-medium">
-                                  ${course.price}
-                                </span>
-                              </div>
+                            )}
+                            <div className="absolute top-3 right-3 flex gap-2">
+                              <Badge
+                                className={getDifficultyColor(
+                                  course.difficulty
+                                )}
+                              >
+                                {course.difficulty}
+                              </Badge>
                             </div>
-                            <Separator />
-                            <p className="text-sm text-slate-600 line-clamp-3">
-                              {course.about}
-                            </p>
                           </div>
-                        </CardContent>
-                        <CardFooter className="pt-2 flex flex-col gap-2 w-full">
-                          <div className="flex justify-between w-full gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 border-slate-300 hover:bg-slate-50"
-                              onClick={() => {
-                                setSelectedCourse(course);
-                                setEditModalOpen(true);
-                              }}
-                              disabled={isLoading}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                              onClick={() => handleDeleteCourse(course._id)}
-                              disabled={isLoading}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </div>
-                          <div className="flex justify-between w-full gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                              onClick={() => {
-                                setSelectedCourse(course);
-                                fetchLessons(course._id);
-                                setLessonModalOpen(true);
-                              }}
-                              disabled={isLoading}
-                            >
-                              <PlusCircle className="h-4 w-4 mr-2" />
-                              Manage Lessons
-                            </Button>
-                            <Link
-                              to={`/tutor/courses/${course._id}`}
-                              className="flex-1"
-                            >
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-xl font-bold line-clamp-1">
+                              {course.title}
+                            </CardTitle>
+                            <CardDescription className="line-clamp-2">
+                              {course.tagline}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pb-2 flex-grow">
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="flex items-center gap-1.5 text-slate-600">
+                                  <Tag className="h-4 w-4" />
+                                  <span>{course.category}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-slate-600">
+                                  <span className="font-medium">
+                                    ₹{course.price}
+                                  </span>
+                                </div>
+                              </div>
+                              <Separator />
+                              <p className="text-sm text-slate-600 line-clamp-3">
+                                {course.about}
+                              </p>
+                            </div>
+                          </CardContent>
+                          <CardFooter className="pt-2 flex flex-col gap-2 w-full">
+                            <div className="flex justify-between w-full gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                className="flex-1 border-slate-300 hover:bg-slate-50"
+                                onClick={() => {
+                                  setSelectedCourse(course);
+                                  setEditModalOpen(true);
+                                }}
                                 disabled={isLoading}
                               >
-                                <BookOpen className="h-4 w-4 mr-2" />
-                                View Details
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
                               </Button>
-                            </Link>
-                          </div>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                                onClick={() => handleDeleteCourse(course._id)}
+                                disabled={isLoading}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </Button>
+                            </div>
+                            <div className="flex justify-between w-full gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                onClick={() => {
+                                  setSelectedCourse(course);
+                                  fetchLessons(course._id);
+                                  setLessonModalOpen(true);
+                                }}
+                                disabled={isLoading}
+                              >
+                                <PlusCircle className="h-4 w-4 mr-2" />
+                                Manage Lessons
+                              </Button>
+                              <Link
+                                to={`/tutor/courses/${course._id}`}
+                                className="flex-1"
+                              >
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                  disabled={isLoading}
+                                >
+                                  <BookOpen className="h-4 w-4 mr-2" />
+                                  View Details
+                                </Button>
+                              </Link>
+                            </div>
+                          </CardFooter>
+                        </Card>
+                      ))}
+                    </div>
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-6">
+                        <Button
+                          variant="outline"
+                          onClick={() => paginate(currentPage - 1)}
+                          disabled={currentPage === 1 || isLoading}
+                        >
+                          Previous
+                        </Button>
+                        <div className="flex items-center gap-2">
+                          {Array.from(
+                            { length: totalPages },
+                            (_, i) => i + 1
+                          ).map((page) => (
+                            <Button
+                              key={page}
+                              variant={
+                                currentPage === page ? "default" : "outline"
+                              }
+                              onClick={() => paginate(page)}
+                              disabled={isLoading}
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => paginate(currentPage + 1)}
+                          disabled={currentPage === totalPages || isLoading}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -894,13 +1015,13 @@ export function TutorCourses() {
             <CourseFormModal
               open={addModalOpen}
               onOpenChange={setAddModalOpen}
-              onCourseSaved={fetchCourses}
+              onCourseSaved={() => fetchCourses(currentPage)}
             />
             <CourseFormModal
               open={editModalOpen}
               onOpenChange={setEditModalOpen}
               course={selectedCourse}
-              onCourseSaved={fetchCourses}
+              onCourseSaved={() => fetchCourses(currentPage)}
               isEditMode={true}
             />
             {addLessonModalOpen && selectedCourse && (

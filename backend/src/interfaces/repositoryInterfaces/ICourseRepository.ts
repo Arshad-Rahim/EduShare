@@ -8,7 +8,11 @@ export interface ICourseRepository {
     thumbnail: string,
     tutorId: string
   ): Promise<void>;
-  getTutorCourses(tutorId: string): Promise<TCourseAdd[] | null>;
+  getTutorCourses(
+    tutorId: string,
+    page: number,
+    limit: number
+  ): Promise<{ courses: TCourseAdd[] | null; totalCourses: number }>;
   editCourse(
     data: TCourseAdd,
     thumbnail: string,

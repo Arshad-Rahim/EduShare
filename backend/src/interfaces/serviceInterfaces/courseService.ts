@@ -7,7 +7,11 @@ export interface ICourseService {
     thumbnail: string,
     tutorId: string
   ): Promise<void>;
-  getTutorCourses(tutroId: string): Promise<TCourseAdd[] | null>;
+  getTutorCourses(
+     tutorId: string,
+     page: number,
+     limit: number
+   ): Promise<{courses:TCourseAdd[] | null,totalCourses:number}> 
   updateCourse(
     data: TCourseAdd,
     thumbnail: string,

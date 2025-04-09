@@ -14,9 +14,17 @@ export class CourseService implements ICourseService {
     await this._courseRepository.addCourse(data, thumbnail, tutorId);
   }
 
-  async getTutorCourses(tutorId: string): Promise<TCourseAdd[] | null> {
-    const courses = await this._courseRepository.getTutorCourses(tutorId);
-    return courses;
+  async getTutorCourses(
+    tutorId: string,
+    page: number,
+    limit: number
+  ): Promise<{ courses: TCourseAdd[] | null; totalCourses: number }> {
+    const {courses,totalCourses} = await this._courseRepository.getTutorCourses(
+      tutorId,
+      page,
+      limit
+    );
+    return {courses,totalCourses};
   }
 
   async updateCourse(
@@ -31,7 +39,9 @@ export class CourseService implements ICourseService {
     await this._courseRepository.deleteCourse(courseId);
   }
 
-  async getAllCourses(options:TCourseFilterOptions):Promise<{courses: TCourseAdd[]; total: number }>{
+  async getAllCourses(
+    options: TCourseFilterOptions
+  ): Promise<{ courses: TCourseAdd[]; total: number }> {
     return this._courseRepository.getAllCourses(options);
   }
 }

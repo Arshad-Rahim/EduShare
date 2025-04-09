@@ -1,4 +1,3 @@
-// src/components/StudentProfile.tsx
 "use client";
 
 import type React from "react";
@@ -17,15 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import {
-  BookOpen,
-  X,
-  User,
-  Edit,
-  Save,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { BookOpen, X, User, Edit, Save, Eye, EyeOff } from "lucide-react";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,6 +40,14 @@ import {
 import { NewPasswordModal } from "@/components/modal-components/newPassword";
 import { Header } from "./components/Header";
 
+// Validation schema for profile form
+const profileSchema = z.object({
+  name: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address").min(1, "Email is required"),
+  bio: z.string().min(1, "Bio is required"),
+  interests: z.string().min(1, "Interests are required"),
+  education: z.string().min(1, "Education is required"),
+});
 
 // Sidebar Component
 function Sidebar() {
@@ -96,7 +95,7 @@ const CurrentPasswordModal = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false); // State for current password visibility
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
   const formSchema = z.object({
     currentPassword: z
@@ -134,7 +133,7 @@ const CurrentPasswordModal = ({
         setError("Incorrect password. Please try again.");
       }
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setError("An error occurred. Please try again later.");
     }
   };
@@ -164,7 +163,7 @@ const CurrentPasswordModal = ({
                       <Input
                         type={showCurrentPassword ? "text" : "password"}
                         placeholder="Enter your current password"
-                        className="pr-10" // Padding-right for icon space
+                        className="pr-10"
                         {...field}
                       />
                     </FormControl>
@@ -221,18 +220,26 @@ export default function StudentProfile() {
     interests: "Web Development, Mobile Apps, Data Science",
     education: "Computer Science",
   });
-  const [formData, setFormData] = useState({ ...user });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newPasswordModalOpen, setNewPasswordModalOpen] = useState(false);
 
-
+  const form = useForm<z.infer<typeof profileSchema>>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      bio: "I'm a student passionate about learning new technologies and skills.",
+      interests: "Web Development, Mobile Apps, Data Science",
+      education: "Computer Science",
+    },
+  });
 
   useEffect(() => {
     authAxiosInstance
       .get("/users/me")
       .then((response) => {
         const userData = response.data.users;
-        setUser({
+        const updatedUser = {
           name: userData.name,
           email: userData.email,
           bio:
@@ -241,57 +248,41 @@ export default function StudentProfile() {
           interests:
             userData.interests || "Web Development, Mobile Apps, Data Science",
           education: userData.education || "Computer Science",
-        });
-        setFormData({
-          name: userData.name,
-          email: userData.email,
-          bio:
-            userData.bio ||
-            "I'm a student passionate about learning new technologies and skills.",
-          interests:
-            userData.interests || "Web Development, Mobile Apps, Data Science",
-          education: userData.education || "Computer Science",
-        });
+        };
+        setUser(updatedUser);
+        form.reset(updatedUser);
       })
       .catch((error) => {
         console.error("Failed to fetch user:", error);
         toast.error("Failed to load profile data");
       });
-  }, []);
+  }, [form]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSave = () => {
+  const handleSave = form.handleSubmit((data) => {
     authAxiosInstance
-      .post("/users/profileUpdate", formData)
+      .post("/users/profileUpdate", data)
       .then((response) => {
-        setUser({ ...formData });
+        setUser({ ...data });
         setIsEditing(false);
-        toast.success(response.data.message||"Profile updated successfully!");
+        toast.success(response.data.message || "Profile updated successfully!");
       })
       .catch((error) => {
         console.error("Update failed:", error);
         toast.error("Failed to update profile!");
       });
-  };
+  });
 
   const handleCancel = () => {
-    setFormData({ ...user });
+    form.reset(user);
     setIsEditing(false);
   };
 
   const handlePasswordVerified = () => {
-    setNewPasswordModalOpen(true); // Open the new password modal
+    setNewPasswordModalOpen(true);
   };
 
   const handlePasswordUpdated = () => {
     console.log("Password updated successfully!");
-    // Optional: Add any post-update actions here (e.g., refresh user data)
   };
 
   return (
@@ -325,219 +316,219 @@ export default function StudentProfile() {
         </div>
 
         <div className="flex-1 max-w-4xl w-full">
-          <div className="space-y-6">
-            {/* Profile Overview Card */}
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Profile Overview</CardTitle>
-                    <CardDescription>
-                      Your personal profile information
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant={isEditing ? "outline" : "default"}
-                    onClick={() =>
-                      isEditing ? handleCancel() : setIsEditing(true)
-                    }
-                  >
-                    {isEditing ? (
-                      <>Cancel</>
-                    ) : (
-                      <>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit Profile
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex flex-col items-center gap-4">
-                    <Avatar className="h-24 w-24">
-                      <AvatarImage
-                        src="/placeholder.svg?height=96&width=96"
-                        alt={user.name}
-                      />
-                      <AvatarFallback className="text-2xl">
-                        {user.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isEditing && (
-                      <Button variant="outline" size="sm">
-                        Change Photo
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="flex-1 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        {isEditing ? (
-                          <Input
-                            id="name"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                          />
-                        ) : (
-                          <div className="p-2 border rounded-md bg-muted/50">
-                            {user.name}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <div className="p-2 border rounded-md bg-muted/50">
-                          {user.email}
-                        </div>
-                        {isEditing && (
-                          <p className="text-xs text-muted-foreground">
-                            Your email address cannot be changed
-                          </p>
-                        )}
-                      </div>
+          <Form {...form}>
+            <form onSubmit={handleSave} className="space-y-6">
+              {/* Profile Overview Card */}
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Profile Overview</CardTitle>
+                      <CardDescription>
+                        Your personal profile information
+                      </CardDescription>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="education">Education</Label>
+                    <Button
+                      type="button"
+                      variant={isEditing ? "outline" : "default"}
+                      onClick={() =>
+                        isEditing ? handleCancel() : setIsEditing(true)
+                      }
+                    >
                       {isEditing ? (
-                        <Input
-                          id="education"
-                          name="education"
-                          value={formData.education}
-                          onChange={handleInputChange}
-                        />
+                        <>Cancel</>
                       ) : (
-                        <div className="p-2 border rounded-md bg-muted/50">
-                          {user.education}
-                        </div>
+                        <>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Profile
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex flex-col items-center gap-4">
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage
+                          src="/placeholder.svg?height=96&width=96"
+                          alt={user.name}
+                        />
+                        <AvatarFallback className="text-2xl">
+                          {user.name.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isEditing && (
+                        <Button variant="outline" size="sm">
+                          Change Photo
+                        </Button>
                       )}
                     </div>
+
+                    <div className="flex-1 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem className="space-y-2">
+                              <FormLabel>Full Name</FormLabel>
+                              {isEditing ? (
+                                <FormControl>
+                                  <Input {...field} />
+                                </FormControl>
+                              ) : (
+                                <div className="p-2 border rounded-md bg-muted/50">
+                                  {user.name}
+                                </div>
+                              )}
+                              {isEditing && <FormMessage />}
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email Address</Label>
+                          <div className="p-2 border rounded-md bg-muted/50">
+                            {user.email}
+                          </div>
+                          {isEditing && (
+                            <p className="text-xs text-muted-foreground">
+                              Your email address cannot be changed
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <FormField
+                        control={form.control}
+                        name="education"
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel>Education</FormLabel>
+                            {isEditing ? (
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                            ) : (
+                              <div className="p-2 border rounded-md bg-muted/50">
+                                {user.education}
+                              </div>
+                            )}
+                            {isEditing && <FormMessage />}
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-              {isEditing && (
-                <CardFooter className="justify-end">
-                  <Button onClick={handleSave}>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
+                </CardContent>
+                {isEditing && (
+                  <CardFooter className="justify-end">
+                    <Button type="submit">
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
 
-            {/* Learning Profile Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Learning Profile</CardTitle>
-                <CardDescription>
-                  Information about your learning preferences and interests
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="bio">About Me</Label>
-                  {isEditing ? (
-                    <Textarea
-                      id="bio"
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleInputChange}
-                      className="min-h-32"
-                    />
-                  ) : (
-                    <div className="p-3 border rounded-md bg-muted/50 min-h-[80px]">
-                      {user.bio}
-                    </div>
-                  )}
-                </div>
+              {/* Learning Profile Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Learning Profile</CardTitle>
+                  <CardDescription>
+                    Information about your learning preferences and interests
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>About Me</FormLabel>
+                        {isEditing ? (
+                          <FormControl>
+                            <Textarea {...field} className="min-h-32" />
+                          </FormControl>
+                        ) : (
+                          <div className="p-3 border rounded-md bg-muted/50 min-h-[80px]">
+                            {user.bio}
+                          </div>
+                        )}
+                        {isEditing && <FormMessage />}
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <Label htmlFor="interests">Interests & Skills</Label>
-                  {isEditing ? (
-                    <Textarea
-                      id="interests"
-                      name="interests"
-                      value={formData.interests}
-                      onChange={handleInputChange}
-                      placeholder="Web Development, Mobile Apps, Data Science, etc."
-                    />
-                  ) : (
-                    <div className="p-3 border rounded-md bg-muted/50">
-                      {user.interests.split(",").map((interest, index) => (
-                        <span
-                          key={index}
-                          className="inline-block bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2"
-                        >
-                          {interest.trim()}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              {isEditing && (
-                <CardFooter className="justify-end">
-                  <Button onClick={handleSave}>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </Button>
-                </CardFooter>
-              )}
-            </Card>
+                  <FormField
+                    control={form.control}
+                    name="interests"
+                    render={({ field }) => (
+                      <FormItem className="space-y-2">
+                        <FormLabel>Interests & Skills</FormLabel>
+                        {isEditing ? (
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Web Development, Mobile Apps, Data Science, etc."
+                            />
+                          </FormControl>
+                        ) : (
+                          <div className="p-3 border rounded-md bg-muted/50">
+                            {user.interests
+                              .split(",")
+                              .map((interest, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-block bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2"
+                                >
+                                  {interest.trim()}
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                        {isEditing && <FormMessage />}
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+                {isEditing && (
+                  <CardFooter className="justify-end">
+                    <Button type="submit">
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </Button>
+                  </CardFooter>
+                )}
+              </Card>
 
-            {/* Account Settings Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
-                  Manage your account settings and preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Password</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Change your account password
-                      </p>
+              {/* Account Settings Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Settings</CardTitle>
+                  <CardDescription>
+                    Manage your account settings and preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Password</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Change your account password
+                        </p>
+                      </div>
+                      <CurrentPasswordModal
+                        onPasswordVerified={handlePasswordVerified}
+                      />
                     </div>
-                    <CurrentPasswordModal
-                      onPasswordVerified={handlePasswordVerified}
-                    />
                   </div>
-
-                  {/* <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">Notifications</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Manage your notification preferences
-                      </p>
-                    </div>
-                    <Button variant="outline">Manage</Button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-destructive">
-                        Delete Account
-                      </h4>
-                      <p className="text-sm text-muted-foreground">
-                        Permanently delete your account and all data
-                      </p>
-                    </div>
-                    <Button variant="destructive">Delete Account</Button>
-                  </div> */}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
         </div>
       </div>
 

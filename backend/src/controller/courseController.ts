@@ -56,11 +56,15 @@ export class CourseController {
   async getTutorCourses(req: Request, res: Response) {
     try {
       const tutor = (req as CustomRequest).user;
-      const courses = await this._courseService.getTutorCourses(tutor?.userId);
+         const page = parseInt(req.query.page as string) || 1;
+         const limit = parseInt(req.query.limit as string) || 6;
+      const {courses,totalCourses} = await this._courseService.getTutorCourses(tutor?.userId,page,limit);
+      
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
         courses,
+        totalCourses
       });
     } catch (error) {
       if (error instanceof CustomError) {
