@@ -51,6 +51,7 @@ import { Slider } from "@/components/ui/slider";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
+import { wishlistService } from "@/services/wishlistService/wishlistService";
 
 export function CourseListingPage() {
   const [courses, setCourses] = useState([]); // Only current page courses
@@ -123,7 +124,7 @@ export function CourseListingPage() {
   // Fetch wishlist courses from backend
   const fetchWishlistCourses = async () => {
     try {
-      const response = await authAxiosInstance.get("/wishlist");
+      const response = await wishlistService.getWishlist({});
       const wishlistData = response.data.courses || [];
       const wishlistIds = wishlistData.map((course) => course._id);
       setWishlist(wishlistIds);
@@ -138,17 +139,16 @@ export function CourseListingPage() {
     const isWishlisted = wishlist.includes(courseId);
     try {
       if (isWishlisted) {
-        await authAxiosInstance.delete(`/wishlist/${courseId}`);
+        await wishlistService.removeFromWishlist(courseId)
         setWishlist((prev) => prev.filter((id) => id !== courseId));
         toast.success("Course removed from wishlist");
       } else {
-        const response = await authAxiosInstance.post(`/wishlist/${courseId}`);
+        const response = await wishlistService.addToWishlist(courseId)
         setWishlist((prev) => [...prev, courseId]);
         toast.success(response.data.message);
       }
     } catch (error) {
       console.error("Failed to toggle wishlist:", error);
-      toast.error(error.response?.data?.message || "Failed to update wishlist");
     }
   };
 

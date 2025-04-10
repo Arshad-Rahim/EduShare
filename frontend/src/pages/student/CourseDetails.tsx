@@ -19,8 +19,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Header } from "./components/Header";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
-import { toast } from "sonner";
 import {
   BookOpen,
   Tag,
@@ -29,7 +27,9 @@ import {
   Clock,
   Star,
   Users,
+  Lock,
 } from "lucide-react";
+import { courseService } from "@/services/courseService/courseService";
 
 export function CourseDetailsPage() {
   const { courseId } = useParams();
@@ -37,47 +37,26 @@ export function CourseDetailsPage() {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState(null); // State for selected video
-  const [videoModalOpen, setVideoModalOpen] = useState(false); // State for video modal
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchCourseDetails();
-    fetchLessons();
-  }, [courseId]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const courseData = await courseService.getCourseDetails(courseId);
+        setCourse(courseData);
 
-  const fetchCourseDetails = async () => {
-    try {
-      const response = await authAxiosInstance.get(`/courses/all-courses`); // Adjust endpoint if student-specific
-      const foundCourse = response.data.courses.courses.find(
-        (c) => c._id === courseId
-      );
-      console.log("FOUNDCOURSE", response.data.courses);
-      if (foundCourse) {
-        setCourse(foundCourse);
-      } else {
-        toast.error("Course not found");
+        const lessonsData = await courseService.getLessons(courseId);
+        setLessons(lessonsData);
+      } catch (error) {
         navigate("/courses");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch course details:", error);
-      toast.error("Failed to load course details");
-      navigate("/courses");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchLessons = async () => {
-    try {
-      const response = await authAxiosInstance.get(
-        `/lessons/course/${courseId}`
-      );
-      setLessons(response.data.lessons || []);
-    } catch (error) {
-      console.error("Failed to fetch lessons:", error);
-      toast.error("Failed to load lessons");
-    }
-  };
+    };
+    fetchData();
+  }, [courseId, navigate]);
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
@@ -233,7 +212,11 @@ export function CourseDetailsPage() {
                           {lessons.map((lesson, index) => (
                             <div
                               key={lesson._id}
-                              className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
+                              className={`flex items-center justify-between p-4 rounded-lg ${
+                                index === 0
+                                  ? "bg-slate-50"
+                                  : "bg-slate-100 opacity-75"
+                              }`}
                             >
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
@@ -242,9 +225,14 @@ export function CourseDetailsPage() {
                                   </span>
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium">
-                                    {lesson.title}
-                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium">
+                                      {lesson.title}
+                                    </p>
+                                    {index !== 0 && (
+                                      <Lock className="h-4 w-4 text-slate-500" />
+                                    )}
+                                  </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <Clock className="h-3 w-3" />
                                     <span>
@@ -259,8 +247,15 @@ export function CourseDetailsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handlePlayVideo(lesson, index)}
+                                className={index !== 0 ? "text-slate-400" : ""}
                               >
-                                <Video className="h-4 w-4 text-primary" />
+                                <Video
+                                  className={`h-4 w-4 ${
+                                    index === 0
+                                      ? "text-primary"
+                                      : "text-slate-400"
+                                  }`}
+                                />
                               </Button>
                             </div>
                           ))}

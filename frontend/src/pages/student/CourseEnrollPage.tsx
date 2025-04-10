@@ -22,6 +22,9 @@ import {
   Lock,
   BookOpen,
 } from "lucide-react";
+import {
+  courseService,
+} from "@/services/courseService/courseService";
 
 // Define Course type
 interface Course {
@@ -234,10 +237,7 @@ export function CourseEnrollPage() {
 
   const fetchCourseDetails = async () => {
     try {
-      const response = await authAxiosInstance.get(`/courses/all-courses`);
-      const foundCourse = response.data.courses.courses.find(
-        (c: Course) => c._id === courseId
-      );
+      const foundCourse = await courseService.getCourseDetails(courseId);
       if (foundCourse) {
         setCourse(foundCourse);
       } else {

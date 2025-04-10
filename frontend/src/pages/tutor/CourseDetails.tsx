@@ -34,6 +34,7 @@ import {
   Upload,
   FileIcon,
 } from "lucide-react";
+import { courseService } from "@/services/courseService/courseService";
 
 export function CourseDetails() {
   const { courseId } = useParams();
@@ -58,7 +59,7 @@ export function CourseDetails() {
 
   const fetchCourseDetails = async () => {
     try {
-      const response = await authAxiosInstance.get(`/courses/my-courses`);
+      const response = await courseService.getSpecificTutorCourse(1,50);
       const foundCourse = response.data.courses.find((c) => c._id === courseId);
       if (foundCourse) {
         setCourse(foundCourse);
@@ -77,9 +78,7 @@ export function CourseDetails() {
 
   const fetchLessons = async () => {
     try {
-      const response = await authAxiosInstance.get(
-        `/lessons/course/${courseId}`
-      );
+      const response = await courseService.getLessons(courseId);
       setLessons(response.data.lessons || []);
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
@@ -467,7 +466,6 @@ export function CourseDetails() {
                         )}
                       </div>
                     </div>
-                   
                   </div>
                   <DialogFooter>
                     <Button

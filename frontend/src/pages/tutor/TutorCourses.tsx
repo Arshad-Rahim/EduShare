@@ -45,6 +45,7 @@ import { Link } from "react-router-dom";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { ClipLoader } from "react-spinners";
 import { Progress } from "@/components/ui/progress";
+import { courseService } from "@/services/courseService/courseService";
 
 export function TutorCourses() {
   const [courses, setCourses] = useState([]);
@@ -71,12 +72,10 @@ export function TutorCourses() {
   const fetchCourses = async (page) => {
     setIsLoading(true);
     try {
-      const response = await authAxiosInstance.get("/courses/my-courses", {
-        params: {
-          page,
-          limit: coursesPerPage,
-        },
-      });
+      const response = await courseService.getSpecificTutorCourse(
+        page,
+        coursesPerPage
+      );
       setCourses(response.data.courses || []);
       setTotalCourses(response.data.totalCourses || 0); // Assuming backend returns totalCourses
     } catch (error) {
@@ -90,13 +89,10 @@ export function TutorCourses() {
   const fetchLessons = async (courseId) => {
     setIsLoading(true);
     try {
-      const response = await authAxiosInstance.get(
-        `/lessons/course/${courseId}`
-      );
-      setLessons(response.data.lessons || []);
+      const lessonsData = await courseService.getLessons(courseId);
+      setLessons(lessonsData);
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
-      toast.error("Failed to load lessons");
     } finally {
       setIsLoading(false);
     }
@@ -112,9 +108,8 @@ export function TutorCourses() {
 
     setIsLoading(true);
     try {
-      const response = await authAxiosInstance.delete(
-        `/courses/delete/${courseToDelete}`
-      );
+      const response = await courseService.deleteCourse(courseToDelete);
+
       toast.success(response.data.message);
       // Refetch courses for the current page
       fetchCourses(currentPage);
@@ -124,7 +119,6 @@ export function TutorCourses() {
       }
     } catch (error) {
       console.error("Failed to delete course:", error);
-      toast.error("Failed to delete course");
     } finally {
       setIsLoading(false);
       setConfirmDeleteCourseOpen(false);
@@ -142,14 +136,11 @@ export function TutorCourses() {
 
     setIsLoading(true);
     try {
-      const response = await authAxiosInstance.delete(
-        `/lessons/delete/${lessonToDelete}`
-      );
+      const response = await courseService.deleteLesson(lessonToDelete);
       setLessons(lessons.filter((lesson) => lesson._id !== lessonToDelete));
       toast.success(response.data.message);
     } catch (error) {
       console.error("Failed to delete lesson:", error);
-      toast.error("Failed to delete lesson");
     } finally {
       setIsLoading(false);
       setConfirmDeleteLessonOpen(false);

@@ -32,9 +32,10 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
+import { courseService } from "@/services/courseService/courseService";
+import { wishlistService } from "@/services/wishlistService/wishlistService";
 
 // Category Card Component
 const CategoryCard = ({ icon: Icon, title, count }) => (
@@ -104,18 +105,17 @@ export function UserHomePage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await authAxiosInstance.get("/courses/all-courses");
+      const response = await courseService.getAllCourse();
       setCourses(response.data.courses.courses || []);
       console.log("Courses in Home", response.data.courses);
     } catch (error) {
       console.error("Failed to fetch courses:", error);
-      toast.error("Failed to load courses");
     }
   };
 
   const fetchWishlistCourses = async () => {
     try {
-      const response = await authAxiosInstance.get("/wishlist");
+      const response = await wishlistService.getWishlist({});
       const wishlistData = response.data.courses || []; // Adjust based on your API response structure
       const wishlistIds = wishlistData.map((course) => course._id);
       setWishlist(wishlistIds);
@@ -129,11 +129,11 @@ export function UserHomePage() {
     const isWishlisted = wishlist.includes(courseId);
     try {
       if (isWishlisted) {
-        await authAxiosInstance.delete(`/wishlist/${courseId}`);
+        await wishlistService.removeFromWishlist(courseId)
         setWishlist((prev) => prev.filter((id) => id !== courseId));
         toast.success("Course removed from wishlist");
       } else {
-        const response = await authAxiosInstance.post(`/wishlist/${courseId}`);
+        const response = await wishlistService.addToWishlist(courseId)
         setWishlist((prev) => [...prev, courseId]);
         toast.success(response.data.message);
       }

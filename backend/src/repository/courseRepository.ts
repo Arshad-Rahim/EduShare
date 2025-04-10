@@ -43,7 +43,7 @@ export class CourseRepository implements ICourseRepository {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    const totalCourses = await courseModel.countDocuments();
+    const totalCourses = await courseModel.countDocuments({tutorId});
 
       return {courses, totalCourses};
   }

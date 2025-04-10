@@ -25,9 +25,9 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
+import { wishlistService } from "@/services/wishlistService/wishlistService";
 
 export default function WishlistPage() {
   const [wishlistCourses, setWishlistCourses] = useState([]);
@@ -47,20 +47,15 @@ export default function WishlistPage() {
         limit: coursesPerPage.toString(),
       });
 
-      const response = await authAxiosInstance.get(
-        `/wishlist?${params.toString()}`
-      );
-
-      console.log("RESPONSES", response.data.courses);
-      const wishlistData = response.data.courses || []; // Adjust based on your API response structure
-      const totalCourses = response.data.total || 0; // Assuming API returns total count
+      const response = await wishlistService.getWishlist(params);
+      const wishlistData = response?.data.courses || []; // Adjust based on your API response structure
+      const totalCourses = response?.data.total || 1; // Assuming API returns total count
 
       setWishlistCourses(wishlistData);
       setTotalPages(Math.ceil(totalCourses / coursesPerPage));
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch wishlist courses:", error);
-      toast.error("Failed to load wishlist");
       setLoading(false);
     }
   };
@@ -68,14 +63,13 @@ export default function WishlistPage() {
   // Remove course from wishlist
   const handleRemoveFromWishlist = async (courseId) => {
     try {
-      await authAxiosInstance.delete(`/wishlist/${courseId}`);
+      await wishlistService.removeFromWishlist(courseId)
       setWishlistCourses((prev) =>
         prev.filter((course) => course._id !== courseId)
       );
       toast.success("Course removed from wishlist");
     } catch (error) {
       console.error("Failed to remove course from wishlist:", error);
-      toast.error("Failed to remove course from wishlist");
     }
   };
 
