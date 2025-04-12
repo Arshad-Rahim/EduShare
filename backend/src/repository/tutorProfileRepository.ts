@@ -114,4 +114,9 @@ export class TutorRepository implements ITutorRepository {
       { $set: { read: true } }
     );
   }
+
+
+  // async getEnrolledStudent(tutorId:string):Promise<>{
+    
+  // }
 }

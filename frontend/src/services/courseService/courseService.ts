@@ -84,7 +84,18 @@ export const courseService = {
        console.error("Failed to fetch courses:", error);
             toast.error("Failed to load courses");
     }
+  },
+
+  async checkCoursePurchase(courseId) {
+  try {
+    const response = await authAxiosInstance.get(
+      `/courses/${courseId}/purchase-status`
+    );
+    return response.data.purchaseStatus;
+  } catch (error) {
+    throw new Error("Failed to check purchase status");
   }
+}
 
   
 };

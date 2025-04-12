@@ -62,7 +62,7 @@ export function SideBar({ sidebarOpen }) {
     {
       icon: <Users className="h-4 w-4" />,
       name: "Students",
-      path: "/students",
+      path: "/tutor/students",
       disabled: isAccepted === false, // Always enabled
     },
     {

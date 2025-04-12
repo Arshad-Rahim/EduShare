@@ -69,6 +69,17 @@ export class CourseRoutes {
          injectedCourseController.getAllCourses(req, res)
      );
 
+
+      this.router.get(
+        "/:courseId/purchase-status",
+        userAuthMiddleware,
+        authorizeRole(["user"]),
+        checkUserBlocked,
+
+        (req: Request, res: Response) =>
+          injectedCourseController.purchaseStatus(req, res)
+      );
+
   }
 }
 

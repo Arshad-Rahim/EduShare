@@ -54,7 +54,7 @@ export function TutorCourses() {
   const [lessonModalOpen, setLessonModalOpen] = useState(false);
   const [addLessonModalOpen, setAddLessonModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [lessons, setLessons] = useState([]);
+  const [lessons, setLessons] = useState([]); // Ensure lessons is initialized as an array
   const [confirmDeleteCourseOpen, setConfirmDeleteCourseOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
@@ -89,10 +89,12 @@ export function TutorCourses() {
   const fetchLessons = async (courseId) => {
     setIsLoading(true);
     try {
-      const lessonsData = await courseService.getLessons(courseId);
-      setLessons(lessonsData);
+      const response = await courseService.getLessons(courseId);
+      // Ensure lessonsData is an array, default to empty array if not
+      setLessons(response?.data.lessons||[]);
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
+      setLessons([]); // Set to empty array on error
     } finally {
       setIsLoading(false);
     }

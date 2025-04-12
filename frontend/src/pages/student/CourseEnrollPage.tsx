@@ -135,7 +135,7 @@ const RenderRazorpay = ({
             razorpayInstance.current.close();
             razorpayInstance.current = null; // Clear the instance
           }
-          navigate(`/course/${courseId}/learn`);
+          navigate(`/courses/${courseId}`);
         } catch (error) {
           console.error("Payment update failed:", error);
           toast.error(

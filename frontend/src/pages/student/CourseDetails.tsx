@@ -30,6 +30,7 @@ import {
   Lock,
 } from "lucide-react";
 import { courseService } from "@/services/courseService/courseService";
+import { toast } from "sonner";
 
 export function CourseDetailsPage() {
   const { courseId } = useParams();
@@ -39,16 +40,30 @@ export function CourseDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [isPurchased, setIsPurchased] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch course details
         const courseData = await courseService.getCourseDetails(courseId);
         setCourse(courseData);
 
-        const lessonsData = await courseService.getLessons(courseId);
-        setLessons(lessonsData);
+        // Fetch lessons
+        const response = await courseService.getLessons(courseId);
+        setLessons(response.data.lessons || []);
+
+        // Check if user has purchased the course
+        try {
+          const purchaseStatus = await courseService.checkCoursePurchase(
+            courseId
+          );
+          setIsPurchased(purchaseStatus || false);
+        } catch (error) {
+          console.error("Error checking purchase status:", error);
+          setIsPurchased(false);
+        }
       } catch (error) {
         navigate("/courses");
       } finally {
@@ -74,8 +89,8 @@ export function CourseDetailsPage() {
   const handlePlayVideo = (lesson, index) => {
     const videoUrl = lesson.file || lesson.videoUrl;
     if (videoUrl) {
-      if (index === 0) {
-        // First lesson is free
+      if (isPurchased || index === 0) {
+        // Allow access if course is purchased or it's the first lesson
         setSelectedVideo(videoUrl);
         setVideoModalOpen(true);
       } else {
@@ -88,7 +103,7 @@ export function CourseDetailsPage() {
   };
 
   const handleEnroll = () => {
-    navigate(`/course/${courseId}/enroll`);
+    navigate(`/courses/${courseId}`);
   };
 
   if (loading) {
@@ -213,7 +228,7 @@ export function CourseDetailsPage() {
                             <div
                               key={lesson._id}
                               className={`flex items-center justify-between p-4 rounded-lg ${
-                                index === 0
+                                isPurchased || index === 0
                                   ? "bg-slate-50"
                                   : "bg-slate-100 opacity-75"
                               }`}
@@ -229,7 +244,7 @@ export function CourseDetailsPage() {
                                     <p className="text-sm font-medium">
                                       {lesson.title}
                                     </p>
-                                    {index !== 0 && (
+                                    {!isPurchased && index !== 0 && (
                                       <Lock className="h-4 w-4 text-slate-500" />
                                     )}
                                   </div>
@@ -247,11 +262,15 @@ export function CourseDetailsPage() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handlePlayVideo(lesson, index)}
-                                className={index !== 0 ? "text-slate-400" : ""}
+                                className={
+                                  !isPurchased && index !== 0
+                                    ? "text-slate-400"
+                                    : ""
+                                }
                               >
                                 <Video
                                   className={`h-4 w-4 ${
-                                    index === 0
+                                    isPurchased || index === 0
                                       ? "text-primary"
                                       : "text-slate-400"
                                   }`}

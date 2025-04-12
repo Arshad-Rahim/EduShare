@@ -44,4 +44,9 @@ export class CourseService implements ICourseService {
   ): Promise<{ courses: TCourseAdd[]; total: number }> {
     return this._courseRepository.getAllCourses(options);
   }
+
+
+  async purchaseStatus(userId: string, courseId: string): Promise<boolean> {
+      return this._courseRepository.purchaseStatus(userId,courseId)
+  }
 }

@@ -22,6 +22,7 @@ import { CourseDetails } from './pages/tutor/CourseDetails';
 import { CourseDetailsPage } from './pages/student/CourseDetails';
 import WishlistPage from './pages/student/Wishlist';
 import { CourseEnrollPage } from './pages/student/CourseEnrollPage';
+import { StudentsPage } from './pages/tutor/StduentsPage';
 
 function App() {
   return (
@@ -123,6 +124,15 @@ function App() {
               element={
                 <ProtectedUserRoute>
                   <CourseDetails />
+                </ProtectedUserRoute>
+              }
+            />
+
+            <Route
+              path="/tutor/students"
+              element={
+                <ProtectedUserRoute>
+                  <StudentsPage />
                 </ProtectedUserRoute>
               }
             />

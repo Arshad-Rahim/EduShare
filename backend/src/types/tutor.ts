@@ -37,5 +37,19 @@ export type TUpdateData = {
   specialization: string;
   bio: string;
   approvalStatus: string;
-  verificationDocUrl?:string;
+  verificationDocUrl?: string;
+};
+
+export type TEnrolledStudent = {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  courseId: string;
+  courseTitle: string;
+  amount: number;
+};
+
+export type TEnrolledStudentsResponse = {
+  students: TEnrolledStudent[];
+  totalRevenue: number;
 };

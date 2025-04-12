@@ -1,5 +1,5 @@
 import { IPurchaseRepository } from "../interfaces/repositoryInterfaces/IPurchaseRepository";
-import { purchaseModel } from "../models/orderModel";
+import { purchaseModel } from "../models/purchaseModel";
 import { TOrderSave } from "../types/order";
 
 export class PurchaseRepository implements IPurchaseRepository {

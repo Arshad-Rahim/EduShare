@@ -1,5 +1,7 @@
 import { ICourseRepository } from "../interfaces/repositoryInterfaces/ICourseRepository";
 import { courseModel } from "../models/courseModel";
+import { lessonModel } from "../models/lessonModel";
+import { purchaseModel } from "../models/purchaseModel";
 import {
   FilterQuery,
   IUpdateData,
@@ -14,13 +16,6 @@ export class CourseRepository implements ICourseRepository {
     thumbnail: string,
     tutorId: string
   ): Promise<void> {
-    // const courses = courseModel.findOne({tutorId,category:data.category});
-
-    //  const existing = courses.map((course) => course.category == data.category);
-    //  if(existing){
-    //   throw new Error('The course alredy ei')
-    //  }
-
     await courseModel.create({
       title: data.title,
       tagline: data.tagline,
@@ -37,15 +32,15 @@ export class CourseRepository implements ICourseRepository {
     tutorId: string,
     page: number,
     limit: number
-  ): Promise<{courses:TCourseAdd[] | null,totalCourses:number}> {
+  ): Promise<{ courses: TCourseAdd[] | null; totalCourses: number }> {
     const courses = await courseModel
       .find({ tutorId })
       .skip((page - 1) * limit)
       .limit(limit);
 
-    const totalCourses = await courseModel.countDocuments({tutorId});
+    const totalCourses = await courseModel.countDocuments({ tutorId });
 
-      return {courses, totalCourses};
+    return { courses, totalCourses };
   }
 
   async editCourse(
@@ -71,6 +66,7 @@ export class CourseRepository implements ICourseRepository {
   }
   async deleteCourse(courseId: string): Promise<void> {
     await courseModel.findByIdAndDelete({ _id: courseId });
+    await lessonModel.deleteMany({ courseId });
   }
 
   async getAllCourses(
@@ -152,5 +148,15 @@ export class CourseRepository implements ICourseRepository {
       return { courses: [], total: 0 };
       // Return null on error as per the original return type
     }
+  }
+
+  async purchaseStatus(userId: string, courseId: string): Promise<boolean> {
+    
+    const purchased = await purchaseModel.findOne({
+      userId,
+      "purchase.courseId": courseId,
+      "purchase.status": "paid",
+    });
+    return !!purchased; // Return true if a matching document is found, false otherwise
   }
 }

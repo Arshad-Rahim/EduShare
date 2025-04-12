@@ -126,8 +126,8 @@ export function CourseDetails() {
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("Video file size should not exceed 10MB");
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("Video file size should not exceed 50MB");
         return;
       }
       if (!["video/mp4", "video/webm"].includes(file.type)) {
@@ -274,8 +274,7 @@ export function CourseDetails() {
                       <span>{course.category}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-600">
-                      <DollarSign className="h-4 w-4" />
-                      <span className="font-medium">${course.price}</span>
+                      <span className="font-medium">₹{course.price}</span>
                     </div>
                   </div>
                 </div>

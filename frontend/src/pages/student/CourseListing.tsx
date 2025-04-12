@@ -110,7 +110,6 @@ export function CourseListingPage() {
       const coursesData = response.data.courses.courses || [];
       const totalCourses = response.data.courses.total || 0; // Assuming backend returns total count
 
-      console.log("Fetched Courses:", coursesData);
       setCourses(coursesData);
       setTotalPages(Math.ceil(totalCourses / coursesPerPage));
       setLoading(false);

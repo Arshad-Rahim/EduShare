@@ -8,15 +8,18 @@ export interface ICourseService {
     tutorId: string
   ): Promise<void>;
   getTutorCourses(
-     tutorId: string,
-     page: number,
-     limit: number
-   ): Promise<{courses:TCourseAdd[] | null,totalCourses:number}> 
+    tutorId: string,
+    page: number,
+    limit: number
+  ): Promise<{ courses: TCourseAdd[] | null; totalCourses: number }>;
   updateCourse(
     data: TCourseAdd,
     thumbnail: string,
     courseId: string
   ): Promise<void>;
- getAllCourses(options:TCourseFilterOptions):Promise<{courses: TCourseAdd[]; total: number }>
+  getAllCourses(
+    options: TCourseFilterOptions
+  ): Promise<{ courses: TCourseAdd[]; total: number }>;
   deleteCourse(courseId: string): Promise<void>;
+  purchaseStatus(userId: string, courseId: string): Promise<boolean>;
 }
