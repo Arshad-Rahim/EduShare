@@ -21,14 +21,12 @@ export class AuthController {
     try {
       let data: RegisterDTO = req.body;
 
-      console.log("Data", data);
       if (data.role == "tutor") {
         data = {
           ...data,
           isAccepted: false,
         };
       }
-      console.log("Datab After", data);
 
       await this._authService.registerUser(data);
 
