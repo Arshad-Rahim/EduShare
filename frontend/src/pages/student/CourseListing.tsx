@@ -52,6 +52,7 @@ import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
 import { wishlistService } from "@/services/wishlistService/wishlistService";
+import { courseService } from "@/services/courseService/courseService";
 
 export function CourseListingPage() {
   const [courses, setCourses] = useState([]); // Only current page courses
@@ -104,9 +105,7 @@ export function CourseListingPage() {
         limit: coursesPerPage.toString(),
       });
 
-      const response = await authAxiosInstance.get(
-        `/courses/all-courses?${params.toString()}`
-      );
+      const response = await courseService.getAllCourse(params)
       const coursesData = response.data.courses.courses || [];
       const totalCourses = response.data.courses.total || 0; // Assuming backend returns total count
 

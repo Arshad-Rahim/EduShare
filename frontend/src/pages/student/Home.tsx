@@ -105,7 +105,7 @@ export function UserHomePage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await courseService.getAllCourse();
+      const response = await courseService.getAllCourse("");
       setCourses(response.data.courses.courses || []);
       console.log("Courses in Home", response.data.courses);
     } catch (error) {

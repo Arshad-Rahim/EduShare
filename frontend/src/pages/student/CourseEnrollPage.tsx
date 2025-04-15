@@ -25,6 +25,8 @@ import {
 import {
   courseService,
 } from "@/services/courseService/courseService";
+import { paymentService } from "@/services/enrollmentService/paymentService";
+import { enrollmentService } from "@/services/enrollmentService/enrollmentService";
 
 // Define Course type
 interface Course {
@@ -115,20 +117,8 @@ const RenderRazorpay = ({
       handler: async (response) => {
         paymentId.current = response.razorpay_payment_id;
         try {
-          await authAxiosInstance.post("/payment", {
-            status: "succeeded",
-            orderDetails: {
-              orderId,
-              paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature,
-            },
-          });
-          await authAxiosInstance.post("/purchase/order", {
-            courseId,
-            orderId: orderId,
-            amount: amount,
-            status: "paid",
-          });
+          await paymentService.payment(orderId,response);
+          await paymentService.purchaseOrder(courseId,orderId,amount)
           toast.success("Payment successful! Enrolling in the course...");
           // Explicitly close the modal after successful payment
           if (razorpayInstance.current) {
@@ -255,9 +245,7 @@ export function CourseEnrollPage() {
 
   const checkEnrollmentStatus = async () => {
     try {
-      const response = await authAxiosInstance.get(
-        `/enrollments/check/${courseId}`
-      );
+      const response = await enrollmentService.checkEnrollmentStatus(courseId)
       setEnrollmentStatus(response.data.isEnrolled ? "enrolled" : null);
     } catch (error) {
       console.error("Failed to check enrollment status:", error);

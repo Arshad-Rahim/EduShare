@@ -1,6 +1,5 @@
 "use client";
 
-import type React from "react";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -17,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { BookOpen, X, User, Edit, Save, Eye, EyeOff } from "lucide-react";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -39,6 +37,8 @@ import {
 } from "@/components/ui/form";
 import { NewPasswordModal } from "@/components/modal-components/newPassword";
 import { Header } from "./components/Header";
+import { userAuthService } from "@/services/userService/authUser";
+import { profileService } from "@/services/userService/profileService";
 
 // Validation schema for profile form
 const profileSchema = z.object({
@@ -112,9 +112,7 @@ const CurrentPasswordModal = ({
 
   const verifyCurrentPassword = async (password: string): Promise<boolean> => {
     try {
-      const response = await authAxiosInstance.post("/verify-password", {
-        password,
-      });
+      const response = await userAuthService.verifyPassword(password);
       return response.data.valid || false;
     } catch (error) {
       console.error("Password verification failed:", error);
@@ -235,9 +233,9 @@ export default function StudentProfile() {
   });
 
   useEffect(() => {
-    authAxiosInstance
-      .get("/users/me")
-      .then((response) => {
+    const userData = async () => {
+      try {
+        const response = await profileService.userDetails();
         const userData = response.data.users;
         const updatedUser = {
           name: userData.name,
@@ -251,25 +249,24 @@ export default function StudentProfile() {
         };
         setUser(updatedUser);
         form.reset(updatedUser);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Failed to fetch user:", error);
         toast.error("Failed to load profile data");
-      });
+      }
+    };
+    userData();
   }, [form]);
 
-  const handleSave = form.handleSubmit((data) => {
-    authAxiosInstance
-      .post("/users/profileUpdate", data)
-      .then((response) => {
-        setUser({ ...data });
-        setIsEditing(false);
-        toast.success(response.data.message || "Profile updated successfully!");
-      })
-      .catch((error) => {
-        console.error("Update failed:", error);
-        toast.error("Failed to update profile!");
-      });
+  const handleSave = form.handleSubmit(async (data) => {
+    try {
+      const response = await profileService.profileUpdate(data);
+      setUser({ ...data });
+      setIsEditing(false);
+      toast.success(response.data.message || "Profile updated successfully!");
+    } catch (error) {
+      console.error("Update failed:", error);
+      toast.error("Failed to update profile!");
+    }
   });
 
   const handleCancel = () => {

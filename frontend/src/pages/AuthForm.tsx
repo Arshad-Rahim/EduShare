@@ -40,7 +40,7 @@ import { sendOtp } from '@/services/otpService/axiosOTPSend';
 import { verifyEmail } from '@/services/userService/verfiyEmail';
 import { sendOtpForgetPassword } from '@/services/otpService/axiosOtpSendForForgetPassword';
 import { verifyOtp } from '@/services/otpService/verifyOtp';
-import { registerUser } from '@/services/userService/registerUser';
+import { userAuthService } from '@/services/userService/authUser';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { addUser } from '@/redux/slice/userSlice';
@@ -142,7 +142,7 @@ export default function AuthForm({
     try {
       const data = registerForm.getValues();
       // setData(data)
-      const res = await registerUser({ ...data, role: activeRole });
+      const res = await userAuthService.registerUser({ ...data, role: activeRole });
       toast.success(res.message);
       onRegister?.(data, activeRole);
       registerForm.reset();

@@ -31,38 +31,35 @@ export const courseService = {
     }
   },
 
-
-  async getSpecificTutorCourse(page,limit){
+  async getSpecificTutorCourse(page, limit) {
     try {
       const response = await authAxiosInstance.get("/courses/my-courses", {
-              params: {
-                page,
-                limit,
-              },
-            });
-            return response;
+        params: {
+          page,
+          limit,
+        },
+      });
+      return response;
     } catch (error) {
-       console.error("Failed to fetch courses:", error);
-       toast.error("Failed to load courses");
+      console.error("Failed to fetch courses:", error);
+      toast.error("Failed to load courses");
     }
   },
 
-
-  async deleteCourse(courseToDelete){
+  async deleteCourse(courseToDelete) {
     try {
-       const response = await authAxiosInstance.delete(
+      const response = await authAxiosInstance.delete(
         `/courses/delete/${courseToDelete}`
       );
 
       return response;
     } catch (error) {
-       console.error("Failed to delete course:", error);
-            toast.error("Failed to delete course");
+      console.error("Failed to delete course:", error);
+      toast.error("Failed to delete course");
     }
   },
 
-
-  async deleteLesson(lessonToDelete){
+  async deleteLesson(lessonToDelete) {
     try {
       const response = await authAxiosInstance.delete(
         `/lessons/delete/${lessonToDelete}`
@@ -70,32 +67,33 @@ export const courseService = {
 
       return response;
     } catch (error) {
-       console.error("Failed to delete lesson:", error);
-            toast.error("Failed to delete lesson");
+      console.error("Failed to delete lesson:", error);
+      toast.error("Failed to delete lesson");
+      throw error;
     }
   },
 
-
-  async getAllCourse(){
+  async getAllCourse(params) {
     try {
-       const response = await authAxiosInstance.get("/courses/all-courses");
-       return response;
+      const response = await authAxiosInstance.get(
+        `/courses/all-courses?${params.toString()}`
+      );
+      return response;
     } catch (error) {
-       console.error("Failed to fetch courses:", error);
-            toast.error("Failed to load courses");
+      console.error("Failed to fetch courses:", error);
+      toast.error("Failed to load courses");
+      throw error
     }
   },
 
-  async checkCoursePurchase(courseId) {
-  try {
-    const response = await authAxiosInstance.get(
-      `/courses/${courseId}/purchase-status`
-    );
-    return response.data.purchaseStatus;
-  } catch (error) {
-    throw new Error("Failed to check purchase status");
-  }
-}
-
-  
+  async checkCoursePurchase(courseId:string) {
+    try {
+      const response = await authAxiosInstance.get(
+        `/courses/${courseId}/purchase-status`
+      );
+      return response.data.purchaseStatus;
+    } catch (error) {
+      throw new Error("Failed to check purchase status");
+    }
+  },
 };

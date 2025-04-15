@@ -2,7 +2,6 @@
 
 import { Input } from "@/components/ui/input";
 import { removeUser } from "@/redux/slice/userSlice";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { useEffect, useState } from "react";
@@ -19,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { Link as RouterLink } from "react-router-dom"; // Rename to avoid confusion
+import { profileService } from "@/services/userService/profileService";
+import { userAuthService } from "@/services/userService/authUser";
 
 // Header Component
 export function Header() {
@@ -30,32 +31,33 @@ export function Header() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    authAxiosInstance
-      .get("/users/me")
-      .then((response) => {
+    const fetchUserMe = async () => {
+      try {
+        const response = await profileService.userDetails();
         setUser({
           name: response.data.users.name,
           email: response.data.users.email,
         });
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Failed to fetch user:", error);
-      });
+      }
+    };
+
+    fetchUserMe();
   }, []);
 
-  const handleLogout = () => {
-    authAxiosInstance
-      .post("/auth/logout")
-      .then((response) => {
-        toast.success(response.data.message);
-        localStorage.removeItem("userData");
-        dispatch(removeUser());
-        navigate("/auth");
-      })
-      .catch((error) => {
-        console.error("Logout failed:", error);
-        toast.error("Failed to sign out");
-      });
+  const handleLogout = async () => {
+    try {
+      const response = await userAuthService.logoutUser();
+
+      toast.success(response.data.message);
+      localStorage.removeItem("userData");
+      dispatch(removeUser());
+      navigate("/auth");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Failed to sign out");
+    }
   };
 
   return (

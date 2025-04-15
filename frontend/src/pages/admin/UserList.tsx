@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import { useDebounce } from "use-debounce";
 import {
   Pagination,
@@ -10,13 +10,13 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-} from '@/components/ui/pagination';
-import { Search } from 'lucide-react';
-import { Header } from './components/admin/Header';
-import { SideBar } from './components/admin/SideBar';
-import Table from '@/components/tableStructure/TableReusableStructure';
-import { Switch } from '@/components/ui/switch';
-import { authAxiosInstance } from '@/api/adminAxiosInstance';
+} from "@/components/ui/pagination";
+import { Search } from "lucide-react";
+import { Header } from "./components/admin/Header";
+import { SideBar } from "./components/admin/SideBar";
+import Table from "@/components/tableStructure/TableReusableStructure";
+import { Switch } from "@/components/ui/switch";
+import { userService } from "@/services/adminService/userService";
 
 interface User {
   _id: string;
@@ -30,27 +30,23 @@ interface User {
 
 const UserListing: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const rowsPerPage = 3;
- const [debouncedValue] = useDebounce(searchQuery, 500);
+  const [debouncedValue] = useDebounce(searchQuery, 500);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await authAxiosInstance.get("/admin/usersList", {
-          params: {
-            page: currentPage,
-            limit: rowsPerPage,
-            search: searchQuery,
-            role: "user",
-          },
-        });
-        console.log("Fetched users:", response.data.users); // Debug
+        const response = await userService.userList(
+          currentPage,
+          rowsPerPage,
+          searchQuery
+        );
         setUsers(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
         // toast.success("Users loaded successfully");
@@ -64,80 +60,40 @@ const UserListing: React.FC = () => {
     fetchUsers();
   }, [currentPage, debouncedValue]);
 
-
-  // const handleOpenDeleteModal = (id: string) => {
-  //   console.log("Opening modal with ID:", id);
-  //   setUserToDelete(id);
-  //   setIsDeleteModalOpen(true);
-  // };
-
-  // const handleDelete = async () => {
-  //   if (!userToDelete) {
-  //     console.log("No userToDelete set");
-  //     return;
-  //   }
-
-  //   console.log("Starting delete for ID:", userToDelete);
-  //   try {
-  //     await authAxiosInstance.delete(`/users/${userToDelete}`);
-  //     setUsers(users.filter((user) => user._id !== userToDelete));
-  //     toast.success("User deleted successfully");
-
-  //     if (users.length === 1 && currentPage > 1) {
-  //       setCurrentPage(currentPage - 1);
-  //     } else {
-  //       const response = await authAxiosInstance.get("/usersList", {
-  //         params: { page: currentPage, limit: rowsPerPage, role: "user" },
-  //       });
-  //       setUsers(response.data.users);
-  //       setTotalPages(Math.ceil(response.data.total / rowsPerPage));
-  //     }
-  //   } catch (error) {
-  //     console.error("Delete error:", error);
-  //     toast.error("Failed to delete user");
-  //   } finally {
-  //     console.log("Finally block: Closing modal");
-  //     setIsDeleteModalOpen(false);
-  //     setUserToDelete(null);
-  //   }
-  // };
-
   const handleToggleStatus = async (
     userId: string,
     currentBlocked: boolean
   ) => {
     const newBlocked = !currentBlocked; // Toggle boolean
     try {
-      await authAxiosInstance.patch(`/admin/${userId}/status`, {
-        status: newBlocked, 
-      });
+      await userService.blockUser(userId, newBlocked);
       setUsers(
         users.map((user) =>
-          (user._id === userId ? { ...user, isBlocked: newBlocked } : user)
+          user._id === userId ? { ...user, isBlocked: newBlocked } : user
         )
       );
       toast.success(
-        `User ${newBlocked ? 'blocked' : 'unblocked'} successfully`
+        `User ${newBlocked ? "blocked" : "unblocked"} successfully`
       );
     } catch (error) {
-      console.error('Toggle status error:', error);
-      toast.error('Failed to update user status');
+      console.error("Toggle status error:", error);
+      toast.error("Failed to update user status");
     }
   };
 
   const headers = [
-    { key: 'name', label: 'Name' },
-    { key: 'email', label: 'Email' },
+    { key: "name", label: "Name" },
+    { key: "email", label: "Email" },
     {
-      key: 'isBlocked',
-      label: 'Status',
-      render: (user: User) => (user.isBlocked ? 'Blocked' : 'Active'), 
+      key: "isBlocked",
+      label: "Status",
+      render: (user: User) => (user.isBlocked ? "Blocked" : "Active"),
     },
-    { key: 'lastActive', label: 'Last Active' },
-    { key: 'enrolledCourses', label: 'Enrolled Courses' },
+    { key: "lastActive", label: "Last Active" },
+    { key: "enrolledCourses", label: "Enrolled Courses" },
     {
-      key: 'actions',
-      label: 'Actions',
+      key: "actions",
+      label: "Actions",
       render: (user: User) => (
         <div className="flex gap-2 items-center">
           {/* <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
@@ -151,7 +107,7 @@ const UserListing: React.FC = () => {
             <Trash className="h-4 w-4" />
           </Button> */}
           <Switch
-            checked={!user.isBlocked} 
+            checked={!user.isBlocked}
             onCheckedChange={() => handleToggleStatus(user._id, user.isBlocked)}
             className="ml-2"
           />
@@ -166,9 +122,9 @@ const UserListing: React.FC = () => {
       <div className="flex min-h-screen w-full pt-16">
         <aside
           className={cn(
-            'inset-y-0 left-0 top-16 w-64 border-r bg-background',
-            sidebarOpen ? 'block' : 'hidden',
-            'md:block'
+            "inset-y-0 left-0 top-16 w-64 border-r bg-background",
+            sidebarOpen ? "block" : "hidden",
+            "md:block"
           )}
         >
           <SideBar />
@@ -208,7 +164,9 @@ const UserListing: React.FC = () => {
                           setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                         className={
-                          currentPage === 1 ? 'pointer-events-none opacity-50' : ''
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : ""
                         }
                       />
                     </PaginationItem>
@@ -234,7 +192,9 @@ const UserListing: React.FC = () => {
                           )
                         }
                         className={
-                          currentPage === totalPages ? 'pointer-events-none opacity-50' : ''
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : ""
                         }
                       />
                     </PaginationItem>

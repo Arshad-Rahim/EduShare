@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { removeUser } from "@/redux/slice/userSlice";
 import { toast } from "sonner";
+import { tutorService } from "@/services/tutorService/tutorService";
 
 // Define notification type
 interface Notification {
@@ -39,18 +39,12 @@ export function Header() {
   );
 
   useEffect(() => {
-    function fetchUser() {
-      authAxiosInstance
-        .get("/tutors/me")
-        .then((response) => {
-          setUser({
-            name: response.data.tutor.name,
-            email: response.data.tutor.email,
-          });
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user:", error);
-        });
+    async function fetchUser() {
+      const response = await tutorService.tutorDetails();
+      setUser({
+        name: response?.data.tutor.name,
+        email: response?.data.tutor.email,
+      });
     }
     fetchUser();
   }, []);
@@ -62,10 +56,10 @@ export function Header() {
 
   const fetchNotifications = async () => {
     try {
-      const response = await authAxiosInstance.get("/tutors/notifications");
+      const response = await tutorService.fetchNotification();
 
       // Handle both single object and array cases
-      const fetchedNotifications = response.data.notifications;
+      const fetchedNotifications = response?.data.notifications;
       const notificationsArray = Array.isArray(fetchedNotifications)
         ? fetchedNotifications
         : [fetchedNotifications]; // Convert single object to array
@@ -76,16 +70,13 @@ export function Header() {
       );
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
-      toast.error("Could not load notifications");
     }
   };
 
   // Mark a single notification as read
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      await authAxiosInstance.put(
-        `/tutors/notifications/${notificationId}/read`
-      );
+      await tutorService.markNotifiactionAsRead(notificationId);
 
       // Update local state
       setNotifications((prevNotifications) =>
@@ -107,7 +98,7 @@ export function Header() {
   // Mark all notifications as read
   const markAllNotificationsAsRead = async () => {
     try {
-      await authAxiosInstance.put("/tutors/notifications/read-all");
+      await tutorService.markAllNotificationAsRead();
 
       // Update local state
       setNotifications((prevNotifications) =>
@@ -123,7 +114,6 @@ export function Header() {
       toast.success("All notifications marked as read");
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error);
-      toast.error("Failed to update notifications");
     }
   };
 
@@ -148,19 +138,13 @@ export function Header() {
     // }
   };
 
-  const handleSignOut = () => {
-    authAxiosInstance
-      .post("/auth/logout")
-      .then((response) => {
-        toast.success(response.data.message);
-        localStorage.removeItem("userData");
-        dispatch(removeUser());
-        navigate("/auth");
-      })
-      .catch((error) => {
-        console.error("Logout failed:", error);
-        toast.error("Failed to sign out");
-      });
+  const handleSignOut = async () => {
+    const response = await tutorService.logoutTutor();
+
+    toast.success(response?.data.message);
+    localStorage.removeItem("userData");
+    dispatch(removeUser());
+    navigate("/auth");
   };
 
   const handleMyAccount = () => {

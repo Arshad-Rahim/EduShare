@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -26,6 +25,7 @@ import { Header } from "./components/Header";
 import { SideBar } from "./components/SideBar";
 import { FileIcon, UploadIcon, XIcon } from "lucide-react";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
+import { tutorService } from "@/services/tutorService/tutorService";
 
 export function TutorProfileDetails() {
   const [email, setEmail] = useState();
@@ -57,30 +57,26 @@ export function TutorProfileDetails() {
     }
   };
 
- 
-    function fetchUser() {
-      authAxiosInstance
-        .get("/tutors/me")
-        .then((response) => {
-          setName(response.data.tutor.name);
-          setPhone(response.data.tutor.phone);
-          setSpecialization(response.data.tutor.specialization);
-          setBio(response.data.tutor.bio);
-          setEmail(response.data.tutor.email);
-          // Assuming the backend returns verificationDocUrl
-          if (response.data.tutor.verificationDocUrl) {
-            setExistingDocUrl(response.data.tutor.verificationDocUrl);
-          }
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user:", error);
-        });
+  async function fetchUser() {
+    try {
+      const response = await tutorService.tutorDetails();
+      setName(response.data.tutor.name);
+      setPhone(response.data.tutor.phone);
+      setSpecialization(response.data.tutor.specialization);
+      setBio(response.data.tutor.bio);
+      setEmail(response.data.tutor.email);
+      // Assuming the backend returns verificationDocUrl
+      if (response.data.tutor.verificationDocUrl) {
+        setExistingDocUrl(response.data.tutor.verificationDocUrl);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
     }
- 
+  }
 
-    useEffect(()=>{
-      fetchUser();
-    },[])
+  useEffect(() => {
+    fetchUser();
+  }, []);
   const handleSave = async () => {
     if (!name || !phone || !specialization || !bio) {
       toast.error("Please fill out all required fields");

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@radix-ui/react-avatar';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,37 +10,31 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@radix-ui/react-dropdown-menu';
-import { Bell, BookOpen, ChevronDown, Menu, Search } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { useDispatch } from 'react-redux';
-import { authAxiosInstance } from '@/api/authAxiosInstance';
-import { logoutAdmin } from '@/redux/slice/adminSlice';
+} from "@radix-ui/react-dropdown-menu";
+import { Bell, BookOpen, ChevronDown, Menu, Search } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useDispatch } from "react-redux";
+import { logoutAdmin } from "@/redux/slice/adminSlice";
+import { adminService } from "@/services/adminService/authService";
 
 export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
-  const [user] = useState<{ name: string; email: string } | null>(
-    null
-  );
+  const [user] = useState<{ name: string; email: string } | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-
-  const handleLogout = () => {
-    authAxiosInstance
-      .post('/admin/logout')
-      .then((response) => {
-        console.log(response);
-        toast.success(response.data.message);
-        localStorage.removeItem('adminDatas');
-        dispatch(logoutAdmin());
-        navigate('/admin/login');
-      })
-      .catch((error) => {
-        console.error('Logout failed:', error);
-        toast.error('Failed to sign out');
-      });
+  const handleLogout = async () => {
+    try {
+      const response = await adminService.logoutAdmin();
+      toast.success(response.data.message);
+      localStorage.removeItem("adminDatas");
+      dispatch(logoutAdmin());
+      navigate("/admin/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+      toast.error("Failed to sign out");
+    }
   };
 
   return (
@@ -59,7 +53,7 @@ export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">
-              TechLearn{' '}
+              TechLearn{" "}
               <span className="text-sm font-normal text-muted-foreground">
                 Admin
               </span>
@@ -86,16 +80,16 @@ export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src="/placeholder.svg?height=32&width=32&text=A"
-                    alt={user?.name || 'Admin'}
+                    alt={user?.name || "Admin"}
                   />
                   <AvatarFallback>
-                    {user?.name?.charAt(0) || 'A'}
+                    {user?.name?.charAt(0) || "A"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden flex-col items-start text-sm md:flex">
-                  <span>{user?.name || 'Admin User'}</span>
+                  <span>{user?.name || "Admin User"}</span>
                   <span className="text-xs text-muted-foreground">
-                    {user?.email || 'Administrator'}
+                    {user?.email || "Administrator"}
                   </span>
                 </div>
                 <ChevronDown className="h-4 w-4" />
@@ -108,22 +102,22 @@ export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
               <DropdownMenuLabel className="px-2 py-1.5">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">
-                    {user?.name || 'Admin User'}
+                    {user?.name || "Admin User"}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {user?.email || 'Administrator'}
+                    {user?.email || "Administrator"}
                   </span>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-1 h-px bg-muted" />
               <DropdownMenuItem
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate("/profile")}
                 className="px-2 py-1.5 text-sm hover:bg-muted cursor-pointer rounded-sm"
               >
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => navigate('/settings')}
+                onClick={() => navigate("/settings")}
                 className="px-2 py-1.5 text-sm hover:bg-muted cursor-pointer rounded-sm"
               >
                 Settings

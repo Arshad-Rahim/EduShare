@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { DocumentViewModal } from "@/components/modal-components/DocumentViewModal";
 import { ApprovalConfirmationModal } from "@/components/modal-components/ApprovalConfirmationModal";
 import { RejectionReasonModal } from "@/components/modal-components/RejectionReasonModal";
-import { authAxiosInstance } from "@/api/adminAxiosInstance";
+import { tutorService } from "@/services/adminService/tutorService";
 
 interface Tutor {
   _id: string;
@@ -59,14 +59,11 @@ const TutorListing: React.FC = () => {
     const fetchTutors = async () => {
       try {
         setLoading(true);
-        const response = await authAxiosInstance.get("/admin/usersList", {
-          params: {
-            page: currentPage,
-            limit: rowsPerPage,
-            search: searchQuery,
-            role: "tutor",
-          },
-        });
+        const response = await tutorService.userList(
+          currentPage,
+          rowsPerPage,
+          searchQuery
+        );
         console.log("Fetched tutors:", response.data.users);
         setTutors(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
@@ -87,9 +84,7 @@ const TutorListing: React.FC = () => {
   ) => {
     const newBlocked = !currentBlocked;
     try {
-      await authAxiosInstance.patch(`/admin/${tutorId}/status`, {
-        status: newBlocked,
-      });
+      await tutorService.blockTutor(tutorId, newBlocked);
       setTutors(
         tutors.map((tutor) =>
           tutor._id === tutorId ? { ...tutor, isBlocked: newBlocked } : tutor
@@ -113,7 +108,7 @@ const TutorListing: React.FC = () => {
     if (!tutorToApprove) return;
 
     try {
-      await authAxiosInstance.patch(`admin/${tutorToApprove}/approve`);
+      await tutorService.tutorApproval(tutorToApprove);
       setTutors(
         tutors.map((tutor) =>
           tutor._id === tutorToApprove
@@ -140,9 +135,7 @@ const TutorListing: React.FC = () => {
     if (!tutorToReject || !rejectionReason.trim()) return;
 
     try {
-      await authAxiosInstance.patch(`admin/${tutorToReject}/reject`, {
-        reason: rejectionReason,
-      });
+      await tutorService.tutorReject(tutorToReject,rejectionReason)
       setTutors(
         tutors.map((tutor) =>
           tutor._id === tutorToReject

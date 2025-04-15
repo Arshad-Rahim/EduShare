@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { authAxiosInstance } from "@/api/authAxiosInstance"; // Import the axios instance
 import { toast } from "sonner"; // Import toast for error handling
+import { tutorService } from "@/services/tutorService/tutorService";
 
 export function SideBar({ sidebarOpen }) {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ export function SideBar({ sidebarOpen }) {
   // Fetch tutor profile data
   const fetchTutorProfile = async () => {
     try {
-      const response = await authAxiosInstance.get("/tutors/me");
+      const response = await tutorService.tutorDetails();
       setIsAccepted(response.data.tutor.isAccepted); // Assuming isAccepted is in the tutor object
       setLoading(false);
     } catch (error) {
