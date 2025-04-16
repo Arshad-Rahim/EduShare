@@ -76,7 +76,7 @@ function App() {
             />
 
             <Route
-              path="/course/:courseId/enroll"
+              path="/courses/:courseId/enroll"
               element={
                 <ProtectedUserRoute>
                   <CourseEnrollPage />

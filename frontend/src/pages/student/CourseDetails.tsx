@@ -95,7 +95,7 @@ export function CourseDetailsPage() {
         setVideoModalOpen(true);
       } else {
         toast.info("Please enroll to access this lesson");
-        navigate(`/course/${courseId}/enroll`);
+        navigate(`/courses/${courseId}/enroll`);
       }
     } else {
       toast.error("No video available for this lesson");
@@ -103,7 +103,7 @@ export function CourseDetailsPage() {
   };
 
   const handleEnroll = () => {
-    navigate(`/courses/${courseId}`);
+    navigate(`/courses/${courseId}/enroll`);
   };
 
   if (loading) {

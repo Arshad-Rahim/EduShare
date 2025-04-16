@@ -3,6 +3,7 @@ import { IWishlistService } from "../interfaces/serviceInterfaces/wishlistServic
 import { CustomError } from "../util/CustomError";
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../shared/constant";
 import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { createSecureUrl } from "../util/createSecureUrl";
 
 export class WishlistController {
   constructor(private _wishlistService: IWishlistService) {}
@@ -44,10 +45,24 @@ export class WishlistController {
       const {page,limit} = req.query;
  
       const courses = await this._wishlistService.getWishlisted(user?.userId,Number(page),Number(limit));
+
+       // Ensure courses exist before mapping
+            const updatedCourses = courses
+              ? await Promise.all(
+                  courses.map(async (course) => {
+                    if (course.thumbnail) {
+                    
+                      console.log("COURSE THUMBNAIL",course.thumbnail)
+                      course.thumbnail = await createSecureUrl(course.thumbnail,'image');
+                    }
+                    return course;
+                  })
+                )
+              : [];
        res.status(HTTP_STATUS.OK).json({
          success: true,
          message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-         courses
+         courses:updatedCourses
        });
       
     } catch (error) {

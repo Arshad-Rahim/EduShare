@@ -133,6 +133,7 @@ export class CourseRepository implements ICourseRepository {
           sortOption = { enrollments: -1 }; // Default to popular
       }
       // Fetch filtered and paginated courses
+
       const courses = await courseModel
         .find(filters)
         .sort(sortOption)

@@ -281,7 +281,7 @@ export function CourseEnrollPage() {
 
   const handleEnroll = () => {
     if (enrollmentStatus === "enrolled") {
-      navigate(`/course/${courseId}/learn`);
+      navigate(`/courses/${courseId}/learn`);
       return;
     }
     if (course) {
@@ -326,7 +326,7 @@ export function CourseEnrollPage() {
                   </CardTitle>
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/course/${courseId}`)}
+                    onClick={() => navigate(`/courses/${courseId}`)}
                     className="border-slate-300 hover:bg-slate-50 w-full sm:w-auto"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
@@ -381,7 +381,7 @@ export function CourseEnrollPage() {
                       </p>
                       <Button
                         className="mt-4 bg-primary hover:bg-primary/90 w-full sm:w-auto"
-                        onClick={() => navigate(`/course/${courseId}/learn`)}
+                        onClick={() => navigate(`/courses/${courseId}/learn`)}
                       >
                         Go to Course
                       </Button>
