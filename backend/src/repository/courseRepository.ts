@@ -156,7 +156,7 @@ export class CourseRepository implements ICourseRepository {
     const purchased = await purchaseModel.findOne({
       userId,
       "purchase.courseId": courseId,
-      "purchase.status": "paid",
+      "purchase.status": "succeeded",
     });
     return !!purchased; // Return true if a matching document is found, false otherwise
   }

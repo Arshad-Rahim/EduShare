@@ -217,6 +217,7 @@ export default function StudentProfile() {
     bio: "I'm a student passionate about learning new technologies and skills.",
     interests: "Web Development, Mobile Apps, Data Science",
     education: "Computer Science",
+    password: null as string | null, // Add password field to user state
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newPasswordModalOpen, setNewPasswordModalOpen] = useState(false);
@@ -241,14 +242,21 @@ export default function StudentProfile() {
           name: userData.name,
           email: userData.email,
           bio:
-            userData.bio ||
+            userData.aboutMe ||
             "I'm a student passionate about learning new technologies and skills.",
           interests:
             userData.interests || "Web Development, Mobile Apps, Data Science",
           education: userData.education || "Computer Science",
+          password: userData.password, // Include password field
         };
         setUser(updatedUser);
-        form.reset(updatedUser);
+        form.reset({
+          name: updatedUser.name,
+          email: updatedUser.email,
+          bio: updatedUser.bio,
+          interests: updatedUser.interests,
+          education: updatedUser.education,
+        });
       } catch (error) {
         console.error("Failed to fetch user:", error);
         toast.error("Failed to load profile data");
@@ -260,7 +268,7 @@ export default function StudentProfile() {
   const handleSave = form.handleSubmit(async (data) => {
     try {
       const response = await profileService.profileUpdate(data);
-      setUser({ ...data });
+      setUser({ ...data, password: user.password }); // Preserve password field
       setIsEditing(false);
       toast.success(response.data.message || "Profile updated successfully!");
     } catch (error) {
@@ -514,12 +522,16 @@ export default function StudentProfile() {
                       <div>
                         <h4 className="font-medium">Password</h4>
                         <p className="text-sm text-muted-foreground">
-                          Change your account password
+                          {user.password === null
+                            ? "You are logged in with Google. Password changes are managed via your Google account."
+                            : "Change your account password"}
                         </p>
                       </div>
-                      <CurrentPasswordModal
-                        onPasswordVerified={handlePasswordVerified}
-                      />
+                      {user.password !== null && (
+                        <CurrentPasswordModal
+                          onPasswordVerified={handlePasswordVerified}
+                        />
+                      )}
                     </div>
                   </div>
                 </CardContent>

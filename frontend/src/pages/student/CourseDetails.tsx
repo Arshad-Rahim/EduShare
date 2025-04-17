@@ -196,8 +196,9 @@ export function CourseDetailsPage() {
                     <Button
                       className="w-full mt-6 bg-primary hover:bg-primary/90"
                       onClick={handleEnroll}
+                      disabled={isPurchased}
                     >
-                      Enroll Now
+                      {isPurchased ? "Already Enrolled" : "Enroll Now"}
                     </Button>
                   </div>
                   {/* Right Column: Description and Lessons */}

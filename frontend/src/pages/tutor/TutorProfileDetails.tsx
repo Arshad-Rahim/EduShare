@@ -26,6 +26,7 @@ import { SideBar } from "./components/SideBar";
 import { FileIcon, UploadIcon, XIcon } from "lucide-react";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { tutorService } from "@/services/tutorService/tutorService";
+import { ClipLoader } from "react-spinners"; // Import ClipLoader
 
 export function TutorProfileDetails() {
   const [email, setEmail] = useState();
@@ -38,6 +39,7 @@ export function TutorProfileDetails() {
     "I'm a dedicated MERN stack developer with a passion for building dynamic and scalable web applications."
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +79,7 @@ export function TutorProfileDetails() {
   useEffect(() => {
     fetchUser();
   }, []);
+
   const handleSave = async () => {
     if (!name || !phone || !specialization || !bio) {
       toast.error("Please fill out all required fields");
@@ -93,6 +96,7 @@ export function TutorProfileDetails() {
       formData.append("file", selectedFile);
     }
 
+    setIsLoading(true); // Set loading to true
     try {
       const response = await authAxiosInstance.post(
         "/tutors/profileUpdate",
@@ -113,6 +117,8 @@ export function TutorProfileDetails() {
     } catch (error) {
       console.error("Upload failed:", error);
       toast.error("Failed to update profile!");
+    } finally {
+      setIsLoading(false); // Reset loading state
     }
   };
 
@@ -173,6 +179,7 @@ export function TutorProfileDetails() {
                   <Button
                     variant="outline"
                     onClick={() => setIsEditing(!isEditing)}
+                    disabled={isLoading} // Disable Edit/Cancel button during loading
                   >
                     {isEditing ? "Cancel" : "Edit"}
                   </Button>
@@ -188,7 +195,7 @@ export function TutorProfileDetails() {
                         placeholder="John"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        disabled={!isEditing}
+                        disabled={!isEditing || isLoading} // Disable input during loading
                       />
                     </div>
                   </div>
@@ -215,14 +222,20 @@ export function TutorProfileDetails() {
                       placeholder="+91 (555) 000-0000"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading} // Disable input during loading
                     />
                   </div>
                 </div>
               </CardContent>
               {isEditing && (
                 <CardFooter className="justify-end">
-                  <Button onClick={handleSave}>Save Changes</Button>
+                  <Button onClick={handleSave} disabled={isLoading}>
+                    {isLoading ? (
+                      <ClipLoader size={20} color="#ffffff" />
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
                 </CardFooter>
               )}
             </Card>
@@ -243,7 +256,7 @@ export function TutorProfileDetails() {
                     <Select
                       value={specialization}
                       onValueChange={setSpecialization}
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading} // Disable select during loading
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select your specialization" />
@@ -271,7 +284,7 @@ export function TutorProfileDetails() {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       className="min-h-32"
-                      disabled={!isEditing}
+                      disabled={!isEditing || isLoading} // Disable textarea during loading
                     />
                   </div>
 
@@ -285,7 +298,7 @@ export function TutorProfileDetails() {
 
                     <div
                       className={`border-2 border-dashed rounded-lg ${
-                        isEditing
+                        isEditing && !isLoading
                           ? "border-primary/50 hover:border-primary cursor-pointer"
                           : "border-gray-200"
                       } transition-colors`}
@@ -298,7 +311,7 @@ export function TutorProfileDetails() {
                           type="file"
                           accept=".pdf,.jpg,.png"
                           onChange={handleFileChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || isLoading} // Disable file input during loading
                           className="hidden"
                         />
 
@@ -337,7 +350,7 @@ export function TutorProfileDetails() {
                             </div>
                             <div className="text-center">
                               <p className="text-sm font-medium">
-                                {isEditing ? (
+                                {isEditing && !isLoading ? (
                                   <>
                                     <span className="text-primary">
                                       Click to upload
@@ -367,6 +380,7 @@ export function TutorProfileDetails() {
                             e.stopPropagation();
                             removeFile();
                           }}
+                          disabled={isLoading} // Disable remove button during loading
                         >
                           <XIcon className="h-3 w-3 mr-1" />
                           Remove file
@@ -378,7 +392,13 @@ export function TutorProfileDetails() {
               </CardContent>
               {isEditing && (
                 <CardFooter className="justify-end">
-                  <Button onClick={handleSave}>Save Changes</Button>
+                  <Button onClick={handleSave} disabled={isLoading}>
+                    {isLoading ? (
+                      <ClipLoader size={20} color="#ffffff" />
+                    ) : (
+                      "Save Changes"
+                    )}
+                  </Button>
                 </CardFooter>
               )}
             </Card>

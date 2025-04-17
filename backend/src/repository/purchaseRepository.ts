@@ -18,7 +18,7 @@ export class PurchaseRepository implements IPurchaseRepository {
         courseId: data.courseId,
         orderId: data.orderId,
         amount: data.amount,
-        status: "paid",
+        status: "succeeded",
       });
       await purchase.save();
       return;
@@ -29,8 +29,8 @@ export class PurchaseRepository implements IPurchaseRepository {
           {
             courseId: data.courseId,
             orderId: data.orderId,
-            amount: data.amount/100,
-            status: "paid",
+            amount: data.amount / 100,
+            status: "succeeded",
           },
         ],
       });

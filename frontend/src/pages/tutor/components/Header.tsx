@@ -33,21 +33,44 @@ export function Header() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
+  const [isAccepted, setIsAccepted] = useState<boolean | null>(null); // New state for isAccepted
 
   useEffect(() => {
     async function fetchUser() {
-      const response = await tutorService.tutorDetails();
-      setUser({
-        name: response?.data.tutor.name,
-        email: response?.data.tutor.email,
-      });
+      try {
+        const response = await tutorService.tutorDetails();
+        setUser({
+          name: response?.data.tutor.name,
+          email: response?.data.tutor.email,
+        });
+        setIsAccepted(response?.data.tutor.isAccepted); // Set isAccepted status
+      } catch (error) {
+        console.error("Failed to fetch user details:", error);
+        toast.error("Failed to load user data");
+      }
     }
     fetchUser();
   }, []);
+
+  // Show toast notification if tutor is not approved
+  useEffect(() => {
+    if (isAccepted === false) {
+      toast.info(
+        "Please complete your profile verification to access all features.",
+        {
+          action: {
+            label: "Update Profile",
+            onClick: () => navigate("/tutor/profileDetails"),
+          },
+          duration: 10000, // Show for 10 seconds
+          closeButton: true,
+        }
+      );
+    }
+  }, [isAccepted, navigate]);
 
   // Fetch notifications on mount
   useEffect(() => {
@@ -57,13 +80,10 @@ export function Header() {
   const fetchNotifications = async () => {
     try {
       const response = await tutorService.fetchNotification();
-
-      // Handle both single object and array cases
       const fetchedNotifications = response?.data.notifications;
       const notificationsArray = Array.isArray(fetchedNotifications)
         ? fetchedNotifications
         : [fetchedNotifications]; // Convert single object to array
-
       setNotifications(notificationsArray);
       setUnreadCount(
         notificationsArray.filter((n: Notification) => !n.read).length
@@ -77,8 +97,6 @@ export function Header() {
   const markNotificationAsRead = async (notificationId: string) => {
     try {
       await tutorService.markNotifiactionAsRead(notificationId);
-
-      // Update local state
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) =>
           notification._id === notificationId
@@ -86,12 +104,9 @@ export function Header() {
             : notification
         )
       );
-
-      // Update unread count
       setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
-      // No toast here to avoid disrupting UX on a background operation
     }
   };
 
@@ -99,18 +114,13 @@ export function Header() {
   const markAllNotificationsAsRead = async () => {
     try {
       await tutorService.markAllNotificationAsRead();
-
-      // Update local state
       setNotifications((prevNotifications) =>
         prevNotifications.map((notification) => ({
           ...notification,
           read: true,
         }))
       );
-
-      // Reset unread count
       setUnreadCount(0);
-
       toast.success("All notifications marked as read");
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error);
@@ -120,8 +130,6 @@ export function Header() {
   // Handle dropdown open/close
   const handleDropdownOpenChange = (open: boolean) => {
     setDropdownOpen(open);
-
-    // Mark all as read when dropdown is closed
     if (!open && unreadCount > 0) {
       markAllNotificationsAsRead();
     }
@@ -130,17 +138,10 @@ export function Header() {
   // Handle click on a specific notification
   const handleNotificationClick = (notificationId: string) => {
     markNotificationAsRead(notificationId);
-
-    // Add any navigation or other actions you want to happen when a notification is clicked
-    // For example:
-    // if (notification.type === 'course') {
-    //   navigate(`/courses/${notification.courseId}`);
-    // }
   };
 
   const handleSignOut = async () => {
     const response = await tutorService.logoutTutor();
-
     toast.success(response?.data.message);
     localStorage.removeItem("userData");
     dispatch(removeUser());

@@ -22,11 +22,19 @@ import {
   Lock,
   BookOpen,
 } from "lucide-react";
-import {
-  courseService,
-} from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService/courseService";
 import { paymentService } from "@/services/enrollmentService/paymentService";
 import { enrollmentService } from "@/services/enrollmentService/enrollmentService";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // Define Course type
 interface Course {
@@ -60,6 +68,13 @@ interface RazorpayOptions {
   theme: { color: string };
 }
 
+// Extend window to include Razorpay
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 // Load Razorpay script
 const loadScript = (src: string) =>
   new Promise<boolean>((resolve) => {
@@ -87,7 +102,6 @@ const RenderRazorpay = ({
   courseId,
   setScriptLoading,
 }: RenderRazorpayProps) => {
-  const paymentId = useRef<string | null>(null);
   const navigate = useNavigate();
   const razorpayInstance = useRef<any>(null); // Ref to store Razorpay instance
   const hasOpened = useRef(false); // Prevent multiple openings
@@ -103,7 +117,13 @@ const RenderRazorpay = ({
     setScriptLoading(false);
 
     if (!res) {
-      toast.error("Failed to load payment gateway. Are you online?");
+      toast.error("Failed to load Razorpay SDK. Please check your connection.");
+      hasOpened.current = false; // Reset to allow retry
+      return;
+    }
+
+    if (!window.Razorpay) {
+      toast.error("Razorpay SDK not available.");
       hasOpened.current = false; // Reset to allow retry
       return;
     }
@@ -115,21 +135,24 @@ const RenderRazorpay = ({
       name: "Your Organization Name",
       order_id: orderId,
       handler: async (response) => {
-        paymentId.current = response.razorpay_payment_id;
         try {
-          await paymentService.payment(orderId,response);
-          await paymentService.purchaseOrder(courseId,orderId,amount)
-          toast.success("Payment successful! Enrolling in the course...");
+          // Verify payment
+          await paymentService.payment(orderId, response);
+          // Enroll user
+          await paymentService.enroll(courseId, orderId, amount / 100); // Convert paise to rupees
+          toast.success("Payment and enrollment successful!");
           // Explicitly close the modal after successful payment
           if (razorpayInstance.current) {
             razorpayInstance.current.close();
             razorpayInstance.current = null; // Clear the instance
           }
           navigate(`/courses/${courseId}`);
-        } catch (error) {
-          console.error("Payment update failed:", error);
+        } catch (error: any) {
+          console.error("Payment or enrollment failed:", error);
           toast.error(
-            "Payment succeeded, but enrollment failed. Contact support."
+            `Payment succeeded, but enrollment failed: ${
+              error.response?.data?.error || "Contact support"
+            }`
           );
           // Close modal even on error
           if (razorpayInstance.current) {
@@ -166,23 +189,23 @@ const RenderRazorpay = ({
             if (razorpayInstance.current) {
               razorpayInstance.current = null;
             }
-            hasOpened.current = false; // Reset to allow retry if needed
+            hasOpened.current = false; // Reset to allow retry
           }
         },
       },
       retry: { enabled: false },
-      timeout: 900,
-      theme: { color: "#1E40AF" },
+      timeout: 300,
+      theme: { color: "#3399cc" },
     };
 
-    const rzp1 = new window.Razorpay(options);
-    razorpayInstance.current = rzp1;
-    rzp1.open();
+    const rzp = new window.Razorpay(options);
+    razorpayInstance.current = rzp;
+    rzp.open();
 
     // Listen for modal close event to ensure cleanup
-    rzp1.on("modal.closed", () => {
+    rzp.on("modal.closed", () => {
       razorpayInstance.current = null;
-      hasOpened.current = false; // Reset to allow retry if needed
+      hasOpened.current = false; // Reset to allow retry
     });
   };
 
@@ -195,10 +218,121 @@ const RenderRazorpay = ({
         razorpayInstance.current.close();
         razorpayInstance.current = null;
       }
+      const script = document.querySelector(
+        `script[src="https://checkout.razorpay.com/v1/checkout.js"]`
+      );
+      if (script) {
+        document.body.removeChild(script);
+      }
     };
-  }, [orderId, keyId, currency, amount, courseId]);
+  }, [orderId, keyId, currency, amount, courseId, navigate, setScriptLoading]);
 
   return null;
+};
+
+interface RenderStripeProps {
+  courseId: string;
+  amount: number;
+  setScriptLoading: (loading: boolean) => void;
+}
+
+const RenderStripe = ({
+  courseId,
+  amount,
+  setScriptLoading,
+}: RenderStripeProps) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleStripePayment = async () => {
+    if (!stripe || !elements) {
+      toast.error("Stripe not initialized");
+      return;
+    }
+
+    setScriptLoading(true);
+
+    try {
+      // Create PaymentIntent
+      const response = await authAxiosInstance.post(
+        "/payment/stripe/create-payment-intent",
+        {
+          amount: amount * 100, // Convert to cents
+          currency: "usd",
+          courseId,
+        }
+      );
+
+      const { clientSecret } = response.data;
+
+      // Confirm payment
+      const result = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: elements.getElement(CardElement)!,
+        },
+      });
+
+      if (result.error) {
+        setError(result.error.message!);
+        toast.error(result.error.message);
+      } else if (result.paymentIntent?.status === "succeeded") {
+        try {
+          // Enroll user
+          await paymentService.enroll(
+            courseId,
+            result.paymentIntent.id,
+            amount, // Amount in dollars
+            true // isStripe flag
+          );
+          toast.success("Payment and enrollment successful!");
+          navigate(`/courses/${courseId}`);
+        } catch (error: any) {
+          console.error("Stripe enrollment failed:", error);
+          toast.error(
+            `Payment succeeded, but enrollment failed: ${
+              error.response?.data?.error || "Contact support"
+            }`
+          );
+        }
+      }
+    } catch (error: any) {
+      console.error("Stripe payment failed:", error);
+      toast.error(
+        `Failed to process payment: ${
+          error.response?.data?.error || "Please try again"
+        }`
+      );
+    } finally {
+      setScriptLoading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4">
+      <CardElement
+        options={{
+          style: {
+            base: {
+              fontSize: "16px",
+              color: "#424770",
+              "::placeholder": { color: "#aab7c4" },
+            },
+            invalid: { color: "#9e2146" },
+          },
+        }}
+      />
+      {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+      <Button
+        className="mt-4 w-full bg-primary hover:bg-primary/90"
+        onClick={handleStripePayment}
+        disabled={!stripe || !elements}
+      >
+        Pay with Stripe
+      </Button>
+    </div>
+  );
 };
 
 export function CourseEnrollPage() {
@@ -208,8 +342,12 @@ export function CourseEnrollPage() {
   const [loading, setLoading] = useState(true);
   const [enrollmentStatus, setEnrollmentStatus] = useState<string | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [displayRazorpay, setDisplayRazorpay] = useState(false);
   const [scriptLoading, setScriptLoading] = useState(false);
+  const [displayRazorpay, setDisplayRazorpay] = useState(false);
+  const [displayStripe, setDisplayStripe] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<
+    "razorpay" | "stripe" | null
+  >(null);
   const [orderDetails, setOrderDetails] = useState<{
     orderId: string | null;
     currency: string | null;
@@ -245,7 +383,7 @@ export function CourseEnrollPage() {
 
   const checkEnrollmentStatus = async () => {
     try {
-      const response = await enrollmentService.checkEnrollmentStatus(courseId)
+      const response = await enrollmentService.checkEnrollmentStatus(courseId);
       setEnrollmentStatus(response.data.isEnrolled ? "enrolled" : null);
     } catch (error) {
       console.error("Failed to check enrollment status:", error);
@@ -284,8 +422,16 @@ export function CourseEnrollPage() {
       navigate(`/courses/${courseId}/learn`);
       return;
     }
+    if (!paymentMethod) {
+      toast.error("Please select a payment method");
+      return;
+    }
     if (course) {
-      handleCreateOrder(course.price, "INR");
+      if (paymentMethod === "razorpay") {
+        handleCreateOrder(course.price, "INR");
+      } else if (paymentMethod === "stripe") {
+        setDisplayStripe(true);
+      }
     }
   };
 
@@ -420,6 +566,50 @@ export function CourseEnrollPage() {
                           Secure payment processing
                         </p>
                       </div>
+
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-semibold text-slate-800">
+                          Select Payment Method
+                        </h3>
+                        <div className="mt-4 flex flex-col gap-4">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="razorpay"
+                              checked={paymentMethod === "razorpay"}
+                              onChange={() => setPaymentMethod("razorpay")}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm text-slate-600">
+                              Pay with Razorpay
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="stripe"
+                              checked={paymentMethod === "stripe"}
+                              onChange={() => setPaymentMethod("stripe")}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm text-slate-600">
+                              Pay with Stripe
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {displayStripe && (
+                        <Elements stripe={stripePromise}>
+                          <RenderStripe
+                            courseId={courseId!}
+                            amount={course.price}
+                            setScriptLoading={setScriptLoading}
+                          />
+                        </Elements>
+                      )}
 
                       <Button
                         className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2 text-sm sm:text-base"

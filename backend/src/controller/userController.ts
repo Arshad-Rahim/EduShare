@@ -28,6 +28,8 @@ export class UserController {
         users = await this._userRepository.findByEmail(user?.email);
       }
 
+      console.log("USER IN HERE",users)
+
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,

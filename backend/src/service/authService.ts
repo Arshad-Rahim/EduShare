@@ -1,7 +1,12 @@
 import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
 import { IAuthService } from "../interfaces/serviceInterfaces/authService";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
-import { TUpdatePassword, TUserLogin, TUserModel, TUserRegister } from "../types/user";
+import {
+  TUpdatePassword,
+  TUserLogin,
+  TUserModel,
+  TUserRegister,
+} from "../types/user";
 import { comparePassword, hashPassword } from "../util/bcrypt";
 import { CustomError } from "../util/CustomError";
 
@@ -64,10 +69,9 @@ export class AuthService implements IAuthService {
     return userData;
   }
 
-
-  async verifyPassword(id:string,password:string):Promise<boolean>{
+  async verifyPassword(id: string, password: string): Promise<boolean> {
     const userData = await this._userRepository.findById(id);
-    console.log("USERDATA",userData)
+
     if (!userData) {
       throw new CustomError(
         ERROR_MESSAGES.USER_NOT_FOUND,
@@ -83,7 +87,7 @@ export class AuthService implements IAuthService {
           HTTP_STATUS.UNAUTHORIZED
         );
       }
-      return valid
+      return valid;
     }
     return false;
   }
