@@ -28,8 +28,6 @@ export class UserController {
         users = await this._userRepository.findByEmail(user?.email);
       }
 
-      console.log("USER IN HERE",users)
-
       res.status(HTTP_STATUS.CREATED).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
@@ -70,28 +68,26 @@ export class UserController {
     }
   }
 
-  async updatePassword(req:Request,res:Response){
+  async updatePassword(req: Request, res: Response) {
     try {
-
       const { newPassword } = req.body;
-       const id = (req as CustomRequest).user.userId;
+      const id = (req as CustomRequest).user.userId;
 
-       await this._userService.updatePassword(id,newPassword);
-        res.status(HTTP_STATUS.OK).json({
-          message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
-        });
-      
+      await this._userService.updatePassword(id, newPassword);
+      res.status(HTTP_STATUS.OK).json({
+        message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
+      });
     } catch (error) {
-       if (error instanceof CustomError) {
-         res
-           .status(error.statusCode)
-           .json({ success: false, message: error.message });
-         return;
-       }
-       console.log(error);
-       res
-         .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+      if (error instanceof CustomError) {
+        res
+          .status(error.statusCode)
+          .json({ success: false, message: error.message });
+        return;
+      }
+      console.log(error);
+      res
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
     }
   }
 }

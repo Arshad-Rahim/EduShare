@@ -2,6 +2,7 @@ import { ITutorRepository } from "../interfaces/repositoryInterfaces/ITutorRepos
 import { ITutorService } from "../interfaces/serviceInterfaces/tutorServiceInterface";
 import { TNotification } from "../types/notification";
 import { TTutorModel, TUpdateTutorProfileBody } from "../types/tutor";
+import { TStudent } from "../types/user";
 
 export class TutorService implements ITutorService {
   constructor(private _tutorRepository: ITutorRepository) {}
@@ -30,4 +31,14 @@ export class TutorService implements ITutorService {
   async markAllNotificationsAsRead(id: string): Promise<void> {
     await this._tutorRepository.markAllNotificationsAsRead(id);
   }
+
+  async  getEnrolledStudent(
+       tutorId: string
+     ): Promise<{ students: TStudent[]; totalRevenue: number }>{
+      const { students, totalRevenue } =
+        await this._tutorRepository.getEnrolledStudent(tutorId);
+      return {students,totalRevenue};
+  }
+
+
 }

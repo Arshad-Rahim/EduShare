@@ -4,7 +4,7 @@ const purchaseSchema = new mongoose.Schema({
   userId: {
     type: Schema.Types.ObjectId,
     ref: "user",
-    require: true,
+    required: true, // Fixed typo from 'require'
   },
   purchase: [
     {
@@ -21,14 +21,14 @@ const purchaseSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
-    //   currency: {
-    //     type: String, // Added to store currency (e.g., "INR", "usd")
-    //     required: false,
-    //   },
       status: {
         type: String,
         required: true,
         default: "pending",
+      },
+      createdAt: {
+        type: Date,
+        default: Date.now, // Set to current date/time when the purchase item is created
       },
     },
   ],

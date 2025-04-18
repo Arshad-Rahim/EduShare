@@ -130,4 +130,31 @@ export class TutorController {
         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
     }
   }
+
+
+  async getEnrolledStudent(req:Request,res:Response){
+    try {
+
+       const tutorId = (req as CustomRequest).user.userId;
+       const { students, totalRevenue } =
+         await this._tutorService.getEnrolledStudent(tutorId);
+        res.status(HTTP_STATUS.CREATED).json({
+          success: true,
+          message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+          students,
+          totalRevenue,
+        });
+    } catch (error) {
+       if (error instanceof CustomError) {
+         res
+           .status(error.statusCode)
+           .json({ success: false, message: error.message });
+         return;
+       }
+       console.log(error);
+       res
+         .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+    }
+  }
 }

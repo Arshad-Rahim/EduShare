@@ -55,6 +55,17 @@ export class TutorRoutes {
       (req: Request, res: Response) =>
         injectedTutorController.markAllNotificationsAsRead(req, res)
     );
+
+
+     this.router.get(
+       "/students",
+       userAuthMiddleware,
+       authorizeRole(["tutor"]),
+       checkUserBlocked,
+
+       (req: Request, res: Response) =>
+         injectedTutorController.getEnrolledStudent(req, res)
+     );
   }
 }
 

@@ -5,8 +5,8 @@ export type TUserRegister = {
   email: string;
   password?: string;
   role: string;
-  isBlocked:boolean;
-  isAccepted:boolean;
+  isBlocked: boolean;
+  isAccepted: boolean;
 };
 
 export type TEmail = {
@@ -34,33 +34,28 @@ export type TUserModel = {
   isAccepted: boolean;
 };
 
+export type TUpdatePassword = {
+  email: string;
+  newPassword: string;
+};
 
-
-
-export type TUpdatePassword ={
-  email:string;
-  newPassword:string;
-}
-
-export type TPaginationOptions ={
+export type TPaginationOptions = {
   page: number;
   limit: number;
   search?: string;
   role?: string;
-}
+};
 
-export type TCourseFilterOptions={
-  page:number;
-  limit:number,
-  search?:string;
-  category?:string;
-  difficulty?:string;
-  minPrice?:number;
-  maxPrice?:number;
-  sort?:string
-}
-
-
+export type TCourseFilterOptions = {
+  page: number;
+  limit: number;
+  search?: string;
+  category?: string;
+  difficulty?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+};
 
 export type TUpdateUserProfile = {
   userId: string;
@@ -70,12 +65,20 @@ export type TUpdateUserProfile = {
   interests: string;
 };
 
-
 type TUserProfileFields = {
   education?: string;
   aboutMe?: string;
   interests?: string;
 };
 
-
 export type TUserWithProfile = TUserModel & TUserProfileFields;
+
+export type TStudent = {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  course: string;
+  purchaseDate: Date;
+  amount: number;
+};
