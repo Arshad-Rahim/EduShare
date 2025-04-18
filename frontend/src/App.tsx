@@ -23,6 +23,7 @@ import { CourseDetailsPage } from './pages/student/CourseDetails';
 import WishlistPage from './pages/student/Wishlist';
 import { CourseEnrollPage } from './pages/student/CourseEnrollPage';
 import { StudentsPage } from './pages/tutor/StduentsPage';
+import {CommunityChat} from './pages/student/CommunityChat';
 
 function App() {
   return (
@@ -83,6 +84,18 @@ function App() {
                 </ProtectedUserRoute>
               }
             />
+
+             <Route
+              path="/community"
+              element={
+                <ProtectedUserRoute>
+                  <CommunityChat />
+                </ProtectedUserRoute>
+              }
+            />
+
+
+
             <Route
               path="/auth"
               element={
