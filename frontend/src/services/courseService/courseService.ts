@@ -96,4 +96,15 @@ export const courseService = {
       throw new Error("Failed to check purchase status");
     }
   },
+
+
+  async getEnrolledCourses(){
+    try {
+      const resposne = await authAxiosInstance.get('/courses/enrolled-courses');
+      return resposne.data.courses;
+      
+    } catch (error) {
+       throw new Error("Failed to get purchased courses");
+    }
+  }
 };

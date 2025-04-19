@@ -1,10 +1,15 @@
 import { useState, useRef, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Send, Menu, Check, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Header } from "./components/Header";
+import { io, Socket } from "socket.io-client";
+import { courseService } from "@/services/courseService/courseService";
+import { profileService } from "@/services/userService/profileService"; // Import profileService
+import { toast } from "sonner";
 
 interface Message {
-  id: number;
+  _id?: string; // MongoDB ID
   sender: string;
   content: string;
   timestamp: string;
@@ -12,7 +17,7 @@ interface Message {
 }
 
 interface Community {
-  id: number;
+  id: string; // Changed to string to match course._id
   name: string;
   course: string;
   messages: Message[];
@@ -20,77 +25,119 @@ interface Community {
   activeNow?: number;
 }
 
-// Static data
-const staticCommunities: Community[] = [
-  {
-    id: 1,
-    name: "JavaScript Basics Community",
-    course: "JavaScript Fundamentals",
-    members: 128,
-    activeNow: 23,
-    messages: [
-      {
-        id: 1,
-        sender: "Alice Smith",
-        content:
-          "Hey everyone! Just finished the first module. Any tips for the quiz? 📚",
-        timestamp: "2025-04-18 09:00 AM",
-        status: "read",
-      },
-      {
-        id: 2,
-        sender: "Bob Johnson",
-        content:
-          "Hi Alice! Make sure to review the array methods section. It's key! 🔑",
-        timestamp: "2025-04-18 09:15 AM",
-        status: "read",
-      },
-      {
-        id: 3,
-        sender: "Charlie Brown",
-        content:
-          "I found the video on loops really helpful. Anyone else struggling with callbacks? 🤔",
-        timestamp: "2025-04-18 10:00 AM",
-        status: "delivered",
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: "Python for Beginners",
-    course: "Python Essentials",
-    members: 95,
-    activeNow: 15,
-    messages: [
-      {
-        id: 1,
-        sender: "Diana Lee",
-        content: "Just started the course! Any advice on Python basics? 🐍",
-        timestamp: "2025-04-18 10:30 AM",
-        status: "read",
-      },
-      {
-        id: 2,
-        sender: "Eve Carter",
-        content:
-          "Try practicing with small scripts. The exercises in module 2 are great! 💻",
-        timestamp: "2025-04-18 10:45 AM",
-        status: "delivered",
-      },
-    ],
-  },
-];
-
 export function CommunityChat() {
-  const [selectedCommunity, setSelectedCommunity] = useState<Community>(
-    staticCommunities[0]
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(
+    null
   );
-  const [messages, setMessages] = useState<Message[]>(
-    staticCommunities[0].messages
-  );
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>(""); // State for user name
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  // Access user token from Redux
+  const user = useSelector((state: any) => state.user.userDatas); // Adjust based on your Redux state structure
+
+  // Fetch user details
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const response = await profileService.userDetails();
+        setUserName(
+          response.data.users.name ||
+            `User_${Math.random().toString(36).substring(7)}`
+        );
+      } catch (error) {
+        console.error("Failed to fetch user details:", error);
+        setUserName(`User_${Math.random().toString(36).substring(7)}`); // Fallback
+      }
+    };
+    if (user) {
+      fetchUserDetails();
+    }
+  }, [user]);
+
+  // Fetch enrolled courses and initialize communities
+  useEffect(() => {
+    const fetchCommunities = async () => {
+      try {
+        const enrolledCourses = await courseService.getEnrolledCourses();
+        const newCommunities: Community[] = enrolledCourses.map(
+          (course: any) => ({
+            id: course._id, // Use course ID as community ID (string)
+            name: `${course.title} Community`,
+            course: course.title,
+            messages: [],
+            members: course.enrollments || 100,
+            activeNow: Math.floor(Math.random() * 20) + 5,
+          })
+        );
+        setCommunities(newCommunities);
+        if (newCommunities.length > 0) {
+          setSelectedCommunity(newCommunities[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching enrolled courses:", error);
+        toast.error("Failed to load communities");
+      }
+    };
+    if (user) {
+      fetchCommunities();
+    }
+  }, [user]);
+
+  // Initialize Socket.IO and user ID
+  useEffect(() => {
+    let storedUserId = sessionStorage.getItem("userId");
+    if (!storedUserId) {
+      storedUserId = Math.random().toString(36).substring(7);
+      sessionStorage.setItem("userId", storedUserId);
+    }
+    setUserId(storedUserId);
+
+    // Initialize Socket.IO with correct backend URL
+    socketRef.current = io("http://localhost:3000", {
+      reconnection: true,
+    });
+
+    if (selectedCommunity) {
+      socketRef.current.emit("join_community", selectedCommunity.id);
+
+      socketRef.current.on("message_history", (history: Message[]) => {
+        setMessages(
+          history.map((msg) => ({
+            _id: msg._id,
+            sender: msg.sender,
+            content: msg.content,
+            timestamp:msg.timestamp,
+            status: msg.status,
+          }))
+        );
+      });
+
+      socketRef.current.on("receive_message", (message: Message) => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            _id: message._id,
+            sender: message.sender,
+            content: message.content,
+            timestamp: message.timestamp,
+            status: message.status,
+          },
+        ]);
+      });
+    }
+
+    return () => {
+      socketRef.current?.off("message_history");
+      socketRef.current?.off("receive_message");
+      socketRef.current?.disconnect();
+    };
+  }, [selectedCommunity?.id]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -102,24 +149,23 @@ export function CommunityChat() {
 
   const handleSelectCommunity = (community: Community) => {
     setSelectedCommunity(community);
-    setMessages(community.messages);
+    setMessages([]);
     setIsSidebarOpen(false);
+    socketRef.current?.emit("join_community", community.id);
   };
 
   const handleSendMessage = () => {
-    if (newMessage.trim()) {
+    if (newMessage.trim() && userId && selectedCommunity && userName) {
       const newMsg: Message = {
-        id: messages.length + 1,
-        sender: "You",
+        sender: userName, // Use fetched user name
         content: newMessage,
-        timestamp: new Date().toLocaleString("en-US", {
-          hour: "numeric",
-          minute: "numeric",
-          hour12: true,
-        }),
+        timestamp: new Date().toISOString(),
         status: "sent",
       };
-      setMessages([...messages, newMsg]);
+      socketRef.current?.emit("send_message", {
+        communityId: selectedCommunity.id,
+        message: newMsg,
+      });
       setNewMessage("");
     }
   };
@@ -131,6 +177,24 @@ export function CommunityChat() {
       hour12: true,
     });
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-slate-600">Please log in to view communities</p>
+      </div>
+    );
+  }
+
+  if (communities.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-slate-600">
+          No enrolled courses found. Enroll in a course to join its community!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
@@ -147,10 +211,9 @@ export function CommunityChat() {
       </style>
       <Header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md" />
       <div className="flex flex-1 pt-0">
-        {" "}
         <aside
           className={cn(
-            "fixed top-16 left-0 w-80 bg-white shadow-lg border-r", // top-16 to start below header
+            "fixed top-16 left-0 w-80 bg-white shadow-lg border-r",
             "transform transition-transform duration-300 ease-in-out z-40",
             isSidebarOpen ? "translate-x-0" : "-translate-x-full",
             "md:static md:translate-x-0 md:top-0"
@@ -165,15 +228,13 @@ export function CommunityChat() {
             </p>
           </div>
           <div className="overflow-y-auto h-[calc(100vh-12rem)]">
-            {" "}
-            {/* Adjust for header and sidebar header */}
-            {staticCommunities.map((community) => (
+            {communities.map((community) => (
               <div
                 key={community.id}
                 className={cn(
                   "p-4 cursor-pointer transition-colors duration-200",
                   "hover:bg-indigo-50 border-b border-gray-100",
-                  selectedCommunity.id === community.id && "bg-indigo-50"
+                  selectedCommunity?.id === community.id && "bg-indigo-50"
                 )}
                 onClick={() => handleSelectCommunity(community)}
               >
@@ -203,16 +264,16 @@ export function CommunityChat() {
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-800">
-                  {selectedCommunity.name}
+                  {selectedCommunity?.name || "Select a Community"}
                 </h1>
                 <p className="text-sm text-gray-500">
-                  {selectedCommunity.course}
+                  {selectedCommunity?.course || ""}
                 </p>
               </div>
             </div>
             <div className="text-sm font-medium text-emerald-600 flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-              {selectedCommunity.activeNow} active now
+              {selectedCommunity?.activeNow || 0} active now
             </div>
           </header>
 
@@ -221,17 +282,19 @@ export function CommunityChat() {
               <div className="max-w-4xl mx-auto space-y-4">
                 {messages.map((message) => (
                   <div
-                    key={message.id}
+                    key={message._id}
                     className={cn(
                       "flex w-full gap-2 items-end animate-fade-in",
-                      message.sender === "You" ? "justify-end" : "justify-start"
+                      message.sender === userName
+                        ? "justify-end"
+                        : "justify-start"
                     )}
                   >
                     <div
                       className={cn(
                         "max-w-md rounded-2xl p-4 shadow-md",
                         "transform transition-all duration-200 hover:scale-[1.01]",
-                        message.sender === "You"
+                        message.sender === userName
                           ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
                           : "bg-white text-gray-800 rounded-bl-sm"
                       )}
@@ -243,13 +306,13 @@ export function CommunityChat() {
                         <span
                           className={cn(
                             "text-xs ml-2 flex items-center gap-1",
-                            message.sender === "You"
+                            message.sender === userName
                               ? "text-indigo-100"
                               : "text-gray-400"
                           )}
                         >
                           {formatTimestamp(message.timestamp)}
-                          {message.sender === "You" && message.status && (
+                          {message.sender === userName && message.status && (
                             <span className="ml-1">
                               {message.status === "delivered" ? (
                                 <Check className="h-3 w-3" />

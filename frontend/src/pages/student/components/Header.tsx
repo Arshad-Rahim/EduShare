@@ -14,6 +14,7 @@ import {
   Menu,
   Search,
   User,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
