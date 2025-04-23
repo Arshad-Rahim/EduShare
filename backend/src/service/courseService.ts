@@ -49,4 +49,7 @@ export class CourseService implements ICourseService {
   async purchaseStatus(userId: string, courseId: string): Promise<boolean> {
       return this._courseRepository.purchaseStatus(userId,courseId)
   }
+  async getEnrolledCourses(userId: string): Promise<TCourseAdd[]> {
+      return this._courseRepository.getEnrolledCourses(userId)
+  }
 }

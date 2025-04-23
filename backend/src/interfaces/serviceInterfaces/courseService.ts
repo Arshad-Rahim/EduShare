@@ -22,4 +22,5 @@ export interface ICourseService {
   ): Promise<{ courses: TCourseAdd[]; total: number }>;
   deleteCourse(courseId: string): Promise<void>;
   purchaseStatus(userId: string, courseId: string): Promise<boolean>;
+   getEnrolledCourses(userId:string):Promise<TCourseAdd[]>
 }

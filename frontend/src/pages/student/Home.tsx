@@ -34,8 +34,8 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
-import { courseService } from "@/services/courseService/courseService";
 import { wishlistService } from "@/services/wishlistService/wishlistService";
+import { courseService } from "@/services/courseService/courseService";
 
 // Category Card Component
 const CategoryCard = ({ icon: Icon, title, count }) => (

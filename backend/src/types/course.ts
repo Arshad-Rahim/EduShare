@@ -21,9 +21,9 @@ export type TCourseAdd = {
   about: string;
   thumbnail: string;
   tutorId: Types.ObjectId; // Matches schema (ObjectId in DB)
-  enrollments?: number; // Optional for sorting
   createdAt?: Date; // Optional for sorting
   _id?: Types.ObjectId; // Optional MongoDB ID
+  enrollments?: Types.ObjectId[]
 };
 
 export type TLessonAdd = {

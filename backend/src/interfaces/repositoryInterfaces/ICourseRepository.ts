@@ -23,4 +23,5 @@ export interface ICourseRepository {
     options: TCourseFilterOptions
   ): Promise<{ courses: TCourseAdd[]; total: number }>;
   purchaseStatus(userId: string, courseId: string): Promise<boolean>;
+   getEnrolledCourses(userId:string):Promise<TCourseAdd[]>
 }
