@@ -25,6 +25,7 @@ import { CourseEnrollPage } from "./pages/student/CourseEnrollPage";
 import { StudentsPage } from "./pages/tutor/StduentsPage";
 import { CommunityChat } from "./pages/student/CommunityChat";
 import AppProvider from "./provider/AppProvider";
+import { Notifications } from "./pages/student/components/Notification";
 
 function App() {
   return (
@@ -32,6 +33,8 @@ function App() {
       <Provider store={store}>
         <AppProvider>
           <Router>
+            <Notifications />
+
             <Routes>
               <Route
                 path="/"

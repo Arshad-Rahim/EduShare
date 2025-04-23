@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import { Header } from "./components/Header";
 import { io, Socket } from "socket.io-client";
 import { courseService } from "@/services/courseService/courseService";
-import { profileService } from "@/services/userService/profileService"; // Import profileService
+import { profileService } from "@/services/userService/profileService";
 import { toast } from "sonner";
 
 interface Message {
-  _id?: string; // MongoDB ID
+  _id?: string;
   sender: string;
   content: string;
   timestamp: string;
@@ -17,7 +17,7 @@ interface Message {
 }
 
 interface Community {
-  id: string; // Changed to string to match course._id
+  id: string;
   name: string;
   course: string;
   messages: Message[];
@@ -33,15 +33,13 @@ export function CommunityChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string>(""); // State for user name
+  const [userName, setUserName] = useState<string>("");
+  const [userId,setUserId] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
 
-  // Access user token from Redux
-  const user = useSelector((state: any) => state.user.userDatas); // Adjust based on your Redux state structure
+  const user = useSelector((state: any) => state.user.userDatas);
 
-  // Fetch user details
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
@@ -52,7 +50,7 @@ export function CommunityChat() {
         );
       } catch (error) {
         console.error("Failed to fetch user details:", error);
-        setUserName(`User_${Math.random().toString(36).substring(7)}`); // Fallback
+        setUserName(`User_${Math.random().toString(36).substring(7)}`);
       }
     };
     if (user) {
@@ -60,14 +58,13 @@ export function CommunityChat() {
     }
   }, [user]);
 
-  // Fetch enrolled courses and initialize communities
   useEffect(() => {
     const fetchCommunities = async () => {
       try {
         const enrolledCourses = await courseService.getEnrolledCourses();
         const newCommunities: Community[] = enrolledCourses.map(
           (course: any) => ({
-            id: course._id, // Use course ID as community ID (string)
+            id: course._id,
             name: `${course.title} Community`,
             course: course.title,
             messages: [],
@@ -89,16 +86,13 @@ export function CommunityChat() {
     }
   }, [user]);
 
-  // Initialize Socket.IO and user ID
   useEffect(() => {
-    let storedUserId = sessionStorage.getItem("userId");
-    if (!storedUserId) {
-      storedUserId = Math.random().toString(36).substring(7);
-      sessionStorage.setItem("userId", storedUserId);
+    setUserId(user?.id?user?.id:user?._id)
+    if (!userId) {
+      console.error("No user ID available");
+      return;
     }
-    setUserId(storedUserId);
 
-    // Initialize Socket.IO with correct backend URL
     socketRef.current = io("http://localhost:3000", {
       reconnection: true,
     });
@@ -112,7 +106,7 @@ export function CommunityChat() {
             _id: msg._id,
             sender: msg.sender,
             content: msg.content,
-            timestamp:msg.timestamp,
+            timestamp: msg.timestamp,
             status: msg.status,
           }))
         );
@@ -137,7 +131,7 @@ export function CommunityChat() {
       socketRef.current?.off("receive_message");
       socketRef.current?.disconnect();
     };
-  }, [selectedCommunity?.id]);
+  }, [selectedCommunity?.id, userId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -157,7 +151,7 @@ export function CommunityChat() {
   const handleSendMessage = () => {
     if (newMessage.trim() && userId && selectedCommunity && userName) {
       const newMsg: Message = {
-        sender: userName, // Use fetched user name
+        sender: userName,
         content: newMessage,
         timestamp: new Date().toISOString(),
         status: "sent",
@@ -165,6 +159,14 @@ export function CommunityChat() {
       socketRef.current?.emit("send_message", {
         communityId: selectedCommunity.id,
         message: newMsg,
+      });
+      console.log("USERID IN FRONTEND", userId);
+      // Emit notification for enrolled users
+      socketRef.current?.emit("send_notification", {
+        communityId: selectedCommunity.id,
+        courseTitle: selectedCommunity.course,
+        message: newMsg,
+        senderId: userId, 
       });
       setNewMessage("");
     }

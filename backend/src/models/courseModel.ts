@@ -13,11 +13,18 @@ const courseSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   about: { type: String, required: true },
   thumbnail: { type: String, required: true },
-  tutorId:{
+  tutorId: {
     type: Schema.Types.ObjectId,
     ref: "user",
     required: true,
   },
+  enrollments: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      default: [],
+    },
+  ],
 });
 
 export const courseModel = mongoose.model('course',courseSchema)

@@ -152,7 +152,6 @@ export class CourseRepository implements ICourseRepository {
   }
 
   async purchaseStatus(userId: string, courseId: string): Promise<boolean> {
-    
     const purchased = await purchaseModel.findOne({
       userId,
       "purchase.courseId": courseId,
@@ -161,18 +160,21 @@ export class CourseRepository implements ICourseRepository {
     return !!purchased; // Return true if a matching document is found, false otherwise
   }
 
-  async getEnrolledCourses(userId:string):Promise<TCourseAdd[]>{
+  async getEnrolledCourses(userId: string): Promise<TCourseAdd[]> {
     try {
-      const purchases = await purchaseModel.find({userId,"purchase.status":"succeeded"}).lean();
-      console.log("PURCHASES",purchases)
-    const courseIds = purchases
-      .flatMap((purchase) =>
-        purchase.purchase
-          .filter((item) => item.status === "succeeded")
-          .map((item) => item.courseId.toString())
-      )
-      .filter((courseId): courseId is string => !!courseId);
-      const courses = await courseModel.find({_id:{$in:courseIds}}).lean();
+      const purchases = await purchaseModel
+        .find({ userId, "purchase.status": "succeeded" })
+        .lean();
+      const courseIds = purchases
+        .flatMap((purchase) =>
+          purchase.purchase
+            .filter((item) => item.status === "succeeded")
+            .map((item) => item.courseId.toString())
+        )
+        .filter((courseId): courseId is string => !!courseId);
+      const courses = await courseModel
+        .find({ _id: { $in: courseIds } })
+        .lean();
       const enrolledCourses: TCourseAdd[] = courses.map((course) => ({
         _id: course._id,
         title: course.title,
@@ -183,13 +185,12 @@ export class CourseRepository implements ICourseRepository {
         about: course.about,
         thumbnail: course.thumbnail,
         tutorId: course.tutorId,
-        enrollments:  0,
+        enrolledCourses: course.enrollments,
       }));
       return enrolledCourses;
     } catch (error) {
       console.error("Error fetching enrolled courses:", error);
       return [];
     }
-
   }
 }

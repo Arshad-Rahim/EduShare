@@ -82,11 +82,11 @@ export const courseService = {
     } catch (error) {
       console.error("Failed to fetch courses:", error);
       toast.error("Failed to load courses");
-      throw error
+      throw error;
     }
   },
 
-  async checkCoursePurchase(courseId:string) {
+  async checkCoursePurchase(courseId: string) {
     try {
       const response = await authAxiosInstance.get(
         `/courses/${courseId}/purchase-status`
@@ -97,14 +97,35 @@ export const courseService = {
     }
   },
 
-
-  async getEnrolledCourses(){
+  async getEnrolledCourses() {
     try {
-      const resposne = await authAxiosInstance.get('/courses/enrolled-courses');
+      const resposne = await authAxiosInstance.get("/courses/enrolled-courses");
       return resposne.data.courses;
-      
     } catch (error) {
-       throw new Error("Failed to get purchased courses");
+      throw new Error("Failed to get purchased courses");
     }
-  }
+  },
+
+  async getCompletedLessons(courseId: string) {
+    try {
+      const response = await authAxiosInstance.get(
+        `/progress/${courseId}/completed-lessons`
+      );
+      return response.data.lessons;
+    } catch (error) {
+      throw new Error("Failed to get completed lesson");
+    }
+  },
+
+  async markLessonCompleted(lessonId: string, courseId: string) {
+    try {
+      const response = await authAxiosInstance.post(
+        `/progress/${lessonId}/complete`,
+        { courseId }
+      );
+      return response;
+    } catch (error) {
+      throw new Error("Failed to marks lesson as completed");
+    }
+  },
 };

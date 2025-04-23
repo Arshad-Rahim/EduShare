@@ -1,5 +1,6 @@
 import mongoose, { isValidObjectId } from "mongoose";
 import { purchaseModel } from "../models/purchaseModel"; // Adjust import based on your model
+import { courseModel } from "../models/courseModel";
 
 export const paymentService = {
   // Create Razorpay Order
@@ -123,6 +124,12 @@ export const paymentService = {
           { upsert: true, session }
         )
         .session(session);
+
+         await courseModel.findByIdAndUpdate(
+           courseId,
+           { $addToSet: { enrollments: userId } },
+           { new: true }
+         );
 
       await session.commitTransaction();
     } catch (error) {
