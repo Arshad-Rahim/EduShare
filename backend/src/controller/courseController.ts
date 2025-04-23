@@ -282,11 +282,26 @@ export class CourseController {
   async getEnrolledCourses(req:Request,res:Response){
     try {
        const user = (req as CustomRequest).user;
-       const courses = await this._courseService.getEnrolledCourses(user?.userId)
+       const courses = await this._courseService.getEnrolledCourses(user?.userId);
+
+         const updatedCourses = courses
+           ? await Promise.all(
+               courses.map(async (course) => {
+                 if (course.thumbnail) {
+                   console.log("COURSE THUMBNAIL", course.thumbnail);
+                   course.thumbnail = await createSecureUrl(
+                     course.thumbnail,
+                     "image"
+                   );
+                 }
+                 return course;
+               })
+             )
+           : [];
 res.status(HTTP_STATUS.OK).json({
   success: true,
   message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-  courses,
+  courses:updatedCourses,
 });
     } catch (error) {
       if (error instanceof CustomError) {

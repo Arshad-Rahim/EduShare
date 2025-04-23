@@ -211,7 +211,7 @@ export function CommunityChat() {
           }
         `}
       </style>
-      <Header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md" />
+      <Header />
       <div className="flex flex-1 pt-0">
         <aside
           className={cn(

@@ -26,6 +26,7 @@ import { StudentsPage } from "./pages/tutor/StduentsPage";
 import { CommunityChat } from "./pages/student/CommunityChat";
 import AppProvider from "./provider/AppProvider";
 import { Notifications } from "./pages/student/components/Notification";
+import { MyCoursesPage } from "./pages/student/MyCoursePage";
 
 function App() {
   return (
@@ -95,6 +96,15 @@ function App() {
                 element={
                   <ProtectedUserRoute>
                     <CommunityChat />
+                  </ProtectedUserRoute>
+                }
+              />
+
+              <Route
+                path="/my-courses"
+                element={
+                  <ProtectedUserRoute>
+                    <MyCoursesPage />
                   </ProtectedUserRoute>
                 }
               />

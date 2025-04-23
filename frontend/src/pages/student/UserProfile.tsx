@@ -19,6 +19,7 @@ import { BookOpen, X, User, Edit, Save, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -62,9 +63,11 @@ function Sidebar() {
             <User className="mr-2 h-4 w-4" />
             Profile
           </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <BookOpen className="mr-2 h-4 w-4" />
-            My Courses
+          <Button variant="ghost" className="w-full justify-start" asChild>
+            <Link to="/my-courses">
+              <BookOpen className="mr-2 h-4 w-4" />
+              My Courses
+            </Link>
           </Button>
         </div>
       </div>
@@ -86,6 +89,7 @@ function Sidebar() {
     </div>
   );
 }
+
 
 // CurrentPasswordModal Component
 const CurrentPasswordModal = ({
