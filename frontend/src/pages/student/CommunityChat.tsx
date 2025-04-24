@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Send, Menu, Check, CheckCheck } from "lucide-react";
+import { Send, Menu, Check, CheckCheck, Image } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Header } from "./components/Header";
 import { io, Socket } from "socket.io-client";
@@ -14,6 +14,7 @@ interface Message {
   content: string;
   timestamp: string;
   status?: "sent" | "delivered" | "read";
+  imageUrl?: string;
 }
 
 interface Community {
@@ -34,9 +35,10 @@ export function CommunityChat() {
   const [newMessage, setNewMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [userName, setUserName] = useState<string>("");
-  const [userId,setUserId] = useState('')
+  const [userId, setUserId] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const user = useSelector((state: any) => state.user.userDatas);
 
@@ -87,7 +89,7 @@ export function CommunityChat() {
   }, [user]);
 
   useEffect(() => {
-    setUserId(user?.id?user?.id:user?._id)
+    setUserId(user?.id ? user.id : user?._id || "");
     if (!userId) {
       console.error("No user ID available");
       return;
@@ -108,6 +110,7 @@ export function CommunityChat() {
             content: msg.content,
             timestamp: msg.timestamp,
             status: msg.status,
+            imageUrl: msg.imageUrl,
           }))
         );
       });
@@ -121,6 +124,7 @@ export function CommunityChat() {
             content: message.content,
             timestamp: message.timestamp,
             status: message.status,
+            imageUrl: message.imageUrl,
           },
         ]);
       });
@@ -166,9 +170,52 @@ export function CommunityChat() {
         communityId: selectedCommunity.id,
         courseTitle: selectedCommunity.course,
         message: newMsg,
-        senderId: userId, 
+        senderId: userId,
       });
       setNewMessage("");
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && userId && selectedCommunity && userName) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        toast.error("Only image files are allowed");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const newMsg: Message = {
+          sender: userName,
+          content: "",
+          timestamp: new Date().toISOString(),
+          status: "sent",
+        };
+        socketRef.current?.emit("send_image_message", {
+          communityId: selectedCommunity.id,
+          message: newMsg,
+          image: {
+            data: reader.result,
+            name: file.name,
+            type: file.type,
+          },
+          senderId: userId,
+        });
+        // Emit notification for enrolled users
+        socketRef.current?.emit("send_notification", {
+          communityId: selectedCommunity.id,
+          courseTitle: selectedCommunity.course,
+          message: { ...newMsg, content: "Sent an image" },
+          senderId: userId,
+        });
+      };
+      reader.readAsDataURL(file);
+      event.target.value = ""; // Reset file input
     }
   };
 
@@ -325,9 +372,17 @@ export function CommunityChat() {
                           )}
                         </span>
                       </div>
-                      <p className="text-[15px] leading-relaxed">
-                        {message.content}
-                      </p>
+                      {message.imageUrl ? (
+                        <img
+                          src={message.imageUrl}
+                          alt="Uploaded image"
+                          className="max-w-full h-auto rounded-lg mt-2"
+                        />
+                      ) : (
+                        <p className="text-[15px] leading-relaxed">
+                          {message.content}
+                        </p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -339,6 +394,25 @@ export function CommunityChat() {
           <div className="bg-white border-t p-4 shadow-sm">
             <div className="max-w-4xl mx-auto">
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className={cn(
+                    "p-3 rounded-full",
+                    "bg-gray-200 text-gray-600",
+                    "hover:bg-gray-300",
+                    "transition-all duration-200"
+                  )}
+                >
+                  <Image className="h-5 w-5" />
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
                 <input
                   type="text"
                   value={newMessage}

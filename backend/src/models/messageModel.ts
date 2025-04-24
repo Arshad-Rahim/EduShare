@@ -12,7 +12,7 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
+    required: false,
   },
   timestamp: {
     type: Date,
@@ -24,6 +24,7 @@ const messageSchema = new mongoose.Schema({
     enum: ["sent", "delivered", "read"],
     default: "sent",
   },
+  imageUrl: { type: String, required: false },
 });
 
 export const MessageModel = mongoose.model("Meassage",messageSchema)
