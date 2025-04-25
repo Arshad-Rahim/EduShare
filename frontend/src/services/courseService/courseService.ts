@@ -128,4 +128,16 @@ export const courseService = {
       throw new Error("Failed to marks lesson as completed");
     }
   },
+
+  async getAllCourses(page,limit){
+    try {
+      const response = await authAxiosInstance.get("/courses/all-courses", {
+        params: { page, limit }, 
+      });
+      return response;
+      
+    } catch (error) {
+       throw new Error("Failed to get all courses");
+    }
+  }
 };

@@ -84,7 +84,7 @@ export class CourseRoutes {
       this.router.get(
         "/enrolled-courses",
         userAuthMiddleware,
-        authorizeRole(["user"]),
+        authorizeRole(["user",'tutor']),
         checkUserBlocked,
 
         (req: Request, res: Response) =>

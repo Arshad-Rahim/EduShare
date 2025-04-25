@@ -42,7 +42,11 @@ const AdminLogin: React.FC = () => {
     try {
       const response = await adminService.loginAdmin(data);
       const { user } = response.data;
-      dispatch(addAdmin(user));
+      const userWithRole = {
+        ...user,
+        role: "admin",
+      };
+      dispatch(addAdmin(userWithRole));
       toast.success(response.data.message);
       loginForm.reset();
       navigate("/admin/home");

@@ -27,6 +27,7 @@ import { CommunityChat } from "./pages/student/CommunityChat";
 import AppProvider from "./provider/AppProvider";
 import { Notifications } from "./pages/student/components/Notification";
 import { MyCoursesPage } from "./pages/student/MyCoursePage";
+import { AdminCourses } from "./pages/admin/Courses";
 
 function App() {
   return (
@@ -183,6 +184,15 @@ function App() {
                 element={
                   <ProtectedAdminRoute>
                     <TutorListing />
+                  </ProtectedAdminRoute>
+                }
+              />
+
+              <Route
+                path="/admin/courses"
+                element={
+                  <ProtectedAdminRoute>
+                    <AdminCourses />
                   </ProtectedAdminRoute>
                 }
               />
