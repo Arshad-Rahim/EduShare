@@ -11,19 +11,22 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
     cors: corsOptions,
   });
 
+  const rooms = new Map<string, string[]>();
+
   io.on("connection", (socket: Socket) => {
     console.log(`User connected: ${socket.id}`);
 
     socket.on("join_user", (userId: string) => {
-      console.log(
-        `Received join_user event for user ${userId} from socket ${socket.id}`
-      );
+      if (!userId) {
+        console.error("join_user: No userId provided");
+        return;
+      }
+      console.log(`Socket ${socket.id} joining user room ${userId}`);
       socket.join(userId);
-      console.log(`Socket ${socket.id} joined user room ${userId}`);
       io.in(userId)
         .allSockets()
         .then((sockets) => {
-          console.log(`Sockets in room ${userId} after join:`, sockets);
+          console.log(`Sockets in room ${userId}:`, sockets.size);
         });
     });
 
@@ -33,10 +36,7 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
       io.in(`community_${communityId}`)
         .allSockets()
         .then((sockets) => {
-          console.log(
-            `Sockets in room community_${communityId} after join:`,
-            sockets
-          );
+          console.log(`Sockets in room community_${communityId}:`, sockets.size);
         });
 
       try {
@@ -112,7 +112,7 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             timestamp: newMessage.timestamp.toISOString(),
           });
           console.log(
-            `Message saved and sent to community ${communityId}: ${message.content}`
+            `Message sent to community ${communityId}: ${message.content}`
           );
         } catch (err) {
           console.error(
@@ -155,7 +155,7 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             timestamp: newMessage.timestamp.toISOString(),
           });
           console.log(
-            `Private message saved and sent to chat ${privateChatId}: ${message.content}`
+            `Private message sent to chat ${privateChatId}: ${message.content}`
           );
         } catch (err) {
           console.error(
@@ -176,27 +176,20 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           timestamp: string;
           status: string;
         };
-        image: {
-          data: string;
-          name: string;
-          type: string;
-        };
+        image: { data: string; name: string; type: string };
         senderId: string;
       }) => {
         const { communityId, message, image, senderId } = data;
 
         try {
-          // Decode base64 image data
           const base64Data = image.data.replace(/^data:image\/\w+;base64,/, "");
           const buffer = Buffer.from(base64Data, "base64");
 
-          // Sanitize image name to create a safe public_id
           const sanitizedImageName = image.name
             .replace(/[^a-zA-Z0-9-_]/g, "_")
             .replace(/\.[^/.]+$/, "");
           const publicId = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}`;
 
-          // Generate signature including public_id
           const timestamp = Math.round(new Date().getTime() / 1000);
           const signatureParams = {
             timestamp,
@@ -210,9 +203,8 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             process.env.CLOUDINARY_API_SECRET as string
           );
 
-          // Upload to Cloudinary
           const uploadResult = await new Promise<UploadApiResponse>(
-            (resolve, reject) => {
+            (resolve: (value: UploadApiResponse) => void, reject: (reason?: any) => void) => {
               const stream = cloudinary.uploader.upload_stream(
                 {
                   resource_type: "image",
@@ -237,13 +229,11 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             uploadResult.public_id
           );
 
-          // Generate secure URL
           const imageUrl = await createSecureUrl(
             uploadResult.public_id,
             "image"
           );
 
-          // Save message with image URL
           const newMessage = new MessageModel({
             communityId,
             sender: message.sender,
@@ -254,7 +244,6 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           });
           await newMessage.save();
 
-          // Broadcast message to community
           io.to(`community_${communityId}`).emit("receive_message", {
             ...message,
             _id: newMessage._id.toString(),
@@ -262,7 +251,7 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             imageUrl,
           });
           console.log(
-            `Image message saved and sent to community ${communityId}: ${imageUrl}`
+            `Image message sent to community ${communityId}: ${imageUrl}`
           );
         } catch (err) {
           console.error(
@@ -285,7 +274,6 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             message,
           });
           const course = await courseModel.findById(communityId);
-          console.log("Found course:", course);
           if (!course) {
             console.error(`Course not found: ${communityId}`);
             return;
@@ -295,8 +283,6 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             return;
           }
           course.enrollments.forEach((userId) => {
-            console.log("SENDERID", senderId);
-            console.log("UserId", userId);
             const userIdStr = userId.toString();
             if (userIdStr !== senderId) {
               console.log(
@@ -312,12 +298,8 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
               io.in(userIdStr)
                 .allSockets()
                 .then((sockets) => {
-                  console.log(`Sockets in room ${userIdStr}:`, sockets);
+                  console.log(`Sockets in room ${userIdStr}:`, sockets.size);
                 });
-            } else {
-              console.log(
-                `Skipping sender ${userIdStr} (matches senderId: ${senderId})`
-              );
             }
           });
         } catch (error) {
@@ -353,7 +335,7 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           io.in(userId)
             .allSockets()
             .then((sockets) => {
-              console.log(`Sockets in room ${userId}:`, sockets);
+              console.log(`Sockets in room ${userId}:`, sockets.size);
             });
         } catch (error) {
           console.error("Error in send_purchase_notification:", error);
@@ -361,8 +343,145 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
       }
     );
 
+    socket.on("join room", async (roomId: string) => {
+      if (!roomId) {
+        console.error("join room: No roomId provided");
+        return;
+      }
+
+      if (rooms.has(roomId)) {
+        rooms.get(roomId)!.push(socket.id);
+      } else {
+        rooms.set(roomId, [socket.id]);
+      }
+
+      socket.join(roomId);
+      console.log(`Socket ${socket.id} joined room ${roomId}`);
+
+      const otherUsers = rooms.get(roomId)!.filter((id) => id !== socket.id);
+      socket.emit("all users", otherUsers);
+      console.log(
+        `User ${socket.id} joined room ${roomId}, other users:`,
+        otherUsers
+      );
+
+      // Notify existing users in the room of the new join
+      const allUsersInRoom = rooms.get(roomId)!;
+      socket.to(roomId).emit("all users", allUsersInRoom);
+      console.log(`Emitted all users to room ${roomId}:`, allUsersInRoom);
+
+      const parts = roomId.split("_");
+      console.log("Parsed roomId parts:", parts);
+      if (parts.length !== 4 || parts[0] !== "videocall") {
+        console.error(
+          "Invalid roomId format:",
+          roomId,
+          "Expected: videocall_<courseId>_<studentId>_<tutorId>"
+        );
+        socket.emit("call_rejected", { message: "Invalid room ID format" });
+        return;
+      }
+
+      const [, courseId, studentId, tutorId] = parts;
+      if (!courseId || !studentId || !tutorId) {
+        console.error("Missing roomId components:", {
+          courseId,
+          studentId,
+          tutorId,
+        });
+        socket.emit("call_rejected", { message: "Invalid room ID components" });
+        return;
+      }
+
+      try {
+        const course = await courseModel.findById(courseId);
+        if (!course) {
+          console.error(`Course not found for courseId: ${courseId}`);
+          socket.emit("call_rejected", { message: "Course not found" });
+          return;
+        }
+
+        const tutorSockets = await io.in(tutorId).allSockets();
+        console.log(
+          `Sockets in tutor room ${tutorId} before emitting call_request:`,
+          tutorSockets.size
+        );
+        if (tutorSockets.size === 0) {
+          console.warn(`No sockets found in tutor room ${tutorId}`);
+          socket.emit("call_rejected", { message: "Tutor not available" });
+          return;
+        }
+
+        io.to(tutorId).emit("call_request", {
+          roomId,
+          studentId,
+          courseId,
+          courseTitle: course.title,
+          timestamp: new Date().toISOString(),
+        });
+        console.log(`Sent call request to tutor ${tutorId} for room ${roomId}`);
+      } catch (error) {
+        console.error("Error fetching course for call request:", error);
+        socket.emit("call_rejected", { message: "Failed to initiate call" });
+      }
+    });
+
+    socket.on("sending signal", (payload) => {
+      console.log(
+        "Sending signal to:",
+        payload.userToSignal,
+        "from:",
+        payload.callerID,
+        "signal:",
+        payload.signal
+      );
+      io.to(payload.userToSignal).emit("user joined", {
+        signal: payload.signal,
+        callerID: payload.callerID,
+      });
+    });
+
+    socket.on("returning signal", (payload) => {
+      console.log(
+        "Returning signal to:",
+        payload.callerID,
+        "from:",
+        socket.id,
+        "signal:",
+        payload.signal
+      );
+      io.to(payload.callerID).emit("receiving returned signal", {
+        signal: payload.signal,
+        id: socket.id,
+      });
+    });
+
+    socket.on("call_rejected", ({ roomId, tutorId }) => {
+      const [_, courseId, studentId] = roomId.split("_");
+      io.to(studentId).emit("call_rejected", {
+        message: "Tutor rejected the call",
+      });
+      console.log(`Tutor ${tutorId} rejected call for room ${roomId}`);
+    });
+
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.id}`);
+      for (const [roomId, sockets] of rooms.entries()) {
+        if (sockets.includes(socket.id)) {
+          rooms.set(
+            roomId,
+            sockets.filter((id) => id !== socket.id)
+          );
+          if (rooms.get(roomId)!.length === 0) {
+            rooms.delete(roomId);
+          }
+          io.to(roomId).emit("all users", rooms.get(roomId) || []);
+          console.log(
+            `Updated all users in room ${roomId} after disconnect:`,
+            rooms.get(roomId)
+          );
+        }
+      }
     });
   });
 

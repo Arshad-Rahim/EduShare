@@ -9,7 +9,6 @@ import UsersList from "./pages/admin/UserList";
 import TutorListing from "./pages/admin/TutorListing";
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
-
 import { PublicAdminRoute } from "./private/admin/PublicAdminRoute";
 import { ProtectedUserRoute } from "./private/user/ProtectedUserRoute";
 import { ProtectedAdminRoute } from "./private/admin/ProtectedAdminRoute";
@@ -22,196 +21,225 @@ import { CourseDetails } from "./pages/tutor/CourseDetails";
 import { CourseDetailsPage } from "./pages/student/CourseDetails";
 import WishlistPage from "./pages/student/Wishlist";
 import { CourseEnrollPage } from "./pages/student/CourseEnrollPage";
-import { StudentsPage } from "./pages/tutor/StduentsPage";
 import { CommunityChat } from "./pages/student/CommunityChat";
-import AppProvider from "./provider/AppProvider";
 import { Notifications } from "./pages/student/components/Notification";
 import { MyCoursesPage } from "./pages/student/MyCoursePage";
 import { AdminCourses } from "./pages/admin/Courses";
+import { CallNotification } from "./components/videoCall/CallNotification";
+import { useAppContext } from "./provider/AppProvider";
+import ErrorBoundary from "./components/error-bountry/ErrorBoundry";
+import { StudentsPage } from "./pages/tutor/StduentsPage";
 
 function App() {
+  const { tutorId } = useAppContext();
+
   return (
-    <>
-      <Provider store={store}>
-        <AppProvider>
-          <Router>
-            <Notifications />
-
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <ProtectedUserRoute>
-                    <UserHomePage />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedUserRoute>
-                    <StudentProfile />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/courses"
-                element={
-                  <ProtectedUserRoute>
-                    <CourseListingPage />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/wishlist"
-                element={
-                  <ProtectedUserRoute>
-                    <WishlistPage />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/courses/:courseId"
-                element={
-                  <ProtectedUserRoute>
-                    <CourseDetailsPage />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/courses/:courseId/enroll"
-                element={
-                  <ProtectedUserRoute>
-                    <CourseEnrollPage />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/community"
-                element={
-                  <ProtectedUserRoute>
-                    <CommunityChat />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/my-courses"
-                element={
-                  <ProtectedUserRoute>
-                    <MyCoursesPage />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/auth"
-                element={
-                  <PublicUserRoute>
-                    <AuthForm />
-                  </PublicUserRoute>
-                }
-              />
-
-              <Route
-                path="/admin/login"
-                element={
-                  <PublicAdminRoute>
-                    <AdminLogin />
-                  </PublicAdminRoute>
-                }
-              />
-
-              <Route
-                path="/tutor/home"
-                element={
-                  <ProtectedUserRoute>
-                    <TutorHome />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/tutor/courses"
-                element={
-                  <ProtectedUserRoute>
-                    <TutorCourses />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/tutor/courses/:courseId"
-                element={
-                  <ProtectedUserRoute>
-                    <CourseDetails />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route
-                path="/tutor/students"
-                element={
-                  <ProtectedUserRoute>
-                    <StudentsPage />
-                  </ProtectedUserRoute>
-                }
-              />
-              <Route
-                path="/admin/home"
-                element={
-                  <ProtectedAdminRoute>
-                    <AdminHome />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="/admin/userList"
-                element={
-                  <ProtectedAdminRoute>
-                    <UsersList />
-                  </ProtectedAdminRoute>
-                }
-              />
-              <Route
-                path="/admin/tutorList"
-                element={
-                  <ProtectedAdminRoute>
-                    <TutorListing />
-                  </ProtectedAdminRoute>
-                }
-              />
-
-              <Route
-                path="/admin/courses"
-                element={
-                  <ProtectedAdminRoute>
-                    <AdminCourses />
-                  </ProtectedAdminRoute>
-                }
-              />
-
-              <Route
-                path="/tutor/profileDetails"
-                element={
-                  <ProtectedUserRoute>
-                    <TutorProfileDetails />
-                  </ProtectedUserRoute>
-                }
-              />
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
-        </AppProvider>
-      </Provider>
-    </>
+    <Provider store={store}>
+      <Router>
+        <Notifications />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <UserHomePage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <StudentProfile />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/courses"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <CourseListingPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <WishlistPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/courses/:courseId"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <CourseDetailsPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/courses/:courseId/enroll"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <CourseEnrollPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/community"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <CommunityChat />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/my-courses"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <MyCoursesPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/auth"
+            element={
+              <PublicUserRoute>
+                <ErrorBoundary>
+                  <AuthForm />
+                </ErrorBoundary>
+              </PublicUserRoute>
+            }
+          />
+          <Route
+            path="/admin/login"
+            element={
+              <PublicAdminRoute>
+                <ErrorBoundary>
+                  <AdminLogin />
+                </ErrorBoundary>
+              </PublicAdminRoute>
+            }
+          />
+          <Route
+            path="/tutor/home"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <TutorHome />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/tutor/courses"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <TutorCourses />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/tutor/courses/:courseId"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <CourseDetails />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/tutor/students"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <StudentsPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/admin/home"
+            element={
+              <ProtectedAdminRoute>
+                <ErrorBoundary>
+                  <AdminHome />
+                </ErrorBoundary>
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/userList"
+            element={
+              <ProtectedAdminRoute>
+                <ErrorBoundary>
+                  <UsersList />
+                </ErrorBoundary>
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/tutorList"
+            element={
+              <ProtectedAdminRoute>
+                <ErrorBoundary>
+                  <TutorListing />
+                </ErrorBoundary>
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/courses"
+            element={
+              <ProtectedAdminRoute>
+                <ErrorBoundary>
+                  <AdminCourses />
+                </ErrorBoundary>
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/tutor/profileDetails"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <TutorProfileDetails />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <ErrorBoundary>
+                <NotFound />
+              </ErrorBoundary>
+            }
+          />
+        </Routes>
+        {tutorId && <CallNotification tutorId={tutorId} />}
+      </Router>
+    </Provider>
   );
 }
 

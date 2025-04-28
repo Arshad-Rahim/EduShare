@@ -1,14 +1,6 @@
-"use client";
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,7 +18,6 @@ import {
   ArrowLeft,
   Clock,
   Star,
-  Users,
   Lock,
   CheckCircle,
   PlayCircle,
@@ -36,34 +27,38 @@ import {
 import { courseService } from "@/services/courseService/courseService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useSelector } from "react-redux";
+import { VideoCall } from "@/components/videoCall/VideoCall";
 
 export function CourseDetailsPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const [course, setCourse] = useState(null);
-  const [lessons, setLessons] = useState([]);
+  const [course, setCourse] = useState<any>(null);
+  const [lessons, setLessons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [isPurchased, setIsPurchased] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [currentLesson, setCurrentLesson] = useState<any>(null);
+  const [isInCall, setIsInCall] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentLessonIdRef = useRef<string | null>(null);
+  const currentUser = useSelector((state: any) => state.user.userDatas);
+  console.log("CURRENT USER", currentUser);
+  const studentId = currentUser?.id ? currentUser?.id : currentUser?._id;
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch course details
         const courseData = await courseService.getCourseDetails(courseId);
+        console.log("Course data:", courseData);
         setCourse(courseData);
 
-        // Fetch lessons
         const response = await courseService.getLessons(courseId);
         setLessons(response.data.lessons || []);
 
-        // Check if user has purchased the course
         try {
           const purchaseStatus = await courseService.checkCoursePurchase(
             courseId
@@ -74,7 +69,6 @@ export function CourseDetailsPage() {
           setIsPurchased(false);
         }
 
-        // Fetch completed lessons
         try {
           const completed = await courseService.getCompletedLessons(courseId);
           setCompletedLessons(completed || []);
@@ -83,6 +77,7 @@ export function CourseDetailsPage() {
           setCompletedLessons([]);
         }
       } catch (error) {
+        console.error("Error fetching course data:", error);
         navigate("/courses");
       } finally {
         setLoading(false);
@@ -91,7 +86,7 @@ export function CourseDetailsPage() {
     fetchData();
   }, [courseId, navigate]);
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -104,25 +99,27 @@ export function CourseDetailsPage() {
     }
   };
 
-  const handlePlayVideo = (lesson, index) => {
-    const videoUrl = lesson.file || lesson.videoUrl;
-    if (videoUrl) {
-      if (isPurchased || index === 0) {
-        // Allow access if course is purchased or it's the first lesson
-        setSelectedVideo(videoUrl);
-        setCurrentLesson(lesson);
-        setVideoModalOpen(true);
-        currentLessonIdRef.current = lesson._id;
+  const handlePlayVideo = useCallback(
+    (lesson: any, index: number) => {
+      const videoUrl = lesson.file || lesson.videoUrl;
+      if (videoUrl) {
+        if (isPurchased || index === 0) {
+          setSelectedVideo(videoUrl);
+          setCurrentLesson(lesson);
+          setVideoModalOpen(true);
+          currentLessonIdRef.current = lesson._id;
+        } else {
+          toast.info("Please enroll to access this lesson");
+          navigate(`/courses/${courseId}/enroll`);
+        }
       } else {
-        toast.info("Please enroll to access this lesson");
-        navigate(`/courses/${courseId}/enroll`);
+        toast.error("No video available for this lesson");
       }
-    } else {
-      toast.error("No video available for this lesson");
-    }
-  };
+    },
+    [isPurchased, courseId, navigate]
+  );
 
-  const handleVideoEnded = async () => {
+  const handleVideoEnded = useCallback(async () => {
     if (
       currentLessonIdRef.current &&
       !completedLessons.includes(currentLessonIdRef.current)
@@ -139,20 +136,53 @@ export function CourseDetailsPage() {
         toast.error("Failed to mark lesson as completed");
       }
     }
-  };
+  }, [completedLessons, courseId]);
 
-  const handleEnroll = () => {
+  const handleEnroll = useCallback(() => {
     navigate(`/courses/${courseId}/enroll`);
-  };
+  }, [courseId, navigate]);
 
-  const calculateProgress = () => {
+  const calculateProgress = useCallback(() => {
     if (lessons.length === 0) return 0;
     return Math.round((completedLessons.length / lessons.length) * 100);
-  };
+  }, [lessons, completedLessons]);
 
-  const isLessonCompleted = (lessonId) => {
-    return completedLessons.includes(lessonId);
-  };
+  const isLessonCompleted = useCallback(
+    (lessonId: string) => {
+      return completedLessons.includes(lessonId);
+    },
+    [completedLessons]
+  );
+
+  const handleStartCall = useCallback(() => {
+    if (!isPurchased) {
+      toast.info("Please enroll in the course to call the tutor");
+      navigate(`/courses/${courseId}/enroll`);
+      return;
+    }
+    if (!course || !course._id || !studentId || !course.tutorId) {
+      toast.error("Course or user data not loaded. Please try again.");
+      console.error("handleStartCall: Missing data", {
+        course,
+        studentId,
+        tutorId: course?.tutorId,
+      });
+      return;
+    }
+    const roomId = `videocall_${course._id}_${studentId}_${course.tutorId}`;
+    console.log(
+      "Starting call with roomId:",
+      roomId,
+      "tutorId:",
+      course.tutorId
+    );
+    setIsInCall(true);
+  }, [isPurchased, courseId, navigate, course, studentId]);
+
+  const handleEndCall = useCallback(() => {
+    console.log("Call ended, isInCall set to false");
+    setIsInCall(false);
+  }, []);
 
   if (loading) {
     return (
@@ -175,7 +205,6 @@ export function CourseDetailsPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col w-full">
       <Header />
       <main className="flex-1 w-full">
-        {/* Hero Section */}
         <section className="relative w-full bg-gradient-to-br from-primary/5 to-primary/10 py-8 mb-6">
           <div className="container px-4 md:px-6 lg:px-8 mx-auto">
             <div className="flex justify-between items-center flex-col sm:flex-row gap-4 sm:gap-0">
@@ -204,7 +233,6 @@ export function CourseDetailsPage() {
             <Card className="border-0 rounded-xl shadow-xl overflow-hidden w-full bg-white/80 backdrop-blur-sm">
               <CardContent className="pt-6 w-full p-6 md:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Left Column: Thumbnail and Basic Info */}
                   <div className="lg:col-span-1">
                     <div className="aspect-video w-full overflow-hidden rounded-xl bg-slate-100 shadow-md hover:shadow-lg transition-all duration-300 border border-slate-200">
                       {course.thumbnail ? (
@@ -266,16 +294,6 @@ export function CourseDetailsPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                          {/* <div className="flex items-center gap-3 bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
-                            <Users className="h-5 w-5 text-primary/80" />
-                            <div>
-                              <p className="text-xs text-slate-500">Students</p>
-                              <p className="font-semibold">
-                                {course.enrollments || 0}
-                              </p>
-                            </div>
-                          </div> */}
-
                           <div className="flex items-center gap-3 bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
                             <Video className="h-5 w-5 text-primary/80" />
                             <div>
@@ -298,7 +316,6 @@ export function CourseDetailsPage() {
                             </span>
                           </div>
 
-                          {/* Custom Progress Bar */}
                           <div className="relative h-3 bg-slate-100 rounded-full overflow-hidden">
                             <div
                               className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all duration-700 ease-out"
@@ -306,7 +323,6 @@ export function CourseDetailsPage() {
                             ></div>
                           </div>
 
-                          {/* Progress Stats */}
                           <div className="flex justify-between text-xs">
                             <div className="bg-slate-50 px-3 py-2 rounded-md text-slate-700">
                               <span className="font-medium text-primary">
@@ -352,9 +368,19 @@ export function CourseDetailsPage() {
                         </span>
                       )}
                     </Button>
+
+                    {isPurchased && (
+                      <Button
+                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-6 shadow-lg transition-all duration-300 text-sm font-semibold"
+                        onClick={handleStartCall}
+                        disabled={isInCall}
+                      >
+                        <Video className="h-5 w-5 mr-2" />
+                        Call Tutor
+                      </Button>
+                    )}
                   </div>
 
-                  {/* Right Column: Description and Lessons */}
                   <div className="lg:col-span-2 space-y-8">
                     <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100 hover:shadow-lg transition-all duration-300">
                       <h3 className="text-xl font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">
@@ -489,7 +515,6 @@ export function CourseDetailsPage() {
               </CardContent>
             </Card>
 
-            {/* Video Modal */}
             {videoModalOpen && selectedVideo && (
               <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
                 <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] bg-slate-900 text-white border-slate-800 shadow-2xl">
@@ -528,6 +553,16 @@ export function CourseDetailsPage() {
                   </div>
                 </DialogContent>
               </Dialog>
+            )}
+
+            {isInCall && course && (
+              <VideoCall
+                roomId={`videocall_${course._id}_${studentId}_${course.tutorId}`}
+                userId={studentId}
+                isInitiator={true}
+                courseTitle={course.title}
+                onEndCall={handleEndCall}
+              />
             )}
           </div>
         </section>

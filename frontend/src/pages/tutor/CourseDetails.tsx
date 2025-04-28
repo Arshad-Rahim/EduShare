@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+"use client";
+
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -35,31 +37,48 @@ import {
   FileIcon,
 } from "lucide-react";
 import { courseService } from "@/services/courseService/courseService";
+import { useSelector } from "react-redux";
+import { VideoCall } from "@/components/videoCall/VideoCall";
 
 export function CourseDetails() {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState(null); // State for selected video in playback modal
-  const [videoModalOpen, setVideoModalOpen] = useState(false); // State for video playback modal
-  const [editLessonModalOpen, setEditLessonModalOpen] = useState(false); // State for edit lesson modal
-  const [selectedLesson, setSelectedLesson] = useState(null); // State for lesson being edited
-  const [editLessonTitle, setEditLessonTitle] = useState(""); // State for lesson title in edit form
-  const [editLessonDuration, setEditLessonDuration] = useState(""); // State for lesson duration in edit form
-  const [editLessonVideoFile, setEditLessonVideoFile] = useState(null); // State for new video file in edit form
-  const [currentVideoName, setCurrentVideoName] = useState(""); // State for displaying current video file name
-  const fileInputRef = useRef(null); // Ref for file input in edit modal
+  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [editLessonModalOpen, setEditLessonModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [editLessonTitle, setEditLessonTitle] = useState("");
+  const [editLessonDuration, setEditLessonDuration] = useState("");
+  const [editLessonVideoFile, setEditLessonVideoFile] = useState(null);
+  const [currentVideoName, setCurrentVideoName] = useState("");
+  const [isInCall, setIsInCall] = useState(false);
+  const fileInputRef = useRef(null);
+  const currentUser = useSelector((state: any) => state.user.userDatas);
+  const tutorId = currentUser?.id ? currentUser?.id : currentUser?._id;
+
+  // Check for call query parameter
+  const queryParams = new URLSearchParams(location.search);
+  const callRoomId = queryParams.get("call");
 
   useEffect(() => {
     fetchCourseDetails();
     fetchLessons();
   }, [courseId]);
 
+  useEffect(() => {
+    if (callRoomId) {
+      console.log("Call query detected, starting video call:", callRoomId);
+      setIsInCall(true);
+    }
+  }, [callRoomId]);
+
   const fetchCourseDetails = async () => {
     try {
-      const response = await courseService.getSpecificTutorCourse(1,50);
+      const response = await courseService.getSpecificTutorCourse(1, 50);
       const foundCourse = response.data.courses.find((c) => c._id === courseId);
       if (foundCourse) {
         setCourse(foundCourse);
@@ -119,7 +138,7 @@ export function CourseDetails() {
         ? videoUrl.split("/").pop() || "Current Video"
         : "No video uploaded"
     );
-    setEditLessonVideoFile(null); // Reset new file selection
+    setEditLessonVideoFile(null);
     setEditLessonModalOpen(true);
   };
 
@@ -135,7 +154,7 @@ export function CourseDetails() {
         return;
       }
       setEditLessonVideoFile(file);
-      setCurrentVideoName(file.name); // Update displayed name to new file
+      setCurrentVideoName(file.name);
       toast.success("Video file selected successfully");
     }
   };
@@ -143,17 +162,6 @@ export function CourseDetails() {
   const triggerFileInput = () => {
     if (fileInputRef.current) fileInputRef.current.click();
   };
-
-  // const removeFile = () => {
-  //   setEditLessonVideoFile(null);
-  //   setCurrentVideoName(
-  //     selectedLesson?.file || selectedLesson?.videoUrl
-  //       ? (selectedLesson.file || selectedLesson.videoUrl).split("/").pop() ||
-  //           "Current Video"
-  //       : "No video uploaded"
-  //   );
-  //   if (fileInputRef.current) fileInputRef.current.value = "";
-  // };
 
   const handleSaveLesson = async () => {
     if (!selectedLesson || !editLessonTitle) {
@@ -207,6 +215,12 @@ export function CourseDetails() {
       toast.error("Failed to update lesson");
     }
   };
+
+  const handleEndCall = useCallback(() => {
+    console.log("Call ended, isInCall set to false");
+    setIsInCall(false);
+    navigate(`/tutor/courses/${courseId}`); // Remove call query param
+  }, [courseId, navigate]);
 
   if (loading) {
     return (
@@ -274,6 +288,7 @@ export function CourseDetails() {
                       <span>{course.category}</span>
                     </div>
                     <div className="flex items-center gap-2 text-slate-600">
+                      <DollarSign className="h-4 w-4" />
                       <span className="font-medium">₹{course.price}</span>
                     </div>
                   </div>
@@ -349,6 +364,7 @@ export function CourseDetails() {
               </div>
             </CardContent>
           </Card>
+
           {/* Video Playback Modal */}
           {videoModalOpen && selectedVideo && (
             <Dialog open={videoModalOpen} onOpenChange={setVideoModalOpen}>
@@ -369,6 +385,7 @@ export function CourseDetails() {
               </DialogContent>
             </Dialog>
           )}
+
           {/* Edit Lesson Modal */}
           {editLessonModalOpen && selectedLesson && (
             <Dialog
@@ -458,7 +475,7 @@ export function CourseDetails() {
                                 or drag and drop
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                MP4 or WebM (max 10MB)
+                                MP4 or WebM (max 50MB)
                               </p>
                             </div>
                           </>
@@ -478,6 +495,17 @@ export function CourseDetails() {
                 </div>
               </DialogContent>
             </Dialog>
+          )}
+
+          {/* Video Call Modal */}
+          {isInCall && callRoomId && course && (
+            <VideoCall
+              roomId={callRoomId}
+              userId={tutorId}
+              isInitiator={false}
+              courseTitle={course.title}
+              onEndCall={handleEndCall}
+            />
           )}
         </div>
       </div>
