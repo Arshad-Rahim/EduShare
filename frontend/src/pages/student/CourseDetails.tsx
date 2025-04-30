@@ -23,6 +23,7 @@ import {
   PlayCircle,
   Calendar,
   CalendarCheck,
+  MessageCircle,
 } from "lucide-react";
 import { courseService } from "@/services/courseService/courseService";
 import { toast } from "sonner";
@@ -45,7 +46,6 @@ export function CourseDetailsPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentLessonIdRef = useRef<string | null>(null);
   const currentUser = useSelector((state: any) => state.user.userDatas);
-  console.log("CURRENT USER", currentUser);
   const studentId = currentUser?.id ? currentUser?.id : currentUser?._id;
 
   useEffect(() => {
@@ -53,7 +53,6 @@ export function CourseDetailsPage() {
       setLoading(true);
       try {
         const courseData = await courseService.getCourseDetails(courseId);
-        console.log("Course data:", courseData);
         setCourse(courseData);
 
         const response = await courseService.getLessons(courseId);
@@ -170,19 +169,44 @@ export function CourseDetailsPage() {
       return;
     }
     const roomId = `videocall_${course._id}_${studentId}_${course.tutorId}`;
-    console.log(
-      "Starting call with roomId:",
-      roomId,
-      "tutorId:",
-      course.tutorId
-    );
     setIsInCall(true);
   }, [isPurchased, courseId, navigate, course, studentId]);
 
   const handleEndCall = useCallback(() => {
-    console.log("Call ended, isInCall set to false");
     setIsInCall(false);
   }, []);
+
+  const handleMessageTutor = useCallback(() => {
+    if (!isPurchased) {
+      toast.info("Please enroll in the course to message the tutor");
+      navigate(`/courses/${courseId}/enroll`);
+      return;
+    }
+    if (!courseId || !studentId || !course?.tutorId) {
+      toast.error("Course or user data not loaded. Please try again.");
+      console.error("handleMessageTutor: Missing data", {
+        courseId,
+        course,
+        studentId,
+        tutorId: course?.tutorId,
+      });
+      return;
+    }
+    console.log("Navigating to private chat with state:", {
+      studentId,
+      tutorId: course.tutorId,
+      courseId,
+      courseTitle: course.title,
+    });
+    navigate(`/courses/${courseId}/chat`, {
+      state: {
+        studentId,
+        tutorId: course.tutorId,
+        courseId, // Use courseId from useParams as fallback
+        courseTitle: course?.title || "Unknown Course",
+      },
+    });
+  }, [isPurchased, courseId, navigate, course, studentId]);
 
   if (loading) {
     return (
@@ -370,14 +394,23 @@ export function CourseDetailsPage() {
                     </Button>
 
                     {isPurchased && (
-                      <Button
-                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-6 shadow-lg transition-all duration-300 text-sm font-semibold"
-                        onClick={handleStartCall}
-                        disabled={isInCall}
-                      >
-                        <Video className="h-5 w-5 mr-2" />
-                        Call Tutor
-                      </Button>
+                      <div className="flex gap-4 mt-4">
+                        <Button
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 shadow-lg transition-all duration-300 text-sm font-semibold"
+                          onClick={handleStartCall}
+                          disabled={isInCall}
+                        >
+                          <Video className="h-5 w-5 mr-2" />
+                          Call Tutor
+                        </Button>
+                        <Button
+                          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-6 shadow-lg transition-all duration-300 text-sm font-semibold"
+                          onClick={handleMessageTutor}
+                        >
+                          <MessageCircle className="h-5 w-5 mr-2" />
+                          Message Tutor
+                        </Button>
+                      </div>
                     )}
                   </div>
 

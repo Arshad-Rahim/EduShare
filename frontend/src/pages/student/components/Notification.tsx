@@ -10,9 +10,12 @@ interface Notification {
   type: "chat_message";
   message: string;
   courseId: string;
+  studentId?: string;
+  tutorId?: string;
   timestamp: string;
   read: boolean;
   userId: string;
+  senderId: string; // Added to track the sender
 }
 
 export function Notifications() {
@@ -21,8 +24,9 @@ export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const socketRef = useRef<Socket | null>(null);
 
-  // Determine user ID, checking both user.id and user._id
+  // Determine user ID and role
   const userId = user?.id || user?._id;
+  const isTutor = user?.role === "tutor"; // Assuming role is stored in user object
 
   useEffect(() => {
     if (!userId) {
@@ -54,39 +58,54 @@ export function Notifications() {
 
     socketRef.current.on(
       "notification",
-      ({ type, message, courseId, timestamp, senderId }) => {
-        if (userId === senderId) {
-          console.log("Skipping notification for sender:", userId);
-          return;
-        }
-
-        console.log(
-          "Received notification for user:",
+      ({
+        type,
+        message,
+        courseId,
+        studentId,
+        tutorId,
+        timestamp,
+        senderId,
+      }) => {
+        console.log("Received notification:", {
           userId,
-          "Socket ID:",
-          socketRef.current?.id
-        );
-        console.log("Notification details:", {
+          senderId,
+          isTutor,
           type,
           message,
           courseId,
+          studentId,
+          tutorId,
           timestamp,
-          senderId,
         });
+        if (userId === senderId) {
+          console.log("Skipping notification for sender:", {
+            userId,
+            senderId,
+          });
+          return; // Skip processing for the sender
+        }
+
+        console.log("Processing notification for recipient:", userId);
         const notification: Notification = {
           id: Math.random().toString(36).substring(7),
           type,
           message,
           courseId,
+          studentId,
+          tutorId,
           timestamp,
           read: false,
           userId: userId,
+          senderId: senderId, // Store senderId for debugging
         };
         setNotifications((prev) => {
           const newNotifications = [notification, ...prev];
           console.log("New notifications state:", newNotifications);
           return newNotifications;
         });
+
+        const redirectPath = isTutor ? `/tutor/messages` : `/community`;
 
         toast(message, {
           description: new Date(timestamp).toLocaleString(),
@@ -96,7 +115,7 @@ export function Notifications() {
               if (!notification.read) {
                 (window as any).markNotificationRead(notification.id);
               }
-              navigate(`/community`);
+              navigate(redirectPath);
             },
           },
           duration: 5000,
@@ -139,7 +158,7 @@ export function Notifications() {
       socketRef.current?.disconnect();
       console.log("Socket.IO disconnected");
     };
-  }, [userId, navigate]);
+  }, [userId, navigate, isTutor]);
 
   useEffect(() => {
     (window as any).notifications = notifications;

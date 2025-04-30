@@ -12,20 +12,19 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { toast } from "sonner"; // Import toast for error handling
+import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
 
 export function SideBar({ sidebarOpen }) {
   const navigate = useNavigate();
-  const location = useLocation(); // Get current route
-  const [isAccepted, setIsAccepted] = useState(null); // State to store isAccepted status
-  const [loading, setLoading] = useState(true); // State to handle loading
+  const location = useLocation();
+  const [isAccepted, setIsAccepted] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch tutor profile data
   const fetchTutorProfile = async () => {
     try {
       const response = await tutorService.tutorDetails();
-      setIsAccepted(response.data.tutor.isAccepted); // Assuming isAccepted is in the tutor object
+      setIsAccepted(response.data.tutor.isAccepted);
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch tutor profile:", error);
@@ -34,54 +33,52 @@ export function SideBar({ sidebarOpen }) {
     }
   };
 
-  // Fetch data on component mount
   useEffect(() => {
     fetchTutorProfile();
   }, []);
 
-  // Define sidebar items with their routes
   const navItems = [
     {
       icon: <LayoutDashboard className="h-4 w-4" />,
       name: "Dashboard",
       path: "/tutor/home",
-      disabled: isAccepted === false, // Always enabled
+      disabled: isAccepted === false,
     },
     {
       icon: <FileText className="h-4 w-4" />,
       name: "My Courses",
       path: "/tutor/courses",
-      disabled: isAccepted === false, // Always enabled
+      disabled: isAccepted === false,
     },
     {
       icon: <Video className="h-4 w-4" />,
       name: "Content Creation",
       path: "/content-creation",
-      disabled: isAccepted === false, // Disabled if isAccepted is false
+      disabled: isAccepted === false,
     },
     {
       icon: <Users className="h-4 w-4" />,
       name: "Students",
       path: "/tutor/students",
-      disabled: isAccepted === false, // Always enabled
+      disabled: isAccepted === false,
     },
     {
       icon: <MessageSquare className="h-4 w-4" />,
       name: "Messages",
-      path: "/messages",
-      disabled: isAccepted === false, // Always enabled
+      path: "/tutor/messages",
+      disabled: isAccepted === false,
     },
     {
       icon: <BarChart3 className="h-4 w-4" />,
       name: "Analytics",
-      path: "/analytics",
-      disabled: isAccepted === false, // Always enabled
+      path: "/tutor/analytics",
+      disabled: isAccepted === false,
     },
     {
       icon: <Calendar className="h-4 w-4" />,
       name: "Schedule",
-      path: "/schedule",
-      disabled: isAccepted === false, // Always enabled
+      path: "/tutor/schedule",
+      disabled: isAccepted === false,
     },
   ];
 
@@ -89,23 +86,21 @@ export function SideBar({ sidebarOpen }) {
     {
       icon: <Settings className="h-4 w-4" />,
       name: "Settings",
-      path: "/settings",
-      disabled: isAccepted === false, // Always enabled
+      path: "/tutor/settings",
+      disabled: isAccepted === false,
     },
     {
       icon: <HelpCircle className="h-4 w-4" />,
       name: "Help & Support",
-      path: "/help",
-      disabled: isAccepted === false, // Always enabled
+      path: "/tutor/help",
+      disabled: isAccepted === false,
     },
   ];
 
-  // Handle navigation
   const handleNavigation = (path) => {
     navigate(path);
   };
 
-  // Render loading state if data is still being fetched
   if (loading) {
     return (
       <aside
@@ -131,15 +126,15 @@ export function SideBar({ sidebarOpen }) {
           {navItems.map((item) => (
             <Button
               key={item.name}
-              variant={location.pathname === item.path ? "secondary" : "ghost"} // Highlight active route
+              variant={location.pathname === item.path ? "secondary" : "ghost"}
               className="justify-start"
-              onClick={() => !item.disabled && handleNavigation(item.path)} // Only navigate if not disabled
-              disabled={item.disabled} // Disable button based on isAccepted
+              onClick={() => !item.disabled && handleNavigation(item.path)}
+              disabled={item.disabled}
               title={
                 item.disabled
                   ? "This feature is available only after acceptance"
                   : undefined
-              } // Tooltip for disabled state
+              }
             >
               {item.icon}
               <span className="ml-2">{item.name}</span>
@@ -150,10 +145,10 @@ export function SideBar({ sidebarOpen }) {
           {bottomItems.map((item) => (
             <Button
               key={item.name}
-              variant={location.pathname === item.path ? "secondary" : "ghost"} // Highlight active route
+              variant={location.pathname === item.path ? "secondary" : "ghost"}
               className="w-full justify-start"
-              onClick={() => handleNavigation(item.path)} // Navigate on click
-              disabled={item.disabled} // Apply disabled state
+              onClick={() => handleNavigation(item.path)}
+              disabled={item.disabled}
             >
               {item.icon}
               <span className="ml-2">{item.name}</span>

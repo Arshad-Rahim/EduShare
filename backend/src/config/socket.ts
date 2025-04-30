@@ -5,6 +5,7 @@ import { courseModel } from "../models/courseModel";
 import { v2 as cloudinary } from "cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import { createSecureUrl } from "../util/createSecureUrl";
+import { userModel } from "../models/userModels";
 
 export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
   const io = new Server(httpServer, {
@@ -36,7 +37,10 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
       io.in(`community_${communityId}`)
         .allSockets()
         .then((sockets) => {
-          console.log(`Sockets in room community_${communityId}:`, sockets.size);
+          console.log(
+            `Sockets in room community_${communityId}:`,
+            sockets.size
+          );
         });
 
       try {
@@ -79,6 +83,67 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             `Error fetching private message history for chat ${privateChatId}:`,
             err
           );
+        }
+      }
+    );
+
+    socket.on(
+      "fetch_private_chats",
+      async ({ tutorId }: { tutorId: string }) => {
+        try {
+          const messages = await MessageModel.find({
+            privateChatId: { $regex: `private_.*_.*_${tutorId}$` },
+          })
+            .sort({ timestamp: -1 })
+            .lean();
+
+          const chats: any[] = [];
+          const uniqueChatIds = [
+            ...new Set(messages.map((msg) => msg.privateChatId)),
+          ];
+
+          for (const privateChatId of uniqueChatIds) {
+            if (privateChatId) {
+              const [_, courseId, studentId] = privateChatId?.split("_");
+              const latestMessage = messages.find(
+                (msg) => msg.privateChatId === privateChatId
+              );
+
+              const course = await courseModel.findById(courseId).lean();
+              const student = await userModel.findById(studentId).lean();
+
+              if (course && student && latestMessage) {
+                chats.push({
+                  privateChatId,
+                  courseId,
+                  studentId,
+                  courseTitle: course.title || "Unknown Course",
+                  studentName: student.name || "Unknown Student",
+                  latestMessage: {
+                    content: latestMessage.content || "",
+                    timestamp: latestMessage.timestamp.toISOString(),
+                    imageUrl: latestMessage.imageUrl || undefined,
+                  },
+                });
+              }
+            }
+          }
+
+          // Sort chats by latest message timestamp
+          chats.sort(
+            (a, b) =>
+              new Date(b.latestMessage.timestamp).getTime() -
+              new Date(a.latestMessage.timestamp).getTime()
+          );
+
+          socket.emit("private_chats", { chats });
+          console.log(`Sent private chats to tutor ${tutorId}`);
+        } catch (err) {
+          console.error(
+            `Error fetching private chats for tutor ${tutorId}:`,
+            err
+          );
+          socket.emit("error", { message: "Failed to fetch private chats" });
         }
       }
     );
@@ -134,6 +199,7 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           content: string;
           timestamp: string;
           status: string;
+          senderId?: string; // Optional senderId
         };
       }) => {
         const { courseId, studentId, tutorId, message } = data;
@@ -149,14 +215,52 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           });
           await newMessage.save();
 
+          const course = await courseModel.findById(courseId).lean();
+          const student = await userModel.findById(studentId).lean();
+
           io.to(privateChatId).emit("receive_private_message", {
             ...message,
             _id: newMessage._id.toString(),
             timestamp: newMessage.timestamp.toISOString(),
+            courseId,
+            studentId,
+            tutorId,
+            courseTitle: course?.title || "Unknown Course",
+            studentName: student?.name || "Unknown Student",
           });
           console.log(
             `Private message sent to chat ${privateChatId}: ${message.content}`
           );
+
+          // Derive senderId based on the sender's role
+          let senderId: string;
+          const tutor = await userModel.findById(tutorId).lean();
+          if (!tutor) {
+            console.error(`Tutor not found for tutorId: ${tutorId}`);
+            return;
+          }
+          const tutorName = tutor.name || "Unknown Tutor";
+          if (message.sender.toLowerCase() === tutorName.toLowerCase()) {
+            senderId = tutorId;
+          } else {
+            senderId = studentId;
+          }
+
+          // Notify the recipient (not the sender)
+          const recipientId = senderId === tutorId ? studentId : tutorId;
+          if (recipientId) {
+            io.to(recipientId).emit("notification", {
+              type: "chat_message",
+              message: `${message.sender} sent a message: ${message.content.slice(0, 50)}...`,
+              courseId,
+              studentId,
+              tutorId,
+              courseTitle: course?.title || "Unknown Course",
+              timestamp: new Date().toISOString(),
+              senderId,
+            });
+            console.log(`Sent notification to ${recipientId} from ${senderId}`);
+          }
         } catch (err) {
           console.error(
             `Error saving private message to chat ${privateChatId}:`,
@@ -204,7 +308,10 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           );
 
           const uploadResult = await new Promise<UploadApiResponse>(
-            (resolve: (value: UploadApiResponse) => void, reject: (reason?: any) => void) => {
+            (
+              resolve: (value: UploadApiResponse) => void,
+              reject: (reason?: any) => void
+            ) => {
               const stream = cloudinary.uploader.upload_stream(
                 {
                   resource_type: "image",
@@ -259,6 +366,154 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
             err
           );
           socket.emit("error", { message: "Failed to upload image" });
+        }
+      }
+    );
+
+    socket.on(
+      "send_private_image_message",
+      async (data: {
+        courseId: string;
+        studentId: string;
+        tutorId: string;
+        message: {
+          sender: string;
+          content: string;
+          timestamp: string;
+          status: string;
+        };
+        image: { data: string; name: string; type: string };
+        senderId: string;
+      }) => {
+        const { courseId, studentId, tutorId, message, image, senderId } = data;
+        const privateChatId = `private_${courseId}_${studentId}_${tutorId}`;
+
+        try {
+          const base64Data = image.data.replace(/^data:image\/\w+;base64,/, "");
+          const buffer = Buffer.from(base64Data, "base64");
+
+          const sanitizedImageName = image.name
+            .replace(/[^a-zA-Z0-9-_]/g, "_")
+            .replace(/\.[^/.]+$/, "");
+          const publicId = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}`;
+
+          const timestamp = Math.round(new Date().getTime() / 1000);
+          const signatureParams = {
+            timestamp,
+            folder: "chat_images",
+            access_mode: "authenticated",
+            public_id: publicId,
+          };
+          console.log("Signature parameters:", signatureParams);
+          const signature = cloudinary.utils.api_sign_request(
+            signatureParams,
+            process.env.CLOUDINARY_API_SECRET as string
+          );
+
+          const uploadResult = await new Promise<UploadApiResponse>(
+            (
+              resolve: (value: UploadApiResponse) => void,
+              reject: (reason?: any) => void
+            ) => {
+              const stream = cloudinary.uploader.upload_stream(
+                {
+                  resource_type: "image",
+                  folder: "chat_images",
+                  access_mode: "authenticated",
+                  timestamp,
+                  signature,
+                  api_key: process.env.CLOUDINARY_API_KEY as string,
+                  public_id: publicId,
+                },
+                (error, result) => {
+                  if (error) return reject(error);
+                  resolve(result as UploadApiResponse);
+                }
+              );
+              stream.end(buffer);
+            }
+          );
+
+          console.log(
+            "Uploaded Secure Image Public ID:",
+            uploadResult.public_id
+          );
+
+          const imageUrl = await createSecureUrl(
+            uploadResult.public_id,
+            "image"
+          );
+
+          const newMessage = new MessageModel({
+            privateChatId,
+            sender: message.sender,
+            content: message.content,
+            timestamp: new Date(message.timestamp),
+            status: message.status,
+            imageUrl,
+          });
+          await newMessage.save();
+
+          const course = await courseModel.findById(courseId).lean();
+          const student = await userModel.findById(studentId).lean();
+
+          io.to(privateChatId).emit("receive_private_message", {
+            ...message,
+            _id: newMessage._id.toString(),
+            timestamp: newMessage.timestamp.toISOString(),
+            imageUrl,
+            courseId,
+            studentId,
+            tutorId,
+            courseTitle: course?.title || "Unknown Course",
+            studentName: student?.name || "Unknown Student",
+          });
+          console.log(
+            `Image message sent to private chat ${privateChatId}: ${imageUrl}`
+          );
+
+          // Notify the recipient (not the sender)
+          const recipientId = senderId === tutorId ? studentId : tutorId;
+          if (recipientId) {
+            io.to(recipientId).emit("notification", {
+              type: "chat_message",
+              message: `${message.sender} sent an image in ${course?.title || "course"}`,
+              courseId,
+              studentId,
+              tutorId,
+              courseTitle: course?.title || "Unknown Course",
+              timestamp: new Date().toISOString(),
+              senderId,
+            });
+            console.log(`Sent notification to ${recipientId} from ${senderId}`);
+          }
+        } catch (err) {
+          console.error(
+            `Error saving image message to private chat ${privateChatId}:`,
+            err
+          );
+          socket.emit("error", { message: "Failed to upload image" });
+        }
+      }
+    );
+
+    socket.on(
+      "mark_private_message_notification_as_read",
+      async ({
+        courseId,
+        studentId,
+        tutorId,
+      }: {
+        courseId: string;
+        studentId: string;
+        tutorId: string;
+      }) => {
+        try {
+          console.log(
+            `Marked notification as read for tutor ${tutorId}, course ${courseId}, student ${studentId}`
+          );
+        } catch (err) {
+          console.error("Error marking notification as read:", err);
         }
       }
     );
@@ -365,7 +620,6 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
         otherUsers
       );
 
-      // Notify existing users in the room of the new join
       const allUsersInRoom = rooms.get(roomId)!;
       socket.to(roomId).emit("all users", allUsersInRoom);
       console.log(`Emitted all users to room ${roomId}:`, allUsersInRoom);

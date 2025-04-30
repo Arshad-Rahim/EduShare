@@ -28,7 +28,7 @@ const purchaseSchema = new mongoose.Schema({
       },
       createdAt: {
         type: Date,
-        default: Date.now, // Set to current date/time when the purchase item is created
+        default: Date.now, 
       },
     },
   ],

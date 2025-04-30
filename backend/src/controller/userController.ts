@@ -47,6 +47,32 @@ export class UserController {
     }
   }
 
+  async findUserData(req: Request, res: Response) {
+    try {
+     
+
+     let {userId} = req.params;
+     let users = await this._userRepository.findById(userId)
+
+      res.status(HTTP_STATUS.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        users,
+      });
+    } catch (error) {
+      if (error instanceof CustomError) {
+        res
+          .status(error.statusCode)
+          .json({ success: false, message: error.message });
+        return;
+      }
+      console.log(error);
+      res
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+    }
+  }
+
   async updateUserProfile(req: Request, res: Response) {
     try {
       const id = (req as CustomRequest).user.userId;

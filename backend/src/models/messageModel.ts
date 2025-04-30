@@ -3,7 +3,12 @@ import mongoose from "mongoose";
 const messageSchema = new mongoose.Schema({
   communityId: {
     type: String,
-    required: true,
+    required: false,
+    index: true, // Index for faster queries by communityId
+  },
+  privateChatId: {
+    type: String,
+    required: false,
     index: true, // Index for faster queries by communityId
   },
   sender: {

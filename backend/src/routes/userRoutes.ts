@@ -24,6 +24,14 @@ export class UserRoutes {
         injectedUserController.logedInUserData(req, res)
     );
 
+    this.router.get(
+      "/:userId",
+      userAuthMiddleware,
+      authorizeRole(["user"]),
+      (req: Request, res: Response) =>
+        injectedUserController.findUserData(req, res)
+    );
+
     this.router.post(
       "/profileUpdate",
       userAuthMiddleware,

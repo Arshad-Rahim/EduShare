@@ -29,6 +29,8 @@ import { CallNotification } from "./components/videoCall/CallNotification";
 import { useAppContext } from "./provider/AppProvider";
 import ErrorBoundary from "./components/error-bountry/ErrorBoundry";
 import { StudentsPage } from "./pages/tutor/StduentsPage";
+import { PrivateChat } from "./components/privateChat/PrivateChat";
+import { MessagesPage } from "./pages/tutor/components/MessagesPage";
 
 function App() {
   const { tutorId } = useAppContext();
@@ -118,6 +120,17 @@ function App() {
               </ProtectedUserRoute>
             }
           />
+
+          <Route
+            path="/courses/:courseId/chat"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <PrivateChat />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
           <Route
             path="/auth"
             element={
@@ -174,6 +187,16 @@ function App() {
               <ProtectedUserRoute>
                 <ErrorBoundary>
                   <StudentsPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+          <Route
+            path="/tutor/messages"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <MessagesPage />
                 </ErrorBoundary>
               </ProtectedUserRoute>
             }

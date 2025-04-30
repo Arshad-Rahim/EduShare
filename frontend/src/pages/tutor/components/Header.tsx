@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Bell, MessageSquare, ChevronDown, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,27 +16,49 @@ import { Badge } from "@/components/ui/badge";
 import { removeUser } from "@/redux/slice/userSlice";
 import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
+import { io, Socket } from "socket.io-client";
 
-// Define notification type
-interface Notification {
+// Define notification type for profile updates
+interface ProfileNotification {
   _id: string;
   type: "approval" | "rejection";
   message: string;
-  reason?: string; // Optional rejection reason
+  reason?: string;
   createdAt: string;
-  read?: boolean; // Add read field
+  read?: boolean;
+}
+
+// Define notification type for private chat messages
+interface ChatNotification {
+  _id?: string;
+  type: "chat_message";
+  message: string;
+  courseId: string;
+  studentId: string;
+  courseTitle: string;
+  timestamp: string;
+  senderId: string;
+  read?: boolean;
 }
 
 export function Header() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileNotifications, setProfileNotifications] = useState<
+    ProfileNotification[]
+  >([]);
+  const [chatNotifications, setChatNotifications] = useState<
+    ChatNotification[]
+  >([]);
+  const [unreadProfileCount, setUnreadProfileCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [chatDropdownOpen, setChatDropdownOpen] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
-  const [isAccepted, setIsAccepted] = useState<boolean | null>(null); // New state for isAccepted
+  const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
     async function fetchUser() {
@@ -46,7 +68,7 @@ export function Header() {
           name: response?.data.tutor.name,
           email: response?.data.tutor.email,
         });
-        setIsAccepted(response?.data.tutor.isAccepted); // Set isAccepted status
+        setIsAccepted(response?.data.tutor.isAccepted);
       } catch (error) {
         console.error("Failed to fetch user details:", error);
         toast.error("Failed to load user data");
@@ -55,7 +77,6 @@ export function Header() {
     fetchUser();
   }, []);
 
-  // Show toast notification if tutor is not approved
   useEffect(() => {
     if (isAccepted === false) {
       toast.info(
@@ -65,87 +86,147 @@ export function Header() {
             label: "Update Profile",
             onClick: () => navigate("/tutor/profileDetails"),
           },
-          duration: 10000, // Show for 10 seconds
+          duration: 10000,
           closeButton: true,
         }
       );
     }
   }, [isAccepted, navigate]);
 
-  // Fetch notifications on mount
+  // Fetch profile notifications
   useEffect(() => {
-    fetchNotifications();
+    fetchProfileNotifications();
   }, []);
 
-  const fetchNotifications = async () => {
+  const fetchProfileNotifications = async () => {
     try {
       const response = await tutorService.fetchNotification();
       const fetchedNotifications = response?.data.notifications;
       const notificationsArray = Array.isArray(fetchedNotifications)
         ? fetchedNotifications
-        : [fetchedNotifications]; // Convert single object to array
-      setNotifications(notificationsArray);
-      setUnreadCount(
-        notificationsArray.filter((n: Notification) => !n.read).length
+        : [fetchedNotifications];
+      setProfileNotifications(notificationsArray);
+      setUnreadProfileCount(
+        notificationsArray.filter((n: ProfileNotification) => !n.read).length
       );
     } catch (error) {
-      console.error("Failed to fetch notifications:", error);
+      console.error("Failed to fetch profile notifications:", error);
     }
   };
 
-  // Mark a single notification as read
-  const markNotificationAsRead = async (notificationId: string) => {
+  // Socket.IO setup for chat notifications
+  useEffect(() => {
+    if (!user) return;
+
+    socketRef.current = io("http://localhost:3000", {
+      reconnection: true,
+    });
+
+    socketRef.current.emit("join_user", user.email); // Join user room using email or tutorId
+
+    socketRef.current.on("notification", (notification: ChatNotification) => {
+      if (notification.type === "chat_message") {
+        setChatNotifications((prev) => [
+          { ...notification, read: false },
+          ...prev.slice(0, 4), // Keep only the latest 5 notifications
+        ]);
+        setUnreadChatCount((prev) => prev + 1);
+      }
+    });
+
+    return () => {
+      socketRef.current?.off("notification");
+      socketRef.current?.disconnect();
+    };
+  }, [user]);
+
+  // Mark a single profile notification as read
+  const markProfileNotificationAsRead = async (notificationId: string) => {
     try {
       await tutorService.markNotifiactionAsRead(notificationId);
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) =>
+      setProfileNotifications((prev) =>
+        prev.map((notification) =>
           notification._id === notificationId
             ? { ...notification, read: true }
             : notification
         )
       );
-      setUnreadCount((prevCount) => Math.max(0, prevCount - 1));
+      setUnreadProfileCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
-      console.error("Failed to mark notification as read:", error);
+      console.error("Failed to mark profile notification as read:", error);
     }
   };
 
-  // Mark all notifications as read
-  const markAllNotificationsAsRead = async () => {
+  // Mark all profile notifications as read
+  const markAllProfileNotificationsAsRead = async () => {
     try {
       await tutorService.markAllNotificationAsRead();
-      setNotifications((prevNotifications) =>
-        prevNotifications.map((notification) => ({
+      setProfileNotifications((prev) =>
+        prev.map((notification) => ({
           ...notification,
           read: true,
         }))
       );
-      setUnreadCount(0);
-      toast.success("All notifications marked as read");
+      setUnreadProfileCount(0);
+      toast.success("All profile notifications marked as read");
     } catch (error) {
-      console.error("Failed to mark all notifications as read:", error);
+      console.error("Failed to mark all profile notifications as read:", error);
     }
   };
 
-  // Handle dropdown open/close
-  const handleDropdownOpenChange = (open: boolean) => {
-    setDropdownOpen(open);
-    if (!open && unreadCount > 0) {
-      markAllNotificationsAsRead();
+  // Mark a single chat notification as read
+  const markChatNotificationAsRead = (courseId: string, studentId: string) => {
+    setChatNotifications((prev) =>
+      prev.map((notification) =>
+        notification.courseId === courseId &&
+        notification.studentId === studentId
+          ? { ...notification, read: true }
+          : notification
+      )
+    );
+    setUnreadChatCount((prev) => Math.max(0, prev - 1));
+    socketRef.current?.emit("mark_private_message_notification_as_read", {
+      courseId,
+      studentId,
+      tutorId: user?.email, // Use tutorId or email
+    });
+  };
+
+  // Handle profile dropdown open/close
+  const handleProfileDropdownOpenChange = (open: boolean) => {
+    setProfileDropdownOpen(open);
+    if (!open && unreadProfileCount > 0) {
+      markAllProfileNotificationsAsRead();
     }
   };
 
-  // Handle click on a specific notification
-  const handleNotificationClick = (notificationId: string) => {
-    markNotificationAsRead(notificationId);
+  // Handle chat dropdown open/close
+  const handleChatDropdownOpenChange = (open: boolean) => {
+    setChatDropdownOpen(open);
+  };
+
+  // Handle click on a profile notification
+  const handleProfileNotificationClick = (notificationId: string) => {
+    markProfileNotificationAsRead(notificationId);
+  };
+
+  // Handle click on a chat notification
+  const handleChatNotificationClick = (courseId: string, studentId: string) => {
+    markChatNotificationAsRead(courseId, studentId);
+    navigate(`/tutor/messages/${courseId}/${studentId}`);
   };
 
   const handleSignOut = async () => {
-    const response = await tutorService.logoutTutor();
-    toast.success(response?.data.message);
-    localStorage.removeItem("userData");
-    dispatch(removeUser());
-    navigate("/auth");
+    try {
+      const response = await tutorService.logoutTutor();
+      toast.success(response?.data.message);
+      localStorage.removeItem("userData");
+      dispatch(removeUser());
+      navigate("/auth");
+    } catch (error) {
+      console.error("Failed to sign out:", error);
+      toast.error("Failed to sign out");
+    }
   };
 
   const handleMyAccount = () => {
@@ -153,7 +234,7 @@ export function Header() {
   };
 
   const handleUpdateProfile = () => {
-    navigate("/tutor/profileDetails"); // Redirect to profile update page
+    navigate("/tutor/profileDetails");
   };
 
   return (
@@ -169,18 +250,18 @@ export function Header() {
         <div className="flex items-center gap-3">
           {/* Notification Bell */}
           <DropdownMenu
-            onOpenChange={handleDropdownOpenChange}
-            open={dropdownOpen}
+            onOpenChange={handleProfileDropdownOpenChange}
+            open={profileDropdownOpen}
           >
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="relative">
                 <Bell className="h-4 w-4" />
-                {unreadCount > 0 && (
+                {unreadProfileCount > 0 && (
                   <Badge
                     variant="destructive"
                     className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
                   >
-                    {unreadCount}
+                    {unreadProfileCount}
                   </Badge>
                 )}
               </Button>
@@ -188,13 +269,13 @@ export function Header() {
             <DropdownMenuContent align="end" className="w-80">
               <div className="flex items-center justify-between px-4 py-2">
                 <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                {unreadCount > 0 && (
+                {unreadProfileCount > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      markAllNotificationsAsRead();
+                      markAllProfileNotificationsAsRead();
                     }}
                     className="text-xs text-blue-500 hover:text-blue-700"
                   >
@@ -203,14 +284,16 @@ export function Header() {
                 )}
               </div>
               <DropdownMenuSeparator />
-              {notifications.length > 0 ? (
-                notifications.map((notification) => (
+              {profileNotifications.length > 0 ? (
+                profileNotifications.map((notification) => (
                   <DropdownMenuItem
                     key={notification._id}
                     className={`flex flex-col items-start p-2 ${
                       !notification.read ? "bg-muted/50" : ""
                     }`}
-                    onClick={() => handleNotificationClick(notification._id)}
+                    onClick={() =>
+                      handleProfileNotificationClick(notification._id)
+                    }
                   >
                     <span className="text-sm font-medium">
                       {notification.type === "approval"
@@ -252,9 +335,72 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="outline" size="icon">
-            <MessageSquare className="h-4 w-4" />
-          </Button>
+          {/* Messages Icon */}
+          <DropdownMenu
+            onOpenChange={handleChatDropdownOpenChange}
+            open={chatDropdownOpen}
+          >
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="relative">
+                <MessageSquare className="h-4 w-4" />
+                {unreadChatCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                  >
+                    {unreadChatCount}
+                  </Badge>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <div className="flex items-center justify-between px-4 py-2">
+                <DropdownMenuLabel>Messages</DropdownMenuLabel>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate("/tutor/messages");
+                  }}
+                  className="text-xs text-blue-500 hover:text-blue-700"
+                >
+                  View all messages
+                </Button>
+              </div>
+              <DropdownMenuSeparator />
+              {chatNotifications.length > 0 ? (
+                chatNotifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={`${notification.courseId}-${notification.studentId}`}
+                    className={`flex flex-col items-start p-2 ${
+                      !notification.read ? "bg-muted/50" : ""
+                    }`}
+                    onClick={() =>
+                      handleChatNotificationClick(
+                        notification.courseId,
+                        notification.studentId
+                      )
+                    }
+                  >
+                    <span className="text-sm font-medium">
+                      {notification.courseTitle}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {notification.message}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {new Date(notification.timestamp).toLocaleString()}
+                    </span>
+                  </DropdownMenuItem>
+                ))
+              ) : (
+                <DropdownMenuItem className="text-sm text-muted-foreground">
+                  No new messages
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* User Dropdown */}
           <DropdownMenu>

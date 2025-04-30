@@ -49,4 +49,14 @@ export const tutorService = {
       toast.error("Failed to sign out");
     }
   },
+
+  async fetchPrivateChats(){
+    try {
+      const response = await authAxiosInstance.get("/tutors/private-chat");
+      return response;
+    } catch (error) {
+      console.error("Failed to fetch chat:", error);
+      toast.error("Failed to fetch chat");
+    }
+  }
 };
