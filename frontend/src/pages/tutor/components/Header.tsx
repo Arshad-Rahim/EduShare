@@ -237,6 +237,10 @@ export function Header() {
     navigate("/tutor/profileDetails");
   };
 
+  const handleWallet = () => {
+    navigate("/tutor/wallet");
+  };
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container mx-auto flex h-16 items-center justify-between space-x-4 sm:space-x-0">
@@ -426,8 +430,9 @@ export function Header() {
               <DropdownMenuItem onClick={handleMyAccount}>
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem>Earnings</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleWallet}>Wallet</DropdownMenuItem>
+              {/* <DropdownMenuItem>Earnings</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 Sign out

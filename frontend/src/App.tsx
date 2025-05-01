@@ -31,6 +31,7 @@ import ErrorBoundary from "./components/error-bountry/ErrorBoundry";
 import { StudentsPage } from "./pages/tutor/StduentsPage";
 import { PrivateChat } from "./components/privateChat/PrivateChat";
 import { MessagesPage } from "./pages/tutor/components/MessagesPage";
+import { WalletPage } from "./pages/tutor/Wallet";
 
 function App() {
   const { tutorId } = useAppContext();
@@ -197,6 +198,17 @@ function App() {
               <ProtectedUserRoute>
                 <ErrorBoundary>
                   <MessagesPage />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
+
+          <Route
+            path="/tutor/wallet"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <WalletPage />
                 </ErrorBoundary>
               </ProtectedUserRoute>
             }

@@ -250,11 +250,12 @@ import {
   userAuthMiddleware,
 } from "../middleware/userAuthMiddleware";
 import mongoose from "mongoose";
-import { WalletModel, TransactionModel } from "../models/walletModel";
+import { WalletModel } from "../models/walletModel";
 import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
 import { CourseService } from "../service/courseService";
 import { CourseRepository } from "../repository/courseRepository";
 import { purchaseModel } from "../models/purchaseModel"; // Import PurchaseModel
+import { TransactionModel } from "../models/transactionModel";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,

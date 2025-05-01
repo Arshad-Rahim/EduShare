@@ -23,6 +23,8 @@ import paymentRoutes from "./routes/paymentRoutes";
 import purchaseRoutes from "./routes/purchaseRoutes";
 import progressRoutes from "./routes/progressRoutes";
 import { initializeSocket } from "./config/socket";
+import walletRoutes from "./routes/walletRoutes";
+import transactionRoutes from "./routes/transactionRoutes";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -56,6 +58,8 @@ app.use("/wishlist", wishlistRoute);
 app.use("/payment", paymentRoutes);
 app.use("/purchase", purchaseRoutes);
 app.use("/progress", progressRoutes);
+app.use("/wallet", walletRoutes);
+app.use("/transaction", transactionRoutes);
 
 // Error handling middleware
 app.use((error: CustomError, req: Request, res: Response, next: NextFunction) =>

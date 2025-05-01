@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, BarChart3 } from "lucide-react";
+import { Users, BarChart3, Wallet, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,8 +25,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
-
-// ... keep existing code (ReusableTable component and interfaces)
 
 // Reusable Table Component
 type Column<T> = {
@@ -67,14 +64,13 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
   );
 }
 
-
 interface TStudent {
   _id: string;
   name: string;
   email: string;
   role: string;
   course: string;
-  purchaseDate: string; // Changed to string for flexibility
+  purchaseDate: string;
   amount: number;
 }
 
@@ -90,136 +86,207 @@ interface CourseStat {
   revenue: string;
 }
 
+interface Transaction {
+  transactionId: string;
+  amount: number;
+  transaction_type: string;
+  description: string;
+  createdAt: string;
+}
+
+interface WalletResponse {
+  balance: number;
+  walletId: string; // Add walletId to the response
+}
+
 export function TutorHome() {
-  // ... keep existing code (state declarations and fetchDashboardData function)
-   const [sidebarOpen] = useState(true);
-   const [students, setStudents] = useState<TStudent[] | null>(null);
-   const [totalRevenue, setTotalRevenue] = useState(0);
-   const [stats, setStats] = useState<Stat[] | null>(null);
-   const [courseStats, setCourseStats] = useState<CourseStat[] | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
-   const user = useSelector((state: any) => state.user.userDatas);
-   const userId = user?.id ? user?.id : user?._id;
-   // Fetch students data with timeout
-   const fetchDashboardData = async () => {
-     console.log("fetchDashboardData called");
-     console.log("User:", user);
+  const [sidebarOpen] = useState(true);
+  const [students, setStudents] = useState<TStudent[] | null>(null);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [stats, setStats] = useState<Stat[] | null>(null);
+  const [courseStats, setCourseStats] = useState<CourseStat[] | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletId, setWalletId] = useState<string | null>(null); // Store walletId
+  const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const user = useSelector((state: any) => state.user.userDatas);
+  const userId = user?.id ? user?.id : user?._id;
 
-     if (!userId) {
-       console.warn("No user.id, cannot fetch data");
-       setError("User not authenticated. Please log in.");
-       setLoading(false);
-       toast.error("Please log in to view dashboard");
-       return;
-     }
+  // Fetch dashboard data (students, revenue, wallet balance, and transactions)
+  const fetchDashboardData = async () => {
+    console.log("fetchDashboardData called");
+    console.log("User:", user);
 
-     try {
-       console.log("Fetching /tutors/students");
-       // Add timeout to prevent hanging
-       const controller = new AbortController();
-       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    if (!userId) {
+      console.warn("No user.id, cannot fetch data");
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      toast.error("Please log in to view dashboard");
+      return;
+    }
 
-       const response = await authAxiosInstance.get("/tutors/students", {
-         signal: controller.signal,
-       });
-       clearTimeout(timeoutId);
+    try {
+      console.log("Fetching /tutors/students");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-       console.log("Response:", response.data);
+      // Fetch students and revenue
+      const studentsResponse = await authAxiosInstance.get("/tutors/students", {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
 
-       // Handle response safely
-       const studentsData = response.data?.students || [];
-       const revenue = response.data?.totalRevenue || 0;
+      console.log("Students Response:", studentsResponse.data);
 
-       setStudents(studentsData);
-       setTotalRevenue(revenue);
+      const studentsData = studentsResponse.data?.students || [];
+      const totalRevenue = studentsResponse.data?.totalRevenue || 0;
 
-       // Calculate stats
-       setStats([
-         {
-           title: "Active Students",
-           value: studentsData.length.toString(),
-           icon: <Users className="h-5 w-5" />,
-         },
-         {
-           title: "Total Revenue",
-           value: `₹${revenue.toFixed(2)}`,
-           icon: <BarChart3 className="h-5 w-5" />,
-         },
-       ]);
+      setStudents(studentsData);
+      setTotalRevenue(totalRevenue);
 
-       // Calculate course stats
-       const courseMap = studentsData.reduce((acc: any, student: TStudent) => {
-         const course = student.course || "Unknown";
-         if (!acc[course]) {
-           acc[course] = { students: 0, amount: 0 };
-         }
-         acc[course].students += 1;
-         acc[course].amount += student.amount || 0;
-         return acc;
-       }, {});
+      // Fetch wallet balance and walletId
+      console.log("Fetching /wallet/get-data");
+      const walletResponse = await authAxiosInstance.get("/wallet/get-data", {
+        signal: controller.signal,
+      });
+      console.log("WALLET RESPOSNE THAT GET", walletResponse);
+      const { balance, _id: fetchedWalletId } = walletResponse.data
+        .wallet as WalletResponse;
+      setWalletBalance(balance);
+      setWalletId(fetchedWalletId);
 
-       const courseStatsData = Object.keys(courseMap).map((course) => ({
-         course,
-         students: courseMap[course].students,
-         revenue: `₹${courseMap[course].amount.toFixed(2)}`,
-       }));
-       setCourseStats(courseStatsData);
-       console.log("Stats:", stats);
-       console.log("Course Stats:", courseStatsData);
-       console.log("Students:", studentsData);
-     } catch (error: any) {
-       console.error("Fetch error:", error);
-       let errorMessage = "Failed to load dashboard data";
-       if (error.name === "AbortError") {
-         errorMessage = "Request timed out. Please try again.";
-       } else if (error.response) {
-         errorMessage = `Server error: ${error.response.status} ${
-           error.response.data?.message || ""
-         }`;
-       }
-       setError(errorMessage);
-       toast.error(errorMessage);
-     } finally {
-       console.log("Setting loading to false");
-       setLoading(false);
-     }
-   };
+      // Fetch wallet transactions using walletId
+      console.log(
+        "Fetching /tutors/wallet/transactions with walletId:",
+        fetchedWalletId
+      );
+      const transactionsResponse = await authAxiosInstance.get(
+        `/transaction/transaction-details?walletId=${fetchedWalletId}`, // Pass walletId as query param
+        {
+          signal: controller.signal,
+        }
+      );
+      const transactionsData = transactionsResponse.data?.transactions || [];
+      setTransactions(transactionsData);
 
-   useEffect(() => {
-     console.log("useEffect ran, user.id:", user?.id);
-     if (userId) {
-       fetchDashboardData();
-     } else {
-       console.warn("No user.id in useEffect, setting loading false");
-       setError("User not authenticated. Please log in.");
-       setLoading(false);
-       toast.error("Please log in to view dashboard");
-     }
-   }, [user?.id]);
+      // Calculate tutor's share (90% of total revenue)
+      const tutorShare = totalRevenue * 0.9;
 
-   // Student table columns
-   const studentColumns: Column<TStudent>[] = [
-     { header: "Student Name", accessor: "name" },
-     { header: "Email", accessor: "email" },
-     { header: "Course", accessor: "course" },
-     {
-       header: "Purchase Date",
-       accessor: (student) =>
-         new Date(student.purchaseDate).toLocaleDateString(),
-     },
-     {
-       header: "Amount",
-       accessor: (student) => `₹${student.amount.toFixed(2)}`,
-     },
-   ];
+      // Calculate stats
+      setStats([
+        {
+          title: "Active Students",
+          value: studentsData.length.toString(),
+          icon: <Users className="h-5 w-5" />,
+        },
+        {
+          title: "Your Earnings",
+          value: `₹${tutorShare.toFixed(2)}`,
+          icon: <BarChart3 className="h-5 w-5" />,
+        },
+        {
+          title: "Wallet Balance",
+          value: `₹${balance.toFixed(2)}`,
+          icon: <Wallet className="h-5 w-5" />,
+        },
+      ]);
 
-   // Course stats table columns
-   const courseColumns: Column<CourseStat>[] = [
-     { header: "Course", accessor: "course" },
-     { header: "Students", accessor: "students" },
-     { header: "Revenue", accessor: "revenue" },
-   ];
+      // Calculate course stats with tutor's share (90% of course revenue)
+      const courseMap = studentsData.reduce((acc: any, student: TStudent) => {
+        const course = student.course || "Unknown";
+        if (!acc[course]) {
+          acc[course] = { students: 0, amount: 0 };
+        }
+        acc[course].students += 1;
+        acc[course].amount += student.amount || 0;
+        return acc;
+      }, {});
+
+      const courseStatsData = Object.keys(courseMap).map((course) => ({
+        course,
+        students: courseMap[course].students,
+        revenue: `₹${(courseMap[course].amount * 0.9).toFixed(2)}`, // 90% of course revenue
+      }));
+      setCourseStats(courseStatsData);
+
+      console.log("Stats:", stats);
+      console.log("Course Stats:", courseStatsData);
+      console.log("Students:", studentsData);
+      console.log("Wallet Balance:", balance);
+      console.log("Wallet ID:", fetchedWalletId);
+      console.log("Transactions:", transactionsData);
+    } catch (error: any) {
+      console.error("Fetch error:", error);
+      let errorMessage = "Failed to load dashboard data";
+      if (error.name === "AbortError") {
+        errorMessage = "Request timed out. Please try again.";
+      } else if (error.response) {
+        errorMessage = `Server error: ${error.response.status} ${
+          error.response.data?.message || ""
+        }`;
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      console.log("Setting loading to false");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    console.log("useEffect ran, user.id:", user?.id);
+    if (userId) {
+      fetchDashboardData();
+    } else {
+      console.warn("No user.id in useEffect, setting loading false");
+      setError("User not authenticated. Please log in.");
+      setLoading(false);
+      toast.error("Please log in to view dashboard");
+    }
+  }, [user?.id]);
+
+  // Student table columns
+  const studentColumns: Column<TStudent>[] = [
+    { header: "Student Name", accessor: "name" },
+    { header: "Email", accessor: "email" },
+    { header: "Course", accessor: "course" },
+    {
+      header: "Purchase Date",
+      accessor: (student) =>
+        new Date(student.purchaseDate).toLocaleDateString(),
+    },
+    {
+      header: "Amount",
+      accessor: (student) => `₹${student.amount.toFixed(2)}`,
+    },
+  ];
+
+  // Course stats table columns
+  const courseColumns: Column<CourseStat>[] = [
+    { header: "Course", accessor: "course" },
+    { header: "Students", accessor: "students" },
+    { header: "Your Earnings", accessor: "revenue" },
+  ];
+
+  // Transaction history table columns
+  const transactionColumns: Column<Transaction>[] = [
+    { header: "Transaction ID", accessor: "transactionId" },
+    {
+      header: "Amount",
+      accessor: (transaction) =>
+        transaction.transaction_type === "credit"
+          ? `+₹${transaction.amount.toFixed(2)}`
+          : `-₹${transaction.amount.toFixed(2)}`,
+    },
+    { header: "Type", accessor: "transaction_type" },
+    { header: "Description", accessor: "description" },
+    {
+      header: "Date",
+      accessor: (transaction) =>
+        new Date(transaction.createdAt).toLocaleDateString(),
+    },
+  ];
 
   if (loading) {
     return (
@@ -254,7 +321,13 @@ export function TutorHome() {
     );
   }
 
-  if (!stats || !students || !courseStats) {
+  if (
+    !stats ||
+    !students ||
+    !courseStats ||
+    walletBalance === null ||
+    !transactions
+  ) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -286,7 +359,7 @@ export function TutorHome() {
             <Separator className="my-6" />
 
             {/* Stats Overview with improved cards */}
-            <div className="mb-8 grid gap-6 sm:grid-cols-2">
+            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {stats.map((stat, index) => (
                 <Card
                   key={index}
@@ -341,6 +414,43 @@ export function TutorHome() {
               </CardFooter>
             </Card>
 
+            {/* Wallet Transaction History */}
+            <Card className="mb-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="border-b bg-muted/50">
+                <CardTitle className="text-2xl">
+                  Wallet Transaction History
+                </CardTitle>
+                <CardDescription>
+                  History of your wallet transactions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {transactions.length === 0 ? (
+                  <div className="text-center py-12">
+                    <History className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                      No transactions yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg overflow-hidden border">
+                    <ReusableTable
+                      columns={transactionColumns}
+                      data={transactions}
+                    />
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  View All Transactions
+                </Button>
+              </CardFooter>
+            </Card>
+
             {/* Student List with improved styling */}
             <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
@@ -378,4 +488,3 @@ export function TutorHome() {
     </div>
   );
 }
-
