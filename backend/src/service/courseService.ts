@@ -52,4 +52,11 @@ export class CourseService implements ICourseService {
   async getEnrolledCourses(userId: string): Promise<TCourseAdd[]> {
       return this._courseRepository.getEnrolledCourses(userId)
   }
+
+
+  async getCourseDetails(courseId: string): Promise<TCourseAdd | null> {
+      return this._courseRepository.getCourseDetails(courseId)
+  }
+
+
 }

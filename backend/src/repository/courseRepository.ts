@@ -194,4 +194,11 @@ export class CourseRepository implements ICourseRepository {
     }
   }
 
+
+  async getCourseDetails(courseId:string):Promise<TCourseAdd | null>{
+    
+    const course = await courseModel.findById(courseId)
+    return course;
+  }
+
 }
