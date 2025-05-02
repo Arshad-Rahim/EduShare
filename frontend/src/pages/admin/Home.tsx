@@ -270,10 +270,8 @@ export function AdminHome() {
       );
 
       // Derive unique courses (placeholder names based on enrollment counts)
-      const uniqueCourses = students
-        .filter((s) => (Number(s.enrolledCourses) || 0) > 0)
-        .map((s, index) => `Course ${index + 1}`)
-        .filter((value, index, self) => self.indexOf(value) === index);
+      const response = await authAxiosInstance.get("/courses/course-count");
+      const uniqueCourses = response?.data.courseCount;
 
       // Derive stats using walletResponse directly for balance
       setStats([
@@ -287,7 +285,7 @@ export function AdminHome() {
         },
         {
           title: "Active Courses",
-          value: uniqueCourses.length.toString(),
+          value: uniqueCourses.toString(),
           change: "+0",
           changePercent: "+0%",
           status: "increase",

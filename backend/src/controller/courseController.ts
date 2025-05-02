@@ -318,6 +318,28 @@ res.status(HTTP_STATUS.OK).json({
   }
 
 
+  async getCourseTotalCount(req:Request,res:Response){
+    try {
+      const courseCount = await this._courseService.getCourseTotalCount();
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        courseCount,
+      });
+
+    } catch (error) {
+      if (error instanceof CustomError) {
+        res
+          .status(error.statusCode)
+          .json({ success: false, message: error.message });
+        return;
+      }
+      console.log(error);
+      res
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+    }
+  }
 
 
 

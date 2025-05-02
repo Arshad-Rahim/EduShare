@@ -91,6 +91,15 @@ export class CourseRoutes {
           injectedCourseController.getEnrolledCourses(req, res)
       );
 
+          this.router.get(
+            "/course-count",
+            authMiddleware,
+            authorizeRole(["admin"]),
+
+            (req: Request, res: Response) =>
+              injectedCourseController.getCourseTotalCount(req, res)
+          );
+
   }
 }
 

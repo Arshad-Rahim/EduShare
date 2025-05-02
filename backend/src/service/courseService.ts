@@ -58,5 +58,9 @@ export class CourseService implements ICourseService {
       return this._courseRepository.getCourseDetails(courseId)
   }
 
+  async getCourseTotalCount(): Promise<number> {
+      return this._courseRepository.getCourseTotalCount();
+  }
+
 
 }

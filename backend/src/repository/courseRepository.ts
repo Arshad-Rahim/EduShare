@@ -201,4 +201,9 @@ export class CourseRepository implements ICourseRepository {
     return course;
   }
 
+  async getCourseTotalCount():Promise<number>{
+      const courseCount = await courseModel.countDocuments();
+    return courseCount;
+  }
+
 }
