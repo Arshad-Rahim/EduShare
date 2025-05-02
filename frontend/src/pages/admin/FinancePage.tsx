@@ -10,16 +10,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
+import Table from "@/components/tableStructure/TableReusableStructure";
 
 interface Transaction {
   transactionId: string;
@@ -93,6 +86,26 @@ export function FinancePage() {
     }
   }, [walletData, transactions]);
 
+  // Define headers for the reusable Table component
+  const headers = [
+    {
+      key: "amount",
+      label: "Amount",
+      render: (transaction: Transaction) =>
+        transaction.transaction_type === "credit"
+          ? `+₹${transaction.amount.toFixed(2)}`
+          : `-₹${transaction.amount.toFixed(2)}`,
+    },
+    { key: "transaction_type", label: "Type" },
+    { key: "description", label: "Description" },
+    {
+      key: "createdAt",
+      label: "Date",
+      render: (transaction: Transaction) =>
+        new Date(transaction.createdAt).toLocaleDateString(),
+    },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -143,44 +156,13 @@ export function FinancePage() {
                 </p>
               </div>
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {/* <TableHead>Transaction ID</TableHead> */}
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions && transactions.length > 0 ? (
-                      transactions.map((transaction) => (
-                        <TableRow key={transaction.transactionId}>
-                          {/* <TableCell>{transaction.transactionId}</TableCell> */}
-                          <TableCell>
-                            {transaction.transaction_type === "credit"
-                              ? `+₹${transaction.amount.toFixed(2)}`
-                              : `-₹${transaction.amount.toFixed(2)}`}
-                          </TableCell>
-                          <TableCell>{transaction.transaction_type}</TableCell>
-                          <TableCell>{transaction.description}</TableCell>
-                          <TableCell>
-                            {new Date(
-                              transaction.createdAt
-                            ).toLocaleDateString()}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center">
-                          No transactions available.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                <Table
+                  headers={headers}
+                  data={transactions || []}
+                  rowKey="transactionId"
+                  className="shadow-md rounded-lg"
+                  noDataMessage="No transactions available."
+                />
               </div>
             </CardContent>
           </Card>
