@@ -32,6 +32,7 @@ import { StudentsPage } from "./pages/tutor/StduentsPage";
 import { PrivateChat } from "./components/privateChat/PrivateChat";
 import { MessagesPage } from "./pages/tutor/components/MessagesPage";
 import { WalletPage } from "./pages/tutor/Wallet";
+import { FinancePage } from "./pages/admin/FinancePage";
 
 function App() {
   const { tutorId } = useAppContext();
@@ -213,6 +214,17 @@ function App() {
               </ProtectedUserRoute>
             }
           />
+
+          <Route
+            path="/tutor/profileDetails"
+            element={
+              <ProtectedUserRoute>
+                <ErrorBoundary>
+                  <TutorProfileDetails />
+                </ErrorBoundary>
+              </ProtectedUserRoute>
+            }
+          />
           <Route
             path="/admin/home"
             element={
@@ -253,16 +265,18 @@ function App() {
               </ProtectedAdminRoute>
             }
           />
+
           <Route
-            path="/tutor/profileDetails"
+            path="/admin/finances"
             element={
-              <ProtectedUserRoute>
+              <ProtectedAdminRoute>
                 <ErrorBoundary>
-                  <TutorProfileDetails />
+                  <FinancePage />
                 </ErrorBoundary>
-              </ProtectedUserRoute>
+              </ProtectedAdminRoute>
             }
           />
+
           <Route
             path="*"
             element={

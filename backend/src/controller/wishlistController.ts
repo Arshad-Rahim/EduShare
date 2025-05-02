@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { IWishlistService } from "../interfaces/serviceInterfaces/wishlistService";
 import { CustomError } from "../util/CustomError";
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../shared/constant";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 import { createSecureUrl } from "../util/createSecureUrl";
 
 export class WishlistController {

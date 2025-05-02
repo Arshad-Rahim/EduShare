@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 import {
   ERROR_MESSAGES,
   HTTP_STATUS,

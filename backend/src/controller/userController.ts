@@ -5,7 +5,7 @@ import {
   SUCCESS_MESSAGES,
 } from "../shared/constant";
 import { CustomError } from "../util/CustomError";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 import { IUserService } from "../interfaces/serviceInterfaces/userService";
 import { IUserRepository } from "../interfaces/repositoryInterfaces/IUserRepository";
 import { IUserProfileRepository } from "../interfaces/repositoryInterfaces/IUserProfileRepository";

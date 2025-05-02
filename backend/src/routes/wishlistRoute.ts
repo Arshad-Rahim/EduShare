@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
 import {
   authorizeRole,
-  userAuthMiddleware,
-} from "../middleware/userAuthMiddleware";
+  authMiddleware,
+} from "../middleware/authMiddleware";
 import { checkUserBlocked } from "../middleware/checkUserBlocked";
 import { injectedWishlistController } from "../di/wishlistInjection";
 
@@ -17,7 +17,7 @@ export class WishlistRoutes {
   initializeRoutes() {
     this.router.post(
       "/:courseId",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       checkUserBlocked,
 
@@ -27,7 +27,7 @@ export class WishlistRoutes {
 
     this.router.get(
       "/",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       checkUserBlocked,
 
@@ -37,7 +37,7 @@ export class WishlistRoutes {
 
     this.router.delete(
       "/:courseId",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       checkUserBlocked,
 

@@ -6,7 +6,7 @@ import {
   HTTP_STATUS,
   SUCCESS_MESSAGES,
 } from "../shared/constant";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 
 export class PurchaseController {
   constructor(private _purchaseService: IPurchaseService) {}

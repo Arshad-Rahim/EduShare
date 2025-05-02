@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
 import {
   authorizeRole,
-  userAuthMiddleware,
-} from "../middleware/userAuthMiddleware";
+  authMiddleware,
+} from "../middleware/authMiddleware";
 import { checkUserBlocked } from "../middleware/checkUserBlocked";
 import { injectedCourseController } from "../di/courseInjection";
 import { upload } from "../util/multer";
@@ -19,7 +19,7 @@ export class CourseRoutes {
     this.router.post(
       "/add",
       upload.single("thumbnail"),
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["tutor"]),
       checkUserBlocked,
 
@@ -29,7 +29,7 @@ export class CourseRoutes {
 
     this.router.get(
       "/my-courses",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["tutor"]),
       checkUserBlocked,
 
@@ -40,7 +40,7 @@ export class CourseRoutes {
     this.router.put(
       "/update/:courseId",
       upload.single("thumbnail"),
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["tutor"]),
       checkUserBlocked,
 
@@ -50,7 +50,7 @@ export class CourseRoutes {
 
     this.router.delete(
       "/delete/:courseId",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["tutor"]),
       checkUserBlocked,
 
@@ -61,8 +61,8 @@ export class CourseRoutes {
 
      this.router.get(
        "/all-courses",
-       userAuthMiddleware,
-       authorizeRole(["user"]),
+       authMiddleware,
+       authorizeRole(["user","admin"]),
        checkUserBlocked,
 
        (req: Request, res: Response) =>
@@ -72,7 +72,7 @@ export class CourseRoutes {
 
       this.router.get(
         "/:courseId/purchase-status",
-        userAuthMiddleware,
+        authMiddleware,
         authorizeRole(["user"]),
         checkUserBlocked,
 
@@ -83,7 +83,7 @@ export class CourseRoutes {
 
       this.router.get(
         "/enrolled-courses",
-        userAuthMiddleware,
+        authMiddleware,
         authorizeRole(["user",'tutor']),
         checkUserBlocked,
 

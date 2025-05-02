@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { authorizeRole, userAuthMiddleware } from "../middleware/userAuthMiddleware";
+import { authorizeRole, authMiddleware } from "../middleware/authMiddleware";
 import { checkUserBlocked } from "../middleware/checkUserBlocked";
 import { injectedProgressController } from "../di/progressInjection";
 
@@ -16,7 +16,7 @@ export class ProgressRoutes {
 
  this.router.post(
    "/:lessonId/complete",
-   userAuthMiddleware,
+   authMiddleware,
    authorizeRole(["user"]),
    checkUserBlocked,
 
@@ -27,7 +27,7 @@ export class ProgressRoutes {
 
  this.router.get(
    "/:courseId/completed-lessons",
-   userAuthMiddleware,
+   authMiddleware,
    authorizeRole(["user"]),
    checkUserBlocked,
 

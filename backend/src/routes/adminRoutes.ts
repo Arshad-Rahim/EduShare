@@ -1,6 +1,5 @@
 import { Request, Response, Router } from "express";
-import { adminAuthMiddleware } from "../middleware/adminAuthMiddleware";
-import { authorizeRole } from "../middleware/userAuthMiddleware";
+import { authMiddleware, authorizeRole } from "../middleware/authMiddleware";
 import { injectedAdminController } from "../di/adminInjection";
 
 export class AdminRoutes{
@@ -12,13 +11,13 @@ export class AdminRoutes{
     }
 
     initializeRoute(){
-      this.router.get("/usersList",adminAuthMiddleware,authorizeRole(['admin']),(req: Request, res: Response) =>
+      this.router.get("/usersList",authMiddleware,authorizeRole(['admin']),(req: Request, res: Response) =>
         injectedAdminController.usersList(req, res)
       );
       // // Approve a tutor
       this.router.patch(
         "/:tutorId/approve",
-        adminAuthMiddleware,
+        authMiddleware,
         authorizeRole(["admin"]),
         (req: Request, res: Response) =>
           injectedAdminController.acceptTutor(req, res)
@@ -26,7 +25,7 @@ export class AdminRoutes{
 
        this.router.patch(
          "/:tutorId/reject",
-         adminAuthMiddleware,
+         authMiddleware,
          authorizeRole(["admin"]),
          (req: Request, res: Response) =>
            injectedAdminController.rejectTutor(req, res)
@@ -34,7 +33,7 @@ export class AdminRoutes{
 
          this.router.patch(
            "/:id/status",
-           adminAuthMiddleware,
+           authMiddleware,
            authorizeRole(["admin"]),
            (req: Request, res: Response) =>
              injectedAdminController.updateStatus(req, res)
@@ -43,7 +42,7 @@ export class AdminRoutes{
         // Logout
            this.router.post(
              "/logout",
-             adminAuthMiddleware,
+             authMiddleware,
              authorizeRole(["admin"]),
              (req: Request, res: Response) =>
                injectedAdminController.logoutAdmin(req, res)

@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
 import {
   authorizeRole,
-  userAuthMiddleware,
-} from "../middleware/userAuthMiddleware";
+  authMiddleware,
+} from "../middleware/authMiddleware";
 import { checkUserBlocked } from "../middleware/checkUserBlocked";
 import { injectedPurchaseController } from "../di/purchaseInjection";
 
@@ -16,7 +16,7 @@ export class PurchaseRoute {
   initializeRoutes() {
     this.router.post(
       "/order",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       checkUserBlocked,
       (req: Request, res: Response) =>

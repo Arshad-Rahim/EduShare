@@ -8,7 +8,7 @@ import {
 } from "../shared/constant";
 import { CustomError } from "../util/CustomError";
 import { ITokenService } from "../interfaces/tokenServiceInterface";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 import { setAuthCookies } from "../util/cookieHelper";
 
 export class AuthController {

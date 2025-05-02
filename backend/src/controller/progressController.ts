@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { ProgressService } from "../service/progressService";
 import { CustomError } from "../util/CustomError";
 import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../shared/constant";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 
 export class ProgressController {
   constructor(private _progressService: ProgressService) {}

@@ -15,13 +15,16 @@ export interface CustomRequest extends Request {
   user: CustomJwtPayload;
 }
 
-export const userAuthMiddleware = async (
+export const authMiddleware = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies.userAccessToken ?? req.cookies.tutorAccessToken;
+    const token =
+      req.cookies.userAccessToken ??
+      req.cookies.tutorAccessToken ??
+      req.cookies.adminAccessToken;
 
     if (!token) {
       console.log("no token");
@@ -32,16 +35,15 @@ export const userAuthMiddleware = async (
     }
 
     const user = tokenService.verifyAccessToken(token) as CustomJwtPayload;
-    // console.log("USER IM USERAUTH", user);
     if (!user) {
       res
         .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS });
       return;
     }
-    // console.log("TOKEN ACCESS TOKEN", token);
 
     (req as CustomRequest).user = user;
+
     next();
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "TokenExpiredError") {
@@ -65,7 +67,11 @@ export const decodeToken = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.cookies.userAccessToken ?? req.cookies.tutorAccessToken;
+    const token =
+      req.cookies.userAccessToken ??
+      req.cookies.tutorAccessToken ??
+      req.cookies.adminAccessToken;
+
     if (!token) {
       console.log("no token");
       res
@@ -74,16 +80,22 @@ export const decodeToken = async (
       return;
     }
 
-    const user = tokenService.decodeAccessToken(token?.access_token);
-    console.log("decoded", user);
+    const user = tokenService.decodeAccessToken(token);
+
+    if (!user) {
+      res
+        .status(HTTP_STATUS.UNAUTHORIZED)
+        .json({ message: ERROR_MESSAGES.INVALID_TOKEN });
+
+      return;
+    }
+
     (req as CustomRequest).user = {
-      id: user?.userId,
-      email: user?.email,
-      role: user?.role,
-      access_token: token.access_token,
-      refresh_token: token.refresh_token,
+      id: user.userId,
+      email: user.email,
+      role: user.role,
     };
-    console.log("FINAL USER", user);
+    console.log("decoded", user);
     next();
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "TokenExpiredError") {
@@ -103,7 +115,11 @@ export const decodeToken = async (
 
 export const authorizeRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
+    console.log("ITHIL POLUM VANNILLE");
+
     const user = (req as CustomRequest).user;
+    console.log("ALLOWED ROLE", allowedRoles);
+    console.log("USER IN THE BACKEND", user);
 
     if (!user || !allowedRoles.includes(user.role)) {
       console.log("role not allowed");

@@ -2,8 +2,8 @@ import { Router, Request, Response } from "express";
 import { injectedUserController } from "../di/userInjection";
 import {
   authorizeRole,
-  userAuthMiddleware,
-} from "../middleware/userAuthMiddleware";
+  authMiddleware,
+} from "../middleware/authMiddleware";
 import { injectedAuthController } from "../di/authInjection";
 
 export class UserRoutes {
@@ -18,7 +18,7 @@ export class UserRoutes {
     // Get current user profile
     this.router.get(
       "/me",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       (req: Request, res: Response) =>
         injectedUserController.logedInUserData(req, res)
@@ -26,7 +26,7 @@ export class UserRoutes {
 
     this.router.get(
       "/:userId",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       (req: Request, res: Response) =>
         injectedUserController.findUserData(req, res)
@@ -34,7 +34,7 @@ export class UserRoutes {
 
     this.router.post(
       "/profileUpdate",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       (req: Request, res: Response) =>
         injectedUserController.updateUserProfile(req, res)
@@ -44,7 +44,7 @@ export class UserRoutes {
 
     this.router.post(
       "/verify-password",
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["user"]),
       (req: Request, res: Response) =>
         injectedAuthController.verifyPassword(req, res)
@@ -54,7 +54,7 @@ export class UserRoutes {
 
      this.router.post(
        "/update-password",
-       userAuthMiddleware,
+       authMiddleware,
        authorizeRole(["user"]),
        (req: Request, res: Response) =>
          injectedUserController.updatePassword(req, res)

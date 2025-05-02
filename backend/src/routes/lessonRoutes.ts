@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import { authorizeRole, userAuthMiddleware } from "../middleware/userAuthMiddleware";
+import { authorizeRole, authMiddleware } from "../middleware/authMiddleware";
 import { checkUserBlocked } from "../middleware/checkUserBlocked";
 import { injectedLessonController } from "../di/lessonInjection";
 import { upload } from "../util/multer";
@@ -16,7 +16,7 @@ export class LessonRoutes {
     this.router.post(
       "/add",
        upload.single("file"),
-      userAuthMiddleware,
+      authMiddleware,
       authorizeRole(["tutor"]),
       checkUserBlocked,
       (req:Request,res:Response)=>
@@ -26,7 +26,7 @@ export class LessonRoutes {
 
      this.router.get(
        "/course/:courseId",
-         userAuthMiddleware,
+         authMiddleware,
          authorizeRole(["tutor","user"]),
          checkUserBlocked,
        (req: Request, res: Response) =>
@@ -36,7 +36,7 @@ export class LessonRoutes {
 
      this.router.delete(
        "/delete/:lessonId",
-         userAuthMiddleware,
+         authMiddleware,
          authorizeRole(["tutor"]),
          checkUserBlocked,
        (req: Request, res: Response) =>
@@ -46,7 +46,7 @@ export class LessonRoutes {
 
       this.router.put(
         "/:lessonId",
-          userAuthMiddleware,
+          authMiddleware,
           authorizeRole(["tutor"]),
           checkUserBlocked,
         (req: Request, res: Response) =>

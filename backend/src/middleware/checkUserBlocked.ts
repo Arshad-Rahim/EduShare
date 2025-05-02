@@ -1,16 +1,16 @@
 
 
-import { NextFunction, Response } from "express";
-import { CustomRequest } from "./adminAuthMiddleware";
+import { NextFunction, Request, Response } from "express";
 import { userModel } from "../models/userModels";
+import { CustomRequest } from "./authMiddleware";
 
 export const checkUserBlocked = async (
-  req: CustomRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    if (!req.user) {
+    if (!(req as CustomRequest).user) {
       res.status(401).json({
         status: "error",
         message: "Unauthorized: No user found in request",
@@ -18,7 +18,7 @@ export const checkUserBlocked = async (
       return;
     }
 
-    const { userId } = req.user;
+    const { userId } = (req as CustomRequest).user;
     const user = await userModel.findById(userId);
     if (!user) {
       res.status(404).json({

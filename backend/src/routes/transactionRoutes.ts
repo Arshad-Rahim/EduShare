@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
 import {
   authorizeRole,
-  userAuthMiddleware,
-} from "../middleware/userAuthMiddleware";
+  authMiddleware,
+} from "../middleware/authMiddleware";
 import { checkUserBlocked } from "../middleware/checkUserBlocked";
 import { injectedTransactionController } from "../di/transactioninjection";
 
@@ -17,8 +17,8 @@ export class TransactionRoutes {
   initializeRoutes() {
     this.router.get(
       "/transaction-details",
-      userAuthMiddleware,
-      authorizeRole(["tutor"]),
+      authMiddleware,
+      authorizeRole(["tutor","admin"]),
       checkUserBlocked,
 
       (req: Request, res: Response) =>

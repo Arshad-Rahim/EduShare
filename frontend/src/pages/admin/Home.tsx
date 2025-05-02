@@ -52,6 +52,7 @@ import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { userService } from "@/services/adminService/userService";
 import { tutorService } from "@/services/adminService/tutorService";
+import { authAxiosInstance } from "@/api/authAxiosInstance";
 
 // Reusable Table Component
 type Column<T> = {
@@ -167,6 +168,22 @@ interface TTutor {
   lastActive: string;
 }
 
+interface Transaction {
+  transactionId: string;
+  amount: number;
+  transaction_type: string;
+  description: string;
+  createdAt: string;
+}
+
+interface WalletResponse {
+  _id: string;
+  userId: string;
+  balance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<Stat[] | null>(null);
@@ -180,6 +197,8 @@ export function AdminHome() {
   >(null);
   const [performanceMetrics, setPerformanceMetrics] =
     useState<PerformanceMetric | null>(null);
+  const [walletData, setWalletData] = useState<WalletResponse | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -206,15 +225,31 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Fetch students and tutors
+      // Fetch students and tutors concurrently
       const [studentResponse, tutorResponse] = await Promise.all([
         userService.userList(1, 100, "", { signal: controller.signal }),
         tutorService.userList(1, 100, "", { signal: controller.signal }),
       ]);
 
+      // Fetch wallet data
+      const walletResponse = await authAxiosInstance.get("/wallet/get-data", {
+        signal: controller.signal,
+      });
+
+      // Fetch transactions using the wallet ID
+      let transactionsResponse = { data: { transactions: [] } };
+      if (walletResponse?.data?.wallet?._id) {
+        transactionsResponse = await authAxiosInstance.get(
+          `/transaction/transaction-details?walletId=${walletResponse.data.wallet._id}`,
+          { signal: controller.signal }
+        );
+      }
+
       clearTimeout(timeoutId);
       console.log("Student Response:", studentResponse.data);
       console.log("Tutor Response:", tutorResponse.data);
+      console.log("Wallet Response:", walletResponse.data);
+      console.log("Transactions Response:", transactionsResponse.data);
 
       const students: TStudent[] =
         studentResponse.data.users.filter((u) => u.role === "user") || [];
@@ -222,6 +257,11 @@ export function AdminHome() {
         tutorResponse.data.users.filter((t) => t.role === "tutor") || [];
 
       setTutors(tutors);
+
+      // Set wallet data and transactions
+      const wallet = walletResponse.data.wallet || null;
+      setWalletData(wallet);
+      setTransactions(transactionsResponse.data.transactions || []);
 
       // Derive total revenue (assume ₹1000 per enrollment)
       const totalRevenue = students.reduce(
@@ -235,7 +275,7 @@ export function AdminHome() {
         .map((s, index) => `Course ${index + 1}`)
         .filter((value, index, self) => self.indexOf(value) === index);
 
-      // Derive stats
+      // Derive stats using walletResponse directly for balance
       setStats([
         {
           title: "Total Users",
@@ -264,12 +304,14 @@ export function AdminHome() {
           ),
         },
         {
-          title: "Avg. Completion Rate",
-          value: "68.5%", // Hardcoded
-          change: "-0%",
-          changePercent: "-0%",
-          status: "decrease",
-          icon: <Percent className="h-5 w-5" />,
+          title: "Wallet Balance",
+          value: wallet ? `₹${wallet.balance.toLocaleString("en-IN")}` : "₹0",
+          change: "₹0",
+          changePercent: "+0%",
+          status: "increase",
+          icon: (
+            <span className="h-5 w-5 flex items-center justify-center">₹</span>
+          ),
         },
       ]);
 
@@ -440,6 +482,8 @@ export function AdminHome() {
       console.log("Course Statuses:", courseStatuses);
       console.log("Course Submissions:", submissions);
       console.log("Performance Metrics:", performanceMetrics);
+      console.log("Wallet Data:", walletData);
+      console.log("Transactions:", transactions);
     } catch (error: any) {
       console.error("Fetch error:", error);
       let errorMessage = "Failed to load dashboard data";
@@ -763,6 +807,47 @@ export function AdminHome() {
                     ) : (
                       <p className="text-muted-foreground">
                         No recent enrollments.
+                      </p>
+                    )}
+                  </div>
+                  <Separator className="my-6" />
+                  <div className="space-y-3">
+                    <h4 className="font-medium">Recent Transactions</h4>
+                    {transactions && transactions.length > 0 ? (
+                      transactions.slice(0, 3).map((transaction, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-md border p-3"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              {transaction.transactionId}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {transaction.description} •{" "}
+                              {new Date(transaction.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={
+                                transaction.transaction_type === "credit"
+                                  ? "bg-green-50 border-green-200 text-green-600"
+                                  : "bg-red-50 border-red-200 text-red-600"
+                              }
+                            >
+                              {transaction.transaction_type === "credit"
+                                ? `+₹${transaction.amount.toFixed(2)}`
+                                : `-₹${transaction.amount.toFixed(2)}`}
+                            </Badge>
+                            <Button size="sm">View</Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground">
+                        No recent transactions.
                       </p>
                     )}
                   </div>

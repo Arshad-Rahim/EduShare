@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { IWalletService } from "../interfaces/serviceInterfaces/walletService";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 import { CustomError } from "../util/CustomError";
 import {
   ERROR_MESSAGES,

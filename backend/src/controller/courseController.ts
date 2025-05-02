@@ -7,7 +7,7 @@ import {
 } from "../shared/constant";
 import { v2 as cloudinary } from "cloudinary";
 import { UploadApiResponse } from "cloudinary";
-import { CustomRequest } from "../middleware/userAuthMiddleware";
+import { CustomRequest } from "../middleware/authMiddleware";
 import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
 import { createSecureUrl } from "../util/createSecureUrl";
 
