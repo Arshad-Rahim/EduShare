@@ -17,7 +17,7 @@ export class LessonRoutes {
       "/add",
        upload.single("file"),
       authMiddleware,
-      authorizeRole(["tutor"]),
+      authorizeRole(["tutor","admin"]),
       checkUserBlocked,
       (req:Request,res:Response)=>
         injectedLessonController.addLesson(req,res)
@@ -27,7 +27,7 @@ export class LessonRoutes {
      this.router.get(
        "/course/:courseId",
          authMiddleware,
-         authorizeRole(["tutor","user"]),
+         authorizeRole(["tutor","user","admin"]),
          checkUserBlocked,
        (req: Request, res: Response) =>
          injectedLessonController.getLessons(req, res)
@@ -37,7 +37,7 @@ export class LessonRoutes {
      this.router.delete(
        "/delete/:lessonId",
          authMiddleware,
-         authorizeRole(["tutor"]),
+         authorizeRole(["tutor","admin"]),
          checkUserBlocked,
        (req: Request, res: Response) =>
          injectedLessonController.deleteLesson(req, res)
@@ -47,7 +47,7 @@ export class LessonRoutes {
       this.router.put(
         "/:lessonId",
           authMiddleware,
-          authorizeRole(["tutor"]),
+          authorizeRole(["tutor","admin"]),
           checkUserBlocked,
         (req: Request, res: Response) =>
           injectedLessonController.editLesson(req, res)

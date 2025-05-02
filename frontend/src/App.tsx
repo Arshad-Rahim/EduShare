@@ -33,6 +33,7 @@ import { PrivateChat } from "./components/privateChat/PrivateChat";
 import { MessagesPage } from "./pages/tutor/components/MessagesPage";
 import { WalletPage } from "./pages/tutor/Wallet";
 import { FinancePage } from "./pages/admin/FinancePage";
+import { AdminCourseDetails } from "./pages/admin/CourseDetails";
 
 function App() {
   const { tutorId } = useAppContext();
@@ -272,6 +273,17 @@ function App() {
               <ProtectedAdminRoute>
                 <ErrorBoundary>
                   <FinancePage />
+                </ErrorBoundary>
+              </ProtectedAdminRoute>
+            }
+          />
+
+          <Route
+            path="/admin/courses/:courseId"
+            element={
+              <ProtectedAdminRoute>
+                <ErrorBoundary>
+                  <AdminCourseDetails />
                 </ErrorBoundary>
               </ProtectedAdminRoute>
             }

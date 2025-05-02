@@ -20,7 +20,7 @@ export class CourseRoutes {
       "/add",
       upload.single("thumbnail"),
       authMiddleware,
-      authorizeRole(["tutor"]),
+      authorizeRole(["tutor","admin"]),
       checkUserBlocked,
 
       (req: Request, res: Response) =>
@@ -30,7 +30,7 @@ export class CourseRoutes {
     this.router.get(
       "/my-courses",
       authMiddleware,
-      authorizeRole(["tutor"]),
+      authorizeRole(["tutor","admin"]),
       checkUserBlocked,
 
       (req: Request, res: Response) =>
@@ -41,7 +41,7 @@ export class CourseRoutes {
       "/update/:courseId",
       upload.single("thumbnail"),
       authMiddleware,
-      authorizeRole(["tutor"]),
+      authorizeRole(["tutor","admin"]),
       checkUserBlocked,
 
       (req: Request, res: Response) =>
@@ -51,7 +51,7 @@ export class CourseRoutes {
     this.router.delete(
       "/delete/:courseId",
       authMiddleware,
-      authorizeRole(["tutor"]),
+      authorizeRole(["tutor","admin"]),
       checkUserBlocked,
 
       (req: Request, res: Response) =>

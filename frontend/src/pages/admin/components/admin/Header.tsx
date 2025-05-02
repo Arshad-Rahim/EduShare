@@ -110,18 +110,18 @@ export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="my-1 h-px bg-muted" />
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 onClick={() => navigate("/profile")}
                 className="px-2 py-1.5 text-sm hover:bg-muted cursor-pointer rounded-sm"
               >
                 Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem
+              </DropdownMenuItem> */}
+              {/* <DropdownMenuItem
                 onClick={() => navigate("/settings")}
                 className="px-2 py-1.5 text-sm hover:bg-muted cursor-pointer rounded-sm"
               >
                 Settings
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuSeparator className="my-1 h-px bg-muted" />
               <DropdownMenuItem
                 onClick={handleLogout}
