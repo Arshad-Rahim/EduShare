@@ -115,11 +115,7 @@ export const decodeToken = async (
 
 export const authorizeRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    console.log("ITHIL POLUM VANNILLE");
-
     const user = (req as CustomRequest).user;
-    console.log("ALLOWED ROLE", allowedRoles);
-    console.log("USER IN THE BACKEND", user);
 
     if (!user || !allowedRoles.includes(user.role)) {
       console.log("role not allowed");

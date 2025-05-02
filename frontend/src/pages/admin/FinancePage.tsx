@@ -13,6 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
 import Table from "@/components/tableStructure/TableReusableStructure";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 interface Transaction {
   transactionId: string;
@@ -35,6 +43,9 @@ export function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const rowsPerPage = 1; // Match WalletPage
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,18 +58,22 @@ export function FinancePage() {
         console.log("ADMIN WALLET DATA", walletResponse.data.wallet);
         setWalletData(walletResponse.data.wallet);
 
-        // Fetch transactions using the admin's wallet ID
+        // Fetch transactions using the admin's wallet ID with pagination
         if (walletResponse.data.wallet?._id) {
           const transactionsResponse = await authAxiosInstance.get(
-            `/transaction/transaction-details?walletId=${walletResponse.data.wallet._id}`
+            `/transaction/transaction-details?walletId=${walletResponse.data.wallet._id}&page=${currentPage}&limit=${rowsPerPage}`
           );
           console.log(
             "ADMIN TRANSACTIONS DATA",
             transactionsResponse.data.transactions
           );
           setTransactions(transactionsResponse.data.transactions || []);
+          setTotalPages(
+            Math.ceil(transactionsResponse.data.totalTransaction / rowsPerPage)
+          );
         } else {
           setTransactions([]);
+          setTotalPages(0);
         }
       } catch (error: any) {
         console.error("Failed to fetch finance data:", error);
@@ -74,7 +89,7 @@ export function FinancePage() {
     };
 
     fetchFinanceData();
-  }, []);
+  }, [currentPage]); // Re-fetch when currentPage changes
 
   // Add a separate useEffect to log walletData and transactions after they update
   useEffect(() => {
@@ -163,6 +178,53 @@ export function FinancePage() {
                   className="shadow-md rounded-lg"
                   noDataMessage="No transactions available."
                 />
+                {totalPages > 1 && (
+                  <Pagination className="mt-4">
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={() =>
+                            setCurrentPage((prev) => Math.max(prev - 1, 1))
+                          }
+                          className={
+                            currentPage === 1
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                        (page) => (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={page === currentPage}
+                              onClick={() => setCurrentPage(page)}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      )}
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={() =>
+                            setCurrentPage((prev) =>
+                              Math.min(prev + 1, totalPages)
+                            )
+                          }
+                          className={
+                            currentPage === totalPages
+                              ? "pointer-events-none opacity-50"
+                              : ""
+                          }
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
               </div>
             </CardContent>
           </Card>

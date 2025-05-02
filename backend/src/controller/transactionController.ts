@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import { ITransactionService } from "../interfaces/serviceInterfaces/ITransactionService";
 import { CustomError } from "../util/CustomError";
-import { ERROR_MESSAGES, HTTP_STATUS, SUCCESS_MESSAGES } from "../shared/constant";
+import {
+  ERROR_MESSAGES,
+  HTTP_STATUS,
+  SUCCESS_MESSAGES,
+} from "../shared/constant";
 
 export class TransactionController {
   constructor(private _transactionService: ITransactionService) {}
@@ -11,16 +15,24 @@ export class TransactionController {
       const { walletId } = req.query;
 
       if (!walletId || typeof walletId !== "string") {
-         res.status(400).json({ error: "walletId is required" });
-         return;
+        res.status(400).json({ error: "walletId is required" });
+        return;
       }
-
-      const transactions = await this._transactionService.transactionDetails(walletId);
-       res.status(HTTP_STATUS.OK).json({
-              success: true,
-              message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-              transactions
-            });
+      const page = parseInt(req.query.page as string) 
+      const limit = parseInt(req.query.limit as string)
+      console.log("PAGE AND LIMIT",page,limit)
+      const { transactions, totalTransaction } =
+        await this._transactionService.transactionDetails(
+          walletId,
+          page,
+          limit
+        );
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        transactions,
+        totalTransaction
+      });
     } catch (error) {
       if (error instanceof CustomError) {
         res
