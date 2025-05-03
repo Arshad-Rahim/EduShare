@@ -5,6 +5,7 @@ import { ThemeProvider } from "../context/ThemeContext";
 import io from "socket.io-client";
 import { toast } from "sonner";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
+import { useSelector } from "react-redux";
 
 interface AppContextType {
   socket: any; // Socket.IO client type (use specific type if available)
@@ -24,18 +25,28 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
   );
   const [tutorId, setTutorId] = useState<string | null>(null);
 
+ const user = useSelector((state: any) => state.user.userDatas);
+
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await authAxiosInstance.get("/tutors/me");
-        console.log("Fetched user:", response.data);
-        if (response.data.tutor?.role === "tutor") {
-          setTutorId(response.data.tutor._id);
-          console.log("Set tutorId:", response.data.tutor._id);
-        } else {
-          console.log("User is not a tutor, role:", response.data.tutor?.role);
-          setTutorId(null);
+        if(user){
+           const response = await authAxiosInstance.get("/tutors/me");
+           console.log("Fetched user:", response.data);
+           if (response.data.tutor?.role === "tutor") {
+             setTutorId(response.data.tutor._id);
+             console.log("Set tutorId:", response.data.tutor._id);
+           } else {
+             console.log(
+               "User is not a tutor, role:",
+               response.data.tutor?.role
+             );
+             setTutorId(null);
+           }
+          
         }
+       
       } catch (error) {
         console.error("Failed to fetch user:", error);
         setTutorId(null);
