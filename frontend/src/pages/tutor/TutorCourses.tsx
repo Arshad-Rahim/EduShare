@@ -45,7 +45,7 @@ import { Link } from "react-router-dom";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { ClipLoader } from "react-spinners";
 import { Progress } from "@/components/ui/progress";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 
 export function TutorCourses() {
   const [courses, setCourses] = useState([]);
@@ -91,7 +91,7 @@ export function TutorCourses() {
     try {
       const response = await courseService.getLessons(courseId);
       // Ensure lessonsData is an array, default to empty array if not
-      setLessons(response?.data.lessons||[]);
+      setLessons(response?.data.lessons || []);
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
       setLessons([]); // Set to empty array on error
@@ -246,19 +246,11 @@ export function TutorCourses() {
       setFormLoading(true);
       try {
         if (isEditMode && course?._id) {
-          const response = await authAxiosInstance.put(
-            `/courses/update/${course._id}`,
-            formData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            }
-          );
+          const response = await courseService.editCourse(course, formData);
           toast.success(response.data.message);
         } else {
-          await authAxiosInstance.post("/courses/add", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-          toast.success("Course added successfully!");
+          const response = await courseService.addCourse(formData);
+          toast.success(response.data.message || "Course added successfully!");
         }
         onOpenChange(false);
         onCourseSaved();

@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -7,26 +6,26 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { authAxiosInstance } from '@/api/authAxiosInstance';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { authAxiosInstance } from "@/api/authAxiosInstance";
+import { toast } from "sonner";
 import {
   FileIcon,
   UploadIcon,
@@ -38,16 +37,16 @@ import {
   PlusCircle,
   Video,
   User,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Header } from './components/admin/Header';
-import { SideBar } from './components/admin/SideBar';
-import { Link } from 'react-router-dom';
-import { ConfirmationModal } from '@/components/modal-components/ConformationModal';
-import { ClipLoader } from 'react-spinners';
-import { Progress } from '@/components/ui/progress';
-import { courseService } from '@/services/courseService/courseService';
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Header } from "./components/admin/Header";
+import { SideBar } from "./components/admin/SideBar";
+import { Link } from "react-router-dom";
+import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
+import { ClipLoader } from "react-spinners";
+import { Progress } from "@/components/ui/progress";
+import { courseService } from "@/services/courseService";
 
 export function AdminCourses() {
   const [courses, setCourses] = useState([]);
@@ -71,30 +70,30 @@ export function AdminCourses() {
     fetchCourses(currentPage);
   }, [currentPage]);
 
-  const fetchCourses = async (page:number) => {
+  const fetchCourses = async (page: number) => {
     setIsLoading(true);
     try {
       const response = await courseService.getAllCourses(page, coursesPerPage);
-      console.log("RESPONSE IN T HE FRONT",response.data.courses.courses)
+      console.log("RESPONSE IN T HE FRONT", response.data.courses.courses);
       setCourses(response.data.courses.courses || []);
       setTotalCourses(response.data.courses.total || 0);
     } catch (error) {
-      console.error('Failed to fetch courses:', error);
-      toast.error('Failed to load courses');
+      console.error("Failed to fetch courses:", error);
+      toast.error("Failed to load courses");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchLessons = async (courseId:string) => {
+  const fetchLessons = async (courseId: string) => {
     setIsLoading(true);
     try {
       const response = await courseService.getLessons(courseId);
       setLessons(response?.data?.lessons || []);
     } catch (error) {
-      console.error('Failed to fetch lessons:', error);
+      console.error("Failed to fetch lessons:", error);
       setLessons([]);
-      toast.error('Failed to load lessons');
+      toast.error("Failed to load lessons");
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +105,6 @@ export function AdminCourses() {
   };
 
   const confirmDeleteCourse = async () => {
-  
     setIsLoading(true);
     try {
       const response = await courseService.deleteCourse(courseToDelete);
@@ -116,8 +114,8 @@ export function AdminCourses() {
         setCurrentPage(currentPage - 1);
       }
     } catch (error) {
-      console.error('Failed to delete course:', error);
-      toast.error('Failed to delete course');
+      console.error("Failed to delete course:", error);
+      toast.error("Failed to delete course");
     } finally {
       setIsLoading(false);
       setConfirmDeleteCourseOpen(false);
@@ -139,8 +137,8 @@ export function AdminCourses() {
       setLessons(lessons.filter((lesson) => lesson._id !== lessonToDelete));
       toast.success(response.data.message);
     } catch (error) {
-      console.error('Failed to delete lesson:', error);
-      toast.error('Failed to delete lesson');
+      console.error("Failed to delete lesson:", error);
+      toast.error("Failed to delete lesson");
     } finally {
       setIsLoading(false);
       setConfirmDeleteLessonOpen(false);
@@ -150,14 +148,14 @@ export function AdminCourses() {
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
-      case 'Beginner':
-        return 'bg-emerald-100 text-emerald-800';
-      case 'Intermediate':
-        return 'bg-amber-100 text-amber-800';
-      case 'Advanced':
-        return 'bg-rose-100 text-rose-800';
+      case "Beginner":
+        return "bg-emerald-100 text-emerald-800";
+      case "Intermediate":
+        return "bg-amber-100 text-amber-800";
+      case "Advanced":
+        return "bg-rose-100 text-rose-800";
       default:
-        return 'bg-slate-100 text-slate-800';
+        return "bg-slate-100 text-slate-800";
     }
   };
 
@@ -176,14 +174,16 @@ export function AdminCourses() {
     onCourseSaved,
     isEditMode = false,
   }) => {
-    const [title, setTitle] = useState(course?.title || '');
-    const [tagline, setTagline] = useState(course?.tagline || '');
-    const [category, setCategory] = useState(course?.category || '');
-    const [difficulty, setDifficulty] = useState(course?.difficulty || '');
-    const [price, setPrice] = useState(course?.price?.toString() || '');
-    const [about, setAbout] = useState(course?.about || '');
+    const [title, setTitle] = useState(course?.title || "");
+    const [tagline, setTagline] = useState(course?.tagline || "");
+    const [category, setCategory] = useState(course?.category || "");
+    const [difficulty, setDifficulty] = useState(course?.difficulty || "");
+    const [price, setPrice] = useState(course?.price?.toString() || "");
+    const [about, setAbout] = useState(course?.about || "");
     const [selectedFile, setSelectedFile] = useState(null);
-    const [existingThumbnailUrl, setExistingThumbnailUrl] = useState(course?.thumbnail || null);
+    const [existingThumbnailUrl, setExistingThumbnailUrl] = useState(
+      course?.thumbnail || null
+    );
     const [formLoading, setFormLoading] = useState(false);
     const fileInputRef = useRef(null);
 
@@ -191,16 +191,16 @@ export function AdminCourses() {
       const file = event.target.files?.[0];
       if (file) {
         if (file.size > 2 * 1024 * 1024) {
-          toast.error('Thumbnail size should not exceed 2MB');
+          toast.error("Thumbnail size should not exceed 2MB");
           return;
         }
-        if (!['image/jpeg', 'image/png'].includes(file.type)) {
-          toast.error('Only JPG and PNG files are allowed');
+        if (!["image/jpeg", "image/png"].includes(file.type)) {
+          toast.error("Only JPG and PNG files are allowed");
           return;
         }
         setSelectedFile(file);
         setExistingThumbnailUrl(null);
-        toast.success('Thumbnail selected successfully');
+        toast.success("Thumbnail selected successfully");
       }
     };
 
@@ -213,62 +213,54 @@ export function AdminCourses() {
     const removeFile = () => {
       setSelectedFile(null);
       setExistingThumbnailUrl(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const handleSave = async () => {
       if (!title || !tagline || !category || !difficulty || !price || !about) {
-        toast.error('Please fill out all required fields');
+        toast.error("Please fill out all required fields");
         return;
       }
 
       if (!/^\d+(\.\d{1,2})?$/.test(price)) {
-        toast.error('Price must be a valid number (e.g., 49.99)');
+        toast.error("Price must be a valid number (e.g., 49.99)");
         return;
       }
 
       const formData = new FormData();
-      formData.append('title', title);
-      formData.append('tagline', tagline);
-      formData.append('category', category);
-      formData.append('difficulty', difficulty);
-      formData.append('price', price);
-      formData.append('about', about);
+      formData.append("title", title);
+      formData.append("tagline", tagline);
+      formData.append("category", category);
+      formData.append("difficulty", difficulty);
+      formData.append("price", price);
+      formData.append("about", about);
       if (selectedFile) {
-        formData.append('thumbnail', selectedFile);
+        formData.append("thumbnail", selectedFile);
       }
 
       setFormLoading(true);
       try {
         if (isEditMode && course?._id) {
-          const response = await authAxiosInstance.put(
-            `/courses/update/${course._id}`,
-            formData,
-            {
-              headers: { 'Content-Type': 'multipart/form-data' },
-            }
-          );
+          const response = await courseService.editCourse(course, formData);
           toast.success(response.data.message);
         } else {
-          await authAxiosInstance.post('/courses/add', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-          toast.success('Course added successfully!');
+          const response = await courseService.addCourse(formData);
+          toast.success(response.data.message || "Course added successfully!");
         }
         onOpenChange(false);
         onCourseSaved();
-        setTitle('');
-        setTagline('');
-        setCategory('');
-        setDifficulty('');
-        setPrice('');
-        setAbout('');
+        setTitle("");
+        setTagline("");
+        setCategory("");
+        setDifficulty("");
+        setPrice("");
+        setAbout("");
         setSelectedFile(null);
         setExistingThumbnailUrl(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (fileInputRef.current) fileInputRef.current.value = "";
       } catch (error) {
-        console.error('Failed to save course:', error);
-        toast.error(`Failed to ${isEditMode ? 'update' : 'add'} course`);
+        console.error("Failed to save course:", error);
+        toast.error(`Failed to ${isEditMode ? "update" : "add"} course`);
       } finally {
         setFormLoading(false);
       }
@@ -278,7 +270,9 @@ export function AdminCourses() {
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Course' : 'Add New Course'}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? "Edit Course" : "Add New Course"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -303,13 +297,21 @@ export function AdminCourses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select value={category} onValueChange={setCategory} disabled={formLoading}>
+              <Select
+                value={category}
+                onValueChange={setCategory}
+                disabled={formLoading}
+              >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Web Development">Web Development</SelectItem>
-                  <SelectItem value="Mobile Development">Mobile Development</SelectItem>
+                  <SelectItem value="Web Development">
+                    Web Development
+                  </SelectItem>
+                  <SelectItem value="Mobile Development">
+                    Mobile Development
+                  </SelectItem>
                   <SelectItem value="Data Science">Data Science</SelectItem>
                   <SelectItem value="Programming">Programming</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
@@ -318,7 +320,11 @@ export function AdminCourses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="difficulty">Difficulty</Label>
-              <Select value={difficulty} onValueChange={setDifficulty} disabled={formLoading}>
+              <Select
+                value={difficulty}
+                onValueChange={setDifficulty}
+                disabled={formLoading}
+              >
                 <SelectTrigger id="difficulty">
                   <SelectValue placeholder="Select difficulty level" />
                 </SelectTrigger>
@@ -373,7 +379,9 @@ export function AdminCourses() {
                     <div className="w-full flex items-center p-2 bg-muted/50 rounded-md">
                       <FileIcon className="h-5 w-5 text-primary" />
                       <div className="ml-2 flex-1 truncate">
-                        <p className="text-sm font-medium">{selectedFile.name}</p>
+                        <p className="text-sm font-medium">
+                          {selectedFile.name}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                         </p>
@@ -388,9 +396,12 @@ export function AdminCourses() {
                       />
                       <div className="flex-1 truncate">
                         <p className="text-sm font-medium">
-                          {existingThumbnailUrl.split('/').pop() || 'Current Thumbnail'}
+                          {existingThumbnailUrl.split("/").pop() ||
+                            "Current Thumbnail"}
                         </p>
-                        <p className="text-xs text-muted-foreground">Existing Thumbnail</p>
+                        <p className="text-xs text-muted-foreground">
+                          Existing Thumbnail
+                        </p>
                       </div>
                     </div>
                   ) : (
@@ -400,9 +411,12 @@ export function AdminCourses() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium">
-                          <span className="text-primary">Click to upload</span> or drag and drop
+                          <span className="text-primary">Click to upload</span>{" "}
+                          or drag and drop
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">JPG or PNG (max 2MB)</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          JPG or PNG (max 2MB)
+                        </p>
                       </div>
                     </>
                   )}
@@ -436,7 +450,13 @@ export function AdminCourses() {
                 Cancel
               </Button>
               <Button type="button" onClick={handleSave} disabled={formLoading}>
-                {formLoading ? <ClipLoader size={20} color="#ffffff" /> : isEditMode ? 'Save' : 'Add'}
+                {formLoading ? (
+                  <ClipLoader size={20} color="#ffffff" />
+                ) : isEditMode ? (
+                  "Save"
+                ) : (
+                  "Add"
+                )}
               </Button>
             </div>
           </div>
@@ -446,11 +466,11 @@ export function AdminCourses() {
   };
 
   const LessonFormModal = ({ open, onOpenChange, courseId, onLessonSaved }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
     const [file, setFile] = useState(null);
-    const [duration, setDuration] = useState('');
-    const [order, setOrder] = useState('');
+    const [duration, setDuration] = useState("");
+    const [order, setOrder] = useState("");
     const [formLoading, setFormLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [displayProgress, setDisplayProgress] = useState(0);
@@ -480,15 +500,15 @@ export function AdminCourses() {
       const selectedFile = event.target.files?.[0];
       if (selectedFile) {
         if (selectedFile.size > 50 * 1024 * 1024) {
-          toast.error('Lesson file size should not exceed 50MB');
+          toast.error("Lesson file size should not exceed 50MB");
           return;
         }
-        if (!['video/mp4', 'video/webm'].includes(selectedFile.type)) {
-          toast.error('Only MP4 and WebM files are allowed');
+        if (!["video/mp4", "video/webm"].includes(selectedFile.type)) {
+          toast.error("Only MP4 and WebM files are allowed");
           return;
         }
         setFile(selectedFile);
-        toast.success('Lesson file selected successfully');
+        toast.success("Lesson file selected successfully");
       }
     };
 
@@ -501,48 +521,50 @@ export function AdminCourses() {
       setUploadProgress(0);
       setDisplayProgress(0);
       setIsProcessing(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const handleSaveLesson = async () => {
       if (!title || !description || !file) {
-        toast.error('Please fill out all required fields (title, description, file)');
+        toast.error(
+          "Please fill out all required fields (title, description, file)"
+        );
         return;
       }
 
       const formData = new FormData();
-      formData.append('title', title);
-      formData.append('courseId', courseId);
-      formData.append('description', description);
-      formData.append('file', file);
-      if (duration) formData.append('duration', duration);
-      if (order) formData.append('order', order);
+      formData.append("title", title);
+      formData.append("courseId", courseId);
+      formData.append("description", description);
+      formData.append("file", file);
+      if (duration) formData.append("duration", duration);
+      if (order) formData.append("order", order);
 
       setFormLoading(true);
       try {
-        await authAxiosInstance.post('/lessons/add', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+        await authAxiosInstance.post("/lessons/add", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (progressEvent) => {
             const { loaded, total } = progressEvent;
             const percent = Math.floor((loaded * 100) / total);
             setUploadProgress(percent);
           },
         });
-        toast.success('Lesson added successfully!');
+        toast.success("Lesson added successfully!");
         onOpenChange(false);
         onLessonSaved();
-        setTitle('');
-        setDescription('');
+        setTitle("");
+        setDescription("");
         setFile(null);
-        setDuration('');
-        setOrder('');
+        setDuration("");
+        setOrder("");
         setUploadProgress(0);
         setDisplayProgress(0);
         setIsProcessing(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (fileInputRef.current) fileInputRef.current.value = "";
       } catch (error) {
-        console.error('Failed to add lesson:', error);
-        toast.error('Failed to add lesson');
+        console.error("Failed to add lesson:", error);
+        toast.error("Failed to add lesson");
       } finally {
         setFormLoading(false);
         setIsProcessing(false);
@@ -610,9 +632,12 @@ export function AdminCourses() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium">
-                          <span className="text-primary">Click to upload</span> or drag and drop
+                          <span className="text-primary">Click to upload</span>{" "}
+                          or drag and drop
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">MP4 or WebM (max 50MB)</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          MP4 or WebM (max 50MB)
+                        </p>
                       </div>
                     </>
                   )}
@@ -639,7 +664,10 @@ export function AdminCourses() {
                     <div className="space-y-1">
                       {displayProgress < 100 ? (
                         <>
-                          <Progress value={displayProgress} className="w-full" />
+                          <Progress
+                            value={displayProgress}
+                            className="w-full"
+                          />
                           <p className="text-xs text-muted-foreground text-center">
                             Uploading: {Math.floor(displayProgress)}%
                           </p>
@@ -647,7 +675,9 @@ export function AdminCourses() {
                       ) : isProcessing ? (
                         <div className="flex items-center justify-center gap-2">
                           <ClipLoader size={20} color="#3b82f6" />
-                          <p className="text-xs text-muted-foreground">Processing on server...</p>
+                          <p className="text-xs text-muted-foreground">
+                            Processing on server...
+                          </p>
                         </div>
                       ) : null}
                     </div>
@@ -675,8 +705,16 @@ export function AdminCourses() {
               >
                 Cancel
               </Button>
-              <Button type="button" onClick={handleSaveLesson} disabled={formLoading}>
-                {formLoading ? <ClipLoader size={20} color="#ffffff" /> : 'Add Lesson'}
+              <Button
+                type="button"
+                onClick={handleSaveLesson}
+                disabled={formLoading}
+              >
+                {formLoading ? (
+                  <ClipLoader size={20} color="#ffffff" />
+                ) : (
+                  "Add Lesson"
+                )}
               </Button>
             </div>
           </div>
@@ -723,9 +761,12 @@ export function AdminCourses() {
                 {courses.length === 0 && currentPage === 1 ? (
                   <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
                     <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-700 mb-2">No courses available</h3>
+                    <h3 className="text-lg font-medium text-slate-700 mb-2">
+                      No courses available
+                    </h3>
                     <p className="text-slate-500 max-w-md mx-auto mb-6">
-                      No courses have been created yet. Add a new course to start building the catalog.
+                      No courses have been created yet. Add a new course to
+                      start building the catalog.
                     </p>
                     <Button
                       onClick={() => setAddModalOpen(true)}
@@ -747,7 +788,7 @@ export function AdminCourses() {
                           <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
                             {course.thumbnail ? (
                               <img
-                                src={course.thumbnail || '/placeholder.svg'}
+                                src={course.thumbnail || "/placeholder.svg"}
                                 alt={course.title}
                                 className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                               />
@@ -757,7 +798,11 @@ export function AdminCourses() {
                               </div>
                             )}
                             <div className="absolute top-3 right-3 flex gap-2">
-                              <Badge className={getDifficultyColor(course.difficulty)}>
+                              <Badge
+                                className={getDifficultyColor(
+                                  course.difficulty
+                                )}
+                              >
                                 {course.difficulty}
                               </Badge>
                             </div>
@@ -766,7 +811,9 @@ export function AdminCourses() {
                             <CardTitle className="text-xl font-bold line-clamp-1">
                               {course.title}
                             </CardTitle>
-                            <CardDescription className="line-clamp-2">{course.tagline}</CardDescription>
+                            <CardDescription className="line-clamp-2">
+                              {course.tagline}
+                            </CardDescription>
                           </CardHeader>
                           <CardContent className="pb-2 flex-grow">
                             <div className="space-y-4">
@@ -776,7 +823,9 @@ export function AdminCourses() {
                                   <span>{course.category}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-slate-600">
-                                  <span className="font-medium">₹{course.price}</span>
+                                  <span className="font-medium">
+                                    ₹{course.price}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-slate-600">
                                   <User className="h-4 w-4" />
@@ -784,7 +833,9 @@ export function AdminCourses() {
                                 </div>
                               </div>
                               <Separator />
-                              <p className="text-sm text-slate-600 line-clamp-3">{course.about}</p>
+                              <p className="text-sm text-slate-600 line-clamp-3">
+                                {course.about}
+                              </p>
                             </div>
                           </CardContent>
                           <CardFooter className="pt-2 flex flex-col gap-2 w-full">
@@ -828,7 +879,10 @@ export function AdminCourses() {
                                 <PlusCircle className="h-4 w-4 mr-2" />
                                 Manage Lessons
                               </Button>
-                              <Link to={`/admin/courses/${course._id}`} className="flex-1">
+                              <Link
+                                to={`/admin/courses/${course._id}`}
+                                className="flex-1"
+                              >
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -854,10 +908,15 @@ export function AdminCourses() {
                           Previous
                         </Button>
                         <div className="flex items-center gap-2">
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          {Array.from(
+                            { length: totalPages },
+                            (_, i) => i + 1
+                          ).map((page) => (
                             <Button
                               key={page}
-                              variant={currentPage === page ? 'default' : 'outline'}
+                              variant={
+                                currentPage === page ? "default" : "outline"
+                              }
                               onClick={() => paginate(page)}
                               disabled={isLoading}
                             >
@@ -882,7 +941,9 @@ export function AdminCourses() {
               <Dialog open={lessonModalOpen} onOpenChange={setLessonModalOpen}>
                 <DialogContent className="w-full sm:max-w-[600px]">
                   <DialogHeader>
-                    <DialogTitle>Manage Lessons for {selectedCourse.title}</DialogTitle>
+                    <DialogTitle>
+                      Manage Lessons for {selectedCourse.title}
+                    </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <Button
@@ -908,9 +969,13 @@ export function AdminCourses() {
                             <div className="flex items-center gap-3">
                               <Video className="h-5 w-5 text-primary" />
                               <div>
-                                <p className="text-sm font-medium">{lesson.title}</p>
+                                <p className="text-sm font-medium">
+                                  {lesson.title}
+                                </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {lesson.duration ? `${lesson.duration} min` : 'No duration'}
+                                  {lesson.duration
+                                    ? `${lesson.duration} min`
+                                    : "No duration"}
                                 </p>
                               </div>
                             </div>

@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -34,7 +33,7 @@ import {
   Upload,
   FileIcon,
 } from "lucide-react";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 import { useSelector } from "react-redux";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
@@ -77,11 +76,8 @@ export function AdminCourseDetails() {
 
   const fetchCourseDetails = async () => {
     try {
-      const response = await authAxiosInstance.get("/courses/all-courses");
+      const foundCourse = await courseService.getCourseDetails(courseId);
 
-      const foundCourse = response.data.courses.courses.find(
-        (c) => c._id === courseId
-      );
       if (foundCourse) {
         setCourse(foundCourse);
       } else {
@@ -182,15 +178,9 @@ export function AdminCourseDetails() {
         formData.append("file", editLessonVideoFile);
       }
 
-      const response = await authAxiosInstance.put(
-        `/lessons/${selectedLesson._id}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+    
+
+      const response = await courseService.editLesson(selectedLesson, formData);
 
       if (response.data.success) {
         const updatedLesson = {

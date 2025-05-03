@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import {
   Card,
   CardContent,
@@ -21,6 +20,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { walletService } from "@/services/walletService";
+import { transactionService } from "@/services/transactionService";
 
 interface Transaction {
   transactionId: string;
@@ -53,16 +54,14 @@ export function FinancePage() {
       try {
         setLoading(true);
 
-        // Fetch admin's wallet data
-        const walletResponse = await authAxiosInstance.get("/wallet/get-data");
+        const walletResponse = await walletService.getWalletData();
         console.log("ADMIN WALLET DATA", walletResponse.data.wallet);
         setWalletData(walletResponse.data.wallet);
 
         // Fetch transactions using the admin's wallet ID with pagination
         if (walletResponse.data.wallet?._id) {
-          const transactionsResponse = await authAxiosInstance.get(
-            `/transaction/transaction-details?walletId=${walletResponse.data.wallet._id}&page=${currentPage}&limit=${rowsPerPage}`
-          );
+        
+          const transactionsResponse = await transactionService.getTransactions(walletResponse,currentPage,rowsPerPage)
           console.log(
             "ADMIN TRANSACTIONS DATA",
             transactionsResponse.data.transactions

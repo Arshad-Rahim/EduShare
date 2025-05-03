@@ -58,5 +58,20 @@ export const tutorService = {
       console.error("Failed to fetch chat:", error);
       toast.error("Failed to fetch chat");
     }
+  },
+
+  async profileUpdate(formData){
+    try {
+      const response = await authAxiosInstance.post(
+              "/tutors/profileUpdate",
+              formData,
+              {
+                headers: { "Content-Type": "multipart/form-data" },
+              }
+            );
+            return response;
+    } catch (error) {
+      throw new Error("Failed to Update the profile")
+    }
   }
 };

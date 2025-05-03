@@ -139,5 +139,55 @@ export const courseService = {
     } catch (error) {
        throw new Error("Failed to get all courses");
     }
-  }
+  },
+
+
+  async editLesson(selectedLesson,formData){
+    try {
+      const resposne = await authAxiosInstance.put(
+        `/lessons/${selectedLesson._id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return resposne;
+
+    } catch (error) {
+      throw new Error("Failed to Edit Lesson")
+    }
+    
+  },
+
+
+  async editCourse(course,formData){
+    try {
+       const response = await authAxiosInstance.put(
+         `/courses/update/${course._id}`,
+         formData,
+         {
+           headers: { "Content-Type": "multipart/form-data" },
+         }
+       );
+       return response;
+    } catch (error) {
+      throw new Error("Failed to edit Courses")
+    }
+    
+  },
+
+  async addCourse(formData){
+    try {
+       const resposne = await authAxiosInstance.post("/courses/add", formData, {
+         headers: { "Content-Type": "multipart/form-data" },
+       });
+       return resposne;
+    } catch (error) {
+      throw new Error("Failed to add new course")
+    }
+ 
+  },
+
 };

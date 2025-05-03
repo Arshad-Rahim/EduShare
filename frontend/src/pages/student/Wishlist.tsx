@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
-import { wishlistService } from "@/services/wishlistService/wishlistService";
+import { wishlistService } from "@/services/wishlistService";
 
 export default function WishlistPage() {
   const [wishlistCourses, setWishlistCourses] = useState([]);

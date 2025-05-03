@@ -4,7 +4,7 @@ import { Send, Menu, Check, CheckCheck, Image } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Header } from "./components/Header";
 import { io, Socket } from "socket.io-client";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 import { profileService } from "@/services/userService/profileService";
 import { toast } from "sonner";
 

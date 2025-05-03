@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import { Header } from "./components/Header";
 import { SideBar } from "./components/SideBar";
 import { FileIcon, UploadIcon, XIcon } from "lucide-react";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { ClipLoader } from "react-spinners"; // Import ClipLoader
 
@@ -98,13 +97,8 @@ export function TutorProfileDetails() {
 
     setIsLoading(true); // Set loading to true
     try {
-      const response = await authAxiosInstance.post(
-        "/tutors/profileUpdate",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+ 
+      const response = await tutorService.profileUpdate(formData);
       console.log("Response:", response.data);
       // Update existingDocUrl if a new document was uploaded
       if (response.data.tutor?.verificationDocUrl && selectedFile) {

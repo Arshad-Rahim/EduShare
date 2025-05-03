@@ -51,8 +51,8 @@ import { Slider } from "@/components/ui/slider";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
-import { wishlistService } from "@/services/wishlistService/wishlistService";
-import { courseService } from "@/services/courseService/courseService";
+import { wishlistService } from "@/services/wishlistService";
+import { courseService } from "@/services/courseService";
 
 export function CourseListingPage() {
   const [courses, setCourses] = useState([]); // Only current page courses

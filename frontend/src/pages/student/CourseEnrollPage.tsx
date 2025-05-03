@@ -22,7 +22,7 @@ import {
   Lock,
   BookOpen,
 } from "lucide-react";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 import { paymentService } from "@/services/enrollmentService/paymentService";
 import { enrollmentService } from "@/services/enrollmentService/enrollmentService";
 import { loadStripe } from "@stripe/stripe-js";

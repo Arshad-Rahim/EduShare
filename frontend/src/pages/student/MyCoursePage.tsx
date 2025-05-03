@@ -17,7 +17,7 @@ import {
   CalendarCheck,
   ArrowLeft,
 } from "lucide-react";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSelector } from "react-redux";

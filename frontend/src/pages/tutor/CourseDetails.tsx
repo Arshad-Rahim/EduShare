@@ -23,7 +23,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Header } from "./components/Header";
 import { SideBar } from "./components/SideBar";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -36,7 +35,7 @@ import {
   Upload,
   FileIcon,
 } from "lucide-react";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 import { useSelector } from "react-redux";
 import { VideoCall } from "@/components/videoCall/VideoCall";
 
@@ -179,16 +178,7 @@ export function CourseDetails() {
       if (editLessonVideoFile) {
         formData.append("file", editLessonVideoFile);
       }
-
-      const response = await authAxiosInstance.put(
-        `/lessons/${selectedLesson._id}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const response = await courseService.editLesson(selectedLesson,formData)
 
       if (response.data.success) {
         const updatedLesson = {

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { io, Socket } from "socket.io-client";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { courseService } from "@/services/courseService/courseService";
+import { courseService } from "@/services/courseService";
 
 interface Notification {
   id: string;
