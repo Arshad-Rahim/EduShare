@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "react-router-dom";
 
 // Reusable Table Component
 type Column<T> = {
@@ -96,7 +97,7 @@ interface Transaction {
 
 interface WalletResponse {
   balance: number;
-  walletId: string; // Add walletId to the response
+  walletId: string;
 }
 
 export function TutorHome() {
@@ -106,12 +107,13 @@ export function TutorHome() {
   const [stats, setStats] = useState<Stat[] | null>(null);
   const [courseStats, setCourseStats] = useState<CourseStat[] | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [walletId, setWalletId] = useState<string | null>(null); // Store walletId
+  const [walletId, setWalletId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const user = useSelector((state: any) => state.user.userDatas);
   const userId = user?.id ? user?.id : user?._id;
+  const navigate = useNavigate();
 
   // Fetch dashboard data (students, revenue, wallet balance, and transactions)
   const fetchDashboardData = async () => {
@@ -150,24 +152,38 @@ export function TutorHome() {
       const walletResponse = await authAxiosInstance.get("/wallet/get-data", {
         signal: controller.signal,
       });
-      console.log("WALLET RESPOSNE THAT GET", walletResponse);
-      const { balance, _id: fetchedWalletId } = walletResponse.data
-        .wallet as WalletResponse;
+      console.log("WALLET RESPONSE THAT GET", walletResponse);
+
+      // Check if wallet exists, otherwise set defaults
+      let balance = 0;
+      let fetchedWalletId = null;
+      if (walletResponse.data?.wallet) {
+        balance = walletResponse.data.wallet.balance || 0;
+        fetchedWalletId = walletResponse.data.wallet._id || null;
+      }
+
       setWalletBalance(balance);
       setWalletId(fetchedWalletId);
 
-      // Fetch wallet transactions using walletId
-      console.log(
-        "Fetching /tutors/wallet/transactions with walletId:",
-        fetchedWalletId
-      );
-      const transactionsResponse = await authAxiosInstance.get(
-        `/transaction/transaction-details?walletId=${fetchedWalletId}`, // Pass walletId as query param
-        {
-          signal: controller.signal,
-        }
-      );
-      const transactionsData = transactionsResponse.data?.transactions || [];
+      // Fetch wallet transactions only if walletId exists
+      let transactionsData: Transaction[] = [];
+      if (fetchedWalletId) {
+        console.log(
+          "Fetching /transaction/transaction-details with walletId:",
+          fetchedWalletId
+        );
+        const transactionsResponse = await authAxiosInstance.get(
+          `/transaction/transaction-details?walletId=${fetchedWalletId}`,
+          {
+            signal: controller.signal,
+          }
+        );
+        transactionsData = transactionsResponse.data?.transactions || [];
+      } else {
+        console.log(
+          "No wallet exists for this tutor, skipping transactions fetch"
+        );
+      }
       setTransactions(transactionsData);
 
       // Calculate tutor's share (90% of total revenue)
@@ -206,7 +222,7 @@ export function TutorHome() {
       const courseStatsData = Object.keys(courseMap).map((course) => ({
         course,
         students: courseMap[course].students,
-        revenue: `₹${(courseMap[course].amount * 0.9).toFixed(2)}`, // 90% of course revenue
+        revenue: `₹${(courseMap[course].amount * 0.9).toFixed(2)}`,
       }));
       setCourseStats(courseStatsData);
 
@@ -408,6 +424,7 @@ export function TutorHome() {
                 <Button
                   variant="outline"
                   className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => navigate("/tutor/courses")}
                 >
                   View All Courses
                 </Button>
@@ -445,6 +462,7 @@ export function TutorHome() {
                 <Button
                   variant="outline"
                   className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => navigate("/tutor/wallet")}
                 >
                   View All Transactions
                 </Button>
@@ -477,6 +495,7 @@ export function TutorHome() {
                 <Button
                   variant="outline"
                   className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => navigate("/tutor/students")}
                 >
                   View All Students
                 </Button>

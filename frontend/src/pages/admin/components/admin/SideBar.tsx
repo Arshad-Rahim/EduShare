@@ -45,26 +45,26 @@ export function SideBar() {
             name: "Finances",
             path: "/admin/finances",
           },
-          {
-            icon: <BarChart3 className="h-4 w-4" />,
-            name: "Analytics",
-            path: "/admin/analytics",
-          },
-          {
-            icon: <MessageSquare className="h-4 w-4" />,
-            name: "Support Tickets",
-            path: "/admin/support",
-          },
-          {
-            icon: <Database className="h-4 w-4" />,
-            name: "Content Management",
-            path: "/admin/content",
-          },
-          {
-            icon: <AlertCircle className="h-4 w-4" />,
-            name: "Reports & Issues",
-            path: "/admin/reports",
-          },
+          // {
+          //   icon: <BarChart3 className="h-4 w-4" />,
+          //   name: "Analytics",
+          //   path: "/admin/analytics",
+          // },
+          // {
+          //   icon: <MessageSquare className="h-4 w-4" />,
+          //   name: "Support Tickets",
+          //   path: "/admin/support",
+          // },
+          // {
+          //   icon: <Database className="h-4 w-4" />,
+          //   name: "Content Management",
+          //   path: "/admin/content",
+          // },
+          // {
+          //   icon: <AlertCircle className="h-4 w-4" />,
+          //   name: "Reports & Issues",
+          //   path: "/admin/reports",
+          // },
         ].map((item) => (
           <Button
             key={item.name}

@@ -157,7 +157,7 @@ export function Header() {
           >
             Courses
           </RouterLink>
-          <RouterLink
+          {/* <RouterLink
             to="/paths"
             className={`text-sm font-medium transition-colors hover:underline ${
               location.pathname === "/paths"
@@ -166,7 +166,7 @@ export function Header() {
             }`}
           >
             Paths
-          </RouterLink>
+          </RouterLink> */}
           <RouterLink
             to="/community"
             className={`text-sm font-medium transition-colors hover:underline ${

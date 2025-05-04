@@ -4,11 +4,9 @@ import { useState, useEffect } from "react";
 import {
   Users,
   Layers,
-  Percent,
   ArrowUpRight,
   ArrowDownRight,
   CheckCircle2,
-  Clock,
   MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,9 +93,6 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
 interface Stat {
   title: string;
   value: string;
-  change: string;
-  changePercent: string;
-  status: "increase" | "decrease";
   icon: React.ReactNode;
 }
 
@@ -119,30 +114,13 @@ interface CourseStatus {
   color: string;
 }
 
-interface CourseSubmission {
-  _id: string;
-  title: string;
-  author: string;
-  submitted: string;
-  status: string;
-}
-
 interface PerformanceMetric {
   enrollment: {
     value: number;
-    changePercent: string;
-    status: "increase" | "decrease";
-    categories: { name: string; growth: string; value: string }[];
+    categories: { name: string; value: string }[];
   };
   revenue: {
     value: number;
-    changePercent: string;
-    status: "increase" | "decrease";
-  };
-  retention: {
-    value: number;
-    changePercent: string;
-    status: "increase" | "decrease";
   };
 }
 
@@ -192,9 +170,6 @@ export function AdminHome() {
   const [courseStatuses, setCourseStatuses] = useState<CourseStatus[] | null>(
     null
   );
-  const [courseSubmissions, setCourseSubmissions] = useState<
-    CourseSubmission[] | null
-  >(null);
   const [performanceMetrics, setPerformanceMetrics] =
     useState<PerformanceMetric | null>(null);
   const [walletData, setWalletData] = useState<WalletResponse | null>(null);
@@ -225,31 +200,38 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Fetch students and tutors concurrently
-      const [studentResponse, tutorResponse] = await Promise.all([
+      // Fetch students, tutors, wallet, transactions, and course count concurrently
+      const [
+        studentResponse,
+        tutorResponse,
+        walletResponse,
+        transactionsResponse,
+        courseCountResponse,
+      ] = await Promise.all([
         userService.userList(1, 100, "", { signal: controller.signal }),
         tutorService.userList(1, 100, "", { signal: controller.signal }),
-      ]);
-
-      // Fetch wallet data
-      const walletResponse = await authAxiosInstance.get("/wallet/get-data", {
-        signal: controller.signal,
-      });
-
-      // Fetch transactions using the wallet ID
-      let transactionsResponse = { data: { transactions: [] } };
-      if (walletResponse?.data?.wallet?._id) {
-        transactionsResponse = await authAxiosInstance.get(
-          `/transaction/transaction-details?walletId=${walletResponse.data.wallet._id}`,
+        authAxiosInstance.get("/wallet/get-data", {
+          signal: controller.signal,
+        }),
+        authAxiosInstance.get(
+          `/transaction/transaction-details?walletId=${
+            (
+              await authAxiosInstance.get("/wallet/get-data")
+            ).data.wallet._id
+          }`,
           { signal: controller.signal }
-        );
-      }
+        ),
+        authAxiosInstance.get("/courses/course-count", {
+          signal: controller.signal,
+        }),
+      ]);
 
       clearTimeout(timeoutId);
       console.log("Student Response:", studentResponse.data);
       console.log("Tutor Response:", tutorResponse.data);
       console.log("Wallet Response:", walletResponse.data);
       console.log("Transactions Response:", transactionsResponse.data);
+      console.log("Course Count Response:", courseCountResponse.data);
 
       const students: TStudent[] =
         studentResponse.data.users.filter((u) => u.role === "user") || [];
@@ -261,42 +243,32 @@ export function AdminHome() {
       // Set wallet data and transactions
       const wallet = walletResponse.data.wallet || null;
       setWalletData(wallet);
-      setTransactions(transactionsResponse.data.transactions || []);
+      const transactionData = transactionsResponse.data.transactions || [];
+      setTransactions(transactionData);
 
-      // Derive total revenue (assume ₹1000 per enrollment)
-      const totalRevenue = students.reduce(
-        (sum, s) => sum + (Number(s.enrolledCourses) || 0) * 1000,
-        0
-      );
+      // Calculate total revenue from transactions (sum of credit transactions)
+      const totalRevenue = transactionData
+        .filter((t: Transaction) => t.transaction_type === "credit")
+        .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
-      // Derive unique courses (placeholder names based on enrollment counts)
-      const response = await authAxiosInstance.get("/courses/course-count");
-      const uniqueCourses = response?.data.courseCount;
+      // Get course count
+      const uniqueCourses = courseCountResponse?.data.courseCount || 0;
 
-      // Derive stats using walletResponse directly for balance
+      // Derive stats
       setStats([
         {
           title: "Total Users",
           value: students.length.toLocaleString(),
-          change: "+0", // Placeholder
-          changePercent: "+0%",
-          status: "increase",
           icon: <Users className="h-5 w-5" />,
         },
         {
           title: "Active Courses",
           value: uniqueCourses.toString(),
-          change: "+0",
-          changePercent: "+0%",
-          status: "increase",
           icon: <Layers className="h-5 w-5" />,
         },
         {
           title: "Total Revenue",
           value: `₹${totalRevenue.toLocaleString("en-IN")}`,
-          change: "₹0",
-          changePercent: "+0%",
-          status: "increase",
           icon: (
             <span className="h-5 w-5 flex items-center justify-center">₹</span>
           ),
@@ -304,9 +276,6 @@ export function AdminHome() {
         {
           title: "Wallet Balance",
           value: wallet ? `₹${wallet.balance.toLocaleString("en-IN")}` : "₹0",
-          change: "₹0",
-          changePercent: "+0%",
-          status: "increase",
           icon: (
             <span className="h-5 w-5 flex items-center justify-center">₹</span>
           ),
@@ -375,54 +344,22 @@ export function AdminHome() {
       setUsers(paginatedUsers);
       setTotalUsers(filteredUsers.length);
 
-      // Derive course statuses (assume all active)
+      // Derive course statuses (only "Active" since others are not supported)
       setCourseStatuses([
         {
           title: "Active",
-          value: uniqueCourses.length,
+          value: uniqueCourses,
           icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
           color: "bg-green-50 border-green-200",
         },
-        {
-          title: "Pending Review",
-          value: 0,
-          icon: <Clock className="h-5 w-5 text-yellow-500" />,
-          color: "bg-yellow-50 border-yellow-200",
-        },
-        {
-          title: "Paused",
-          value: 0,
-          icon: <Clock className="h-5 w-5 text-blue-500" />,
-          color: "bg-blue-50 border-blue-200",
-        },
-        {
-          title: "Rejected",
-          value: 0,
-          icon: <Clock className="h-5 w-5 text-red-500" />,
-          color: "bg-red-50 border-red-200",
-        },
       ]);
 
-      // Derive course submissions (recent enrollments)
-      const submissions = students
-        .filter((s) => (Number(s.enrolledCourses) || 0) > 0)
-        .sort(
-          (a, b) =>
-            new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime()
-        )
-        .slice(0, 3)
-        .map((s, index) => ({
-          _id: s._id,
-          title: `Course ${index + 1}`,
-          author:
-            tutors.find((t) => t.approvalStatus === "approved")?.name ||
-            "Unknown",
-          submitted: s.lastActive,
-          status: "Enrolled",
-        }));
-      setCourseSubmissions(submissions);
-
       // Derive performance metrics
+      const totalEnrollments = students.reduce(
+        (sum, s) => sum + (Number(s.enrolledCourses) || 0),
+        0
+      );
+
       const courseMap = students.reduce(
         (acc: any, student: TStudent) => {
           const course =
@@ -443,13 +380,8 @@ export function AdminHome() {
         .filter((key) => key !== "count")
         .map((course) => ({
           name: course,
-          growth: "+0%", // Placeholder
           value: `${(
-            (courseMap[course].count /
-              students.reduce(
-                (sum, s) => sum + (Number(s.enrolledCourses) || 0),
-                0
-              )) *
+            (courseMap[course].count / (totalEnrollments || 1)) *
             100
           ).toFixed(1)}%`,
         }))
@@ -458,27 +390,17 @@ export function AdminHome() {
 
       setPerformanceMetrics({
         enrollment: {
-          value: students.length,
-          changePercent: "+0%", // Placeholder
-          status: "increase",
+          value: totalEnrollments,
           categories,
         },
         revenue: {
           value: totalRevenue,
-          changePercent: "+0%",
-          status: "increase",
-        },
-        retention: {
-          value: 76.4, // Hardcoded
-          changePercent: "-0%",
-          status: "decrease",
         },
       });
 
       console.log("Stats:", stats);
       console.log("Users:", paginatedUsers);
       console.log("Course Statuses:", courseStatuses);
-      console.log("Course Submissions:", submissions);
       console.log("Performance Metrics:", performanceMetrics);
       console.log("Wallet Data:", walletData);
       console.log("Transactions:", transactions);
@@ -650,30 +572,12 @@ export function AdminHome() {
                         <div className="rounded-full bg-primary/10 p-2">
                           {stat.icon}
                         </div>
-                        <span
-                          className={
-                            stat.status === "increase"
-                              ? "flex items-center text-sm font-medium text-green-500"
-                              : "flex items-center text-sm font-medium text-red-500"
-                          }
-                        >
-                          {stat.status === "increase" ? (
-                            <ArrowUpRight className="mr-1 h-4 w-4" />
-                          ) : (
-                            <ArrowDownRight className="mr-1 h-4 w-4" />
-                          )}
-                          {stat.changePercent}
-                        </span>
                       </div>
                       <div className="mt-4">
                         <p className="text-sm font-medium text-muted-foreground">
                           {stat.title}
                         </p>
                         <p className="mt-1 text-2xl font-bold">{stat.value}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {stat.status === "increase" ? "+" : ""}
-                          {stat.change} this month
-                        </p>
                       </div>
                     </CardContent>
                   </Card>
@@ -777,39 +681,6 @@ export function AdminHome() {
                   </div>
                   <Separator className="my-6" />
                   <div className="space-y-3">
-                    <h4 className="font-medium">Recent Course Enrollments</h4>
-                    {courseSubmissions && courseSubmissions.length > 0 ? (
-                      courseSubmissions.map((course, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between rounded-md border p-3"
-                        >
-                          <div>
-                            <p className="font-medium">{course.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              By {course.author} •{" "}
-                              {new Date(course.submitted).toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant="outline"
-                              className="bg-green-50 border-green-200"
-                            >
-                              {course.status}
-                            </Badge>
-                            <Button size="sm">View</Button>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground">
-                        No recent enrollments.
-                      </p>
-                    )}
-                  </div>
-                  <Separator className="my-6" />
-                  <div className="space-y-3">
                     <h4 className="font-medium">Recent Transactions</h4>
                     {transactions && transactions.length > 0 ? (
                       transactions.slice(0, 3).map((transaction, index) => (
@@ -861,10 +732,9 @@ export function AdminHome() {
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="enrollment">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="enrollment">Enrollment</TabsTrigger>
                       <TabsTrigger value="revenue">Revenue</TabsTrigger>
-                      <TabsTrigger value="retention">Retention</TabsTrigger>
                     </TabsList>
                     <TabsContent value="enrollment" className="pt-4">
                       {performanceMetrics ? (
@@ -875,26 +745,8 @@ export function AdminHome() {
                                 {performanceMetrics.enrollment.value.toLocaleString()}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                New enrollments this month
+                                Total enrollments
                               </div>
-                            </div>
-                            <div
-                              className={`text-sm font-medium ${
-                                performanceMetrics.enrollment.status ===
-                                "increase"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              <span className="flex items-center">
-                                {performanceMetrics.enrollment.status ===
-                                "increase" ? (
-                                  <ArrowUpRight className="mr-1 h-4 w-4" />
-                                ) : (
-                                  <ArrowDownRight className="mr-1 h-4 w-4" />
-                                )}
-                                {performanceMetrics.enrollment.changePercent}
-                              </span>
                             </div>
                           </div>
                           <div className="mt-4 h-[160px] rounded-md bg-muted/50 flex items-center justify-center">
@@ -917,13 +769,8 @@ export function AdminHome() {
                                     <div className="text-sm">
                                       {category.name}
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm text-green-600">
-                                        {category.growth}
-                                      </span>
-                                      <span className="text-sm font-medium">
-                                        {category.value}
-                                      </span>
+                                    <div className="text-sm font-medium">
+                                      {category.value}
                                     </div>
                                   </div>
                                 )
@@ -953,25 +800,8 @@ export function AdminHome() {
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                Revenue this month
+                                Total revenue
                               </div>
-                            </div>
-                            <div
-                              className={`text-sm font-medium ${
-                                performanceMetrics.revenue.status === "increase"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              <span className="flex items-center">
-                                {performanceMetrics.revenue.status ===
-                                "increase" ? (
-                                  <ArrowUpRight className="mr-1 h-4 w-4" />
-                                ) : (
-                                  <ArrowDownRight className="mr-1 h-4 w-4" />
-                                )}
-                                {performanceMetrics.revenue.changePercent}
-                              </span>
                             </div>
                           </div>
                           <div className="mt-4 h-[160px] rounded-md bg-muted/50 flex items-center justify-center">
@@ -983,49 +813,6 @@ export function AdminHome() {
                       ) : (
                         <p className="text-muted-foreground">
                           No revenue data available.
-                        </p>
-                      )}
-                    </TabsContent>
-                    <TabsContent value="retention" className="pt-4">
-                      {performanceMetrics ? (
-                        <>
-                          <div className="flex items-end justify-between">
-                            <div>
-                              <div className="text-2xl font-bold">
-                                {performanceMetrics.retention.value.toFixed(1)}%
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                30-day retention rate
-                              </div>
-                            </div>
-                            <div
-                              className={`text-sm font-medium ${
-                                performanceMetrics.retention.status ===
-                                "increase"
-                                  ? "text-green-600"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              <span className="flex items-center">
-                                {performanceMetrics.retention.status ===
-                                "increase" ? (
-                                  <ArrowUpRight className="mr-1 h-4 w-4" />
-                                ) : (
-                                  <ArrowDownRight className="mr-1 h-4 w-4" />
-                                )}
-                                {performanceMetrics.retention.changePercent}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-4 h-[160px] rounded-md bg-muted/50 flex items-center justify-center">
-                            <div className="text-muted-foreground">
-                              Retention chart placeholder
-                            </div>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-muted-foreground">
-                          No retention data available.
                         </p>
                       )}
                     </TabsContent>

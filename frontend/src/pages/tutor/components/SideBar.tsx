@@ -50,12 +50,12 @@ export function SideBar({ sidebarOpen }) {
       path: "/tutor/courses",
       disabled: isAccepted === false,
     },
-    {
-      icon: <Video className="h-4 w-4" />,
-      name: "Content Creation",
-      path: "/content-creation",
-      disabled: isAccepted === false,
-    },
+    // {
+    //   icon: <Video className="h-4 w-4" />,
+    //   name: "Content Creation",
+    //   path: "/content-creation",
+    //   disabled: isAccepted === false,
+    // },
     {
       icon: <Users className="h-4 w-4" />,
       name: "Students",
@@ -68,18 +68,18 @@ export function SideBar({ sidebarOpen }) {
       path: "/tutor/messages",
       disabled: isAccepted === false,
     },
-    {
-      icon: <BarChart3 className="h-4 w-4" />,
-      name: "Analytics",
-      path: "/tutor/analytics",
-      disabled: isAccepted === false,
-    },
-    {
-      icon: <Calendar className="h-4 w-4" />,
-      name: "Schedule",
-      path: "/tutor/schedule",
-      disabled: isAccepted === false,
-    },
+    // {
+    //   icon: <BarChart3 className="h-4 w-4" />,
+    //   name: "Analytics",
+    //   path: "/tutor/analytics",
+    //   disabled: isAccepted === false,
+    // },
+    // {
+    //   icon: <Calendar className="h-4 w-4" />,
+    //   name: "Schedule",
+    //   path: "/tutor/schedule",
+    //   disabled: isAccepted === false,
+    // },
   ];
 
   const bottomItems = [
