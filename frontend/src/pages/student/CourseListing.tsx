@@ -75,13 +75,15 @@ export function CourseListingPage() {
 
   const categories = [
     { id: "web-dev", name: "Web Development", count: 120 },
-    { id: "data-science", name: "Data Science", count: 85 },
-    { id: "cloud", name: "Cloud Computing", count: 64 },
     { id: "mobile-dev", name: "Mobile Development", count: 72 },
+    { id: "data-science", name: "Data Science", count: 85 },
+    { id: "programming", name: "Programming", count: 90 }, // Added with a reasonable count
+    { id: "cloud", name: "Cloud Computing", count: 64 },
     { id: "design", name: "UI/UX Design", count: 48 },
     { id: "devops", name: "DevOps", count: 36 },
     { id: "ai-ml", name: "AI & Machine Learning", count: 54 },
     { id: "cybersecurity", name: "Cybersecurity", count: 42 },
+    { id: "other", name: "Other", count: 30 }, // Added with a reasonable count
   ];
 
   const difficulties = [
@@ -105,7 +107,7 @@ export function CourseListingPage() {
         limit: coursesPerPage.toString(),
       });
 
-      const response = await courseService.getAllCourse(params)
+      const response = await courseService.getAllCourse(params);
       const coursesData = response.data.courses.courses || [];
       const totalCourses = response.data.courses.total || 0; // Assuming backend returns total count
 
@@ -137,11 +139,11 @@ export function CourseListingPage() {
     const isWishlisted = wishlist.includes(courseId);
     try {
       if (isWishlisted) {
-        await wishlistService.removeFromWishlist(courseId)
+        await wishlistService.removeFromWishlist(courseId);
         setWishlist((prev) => prev.filter((id) => id !== courseId));
         toast.success("Course removed from wishlist");
       } else {
-        const response = await wishlistService.addToWishlist(courseId)
+        const response = await wishlistService.addToWishlist(courseId);
         setWishlist((prev) => [...prev, courseId]);
         toast.success(response.data.message);
       }

@@ -319,6 +319,15 @@ export function TutorCourses() {
                   </SelectItem>
                   <SelectItem value="Data Science">Data Science</SelectItem>
                   <SelectItem value="Programming">Programming</SelectItem>
+                  <SelectItem value="Cloud Computing">
+                    Cloud Computing
+                  </SelectItem>
+                  <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
+                  <SelectItem value="DevOps">DevOps</SelectItem>
+                  <SelectItem value="AI & Machine Learning">
+                    AI & Machine Learning
+                  </SelectItem>
+                  <SelectItem value="Cybersecurity">Cybersecurity</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
