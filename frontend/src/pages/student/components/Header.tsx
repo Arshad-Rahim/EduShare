@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { removeUser } from "@/redux/slice/userSlice";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ export function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation(); // Added to get current pathname
   const currentUser = useSelector((state: any) => state.user.userDatas);
 
   // Determine user ID, checking both currentUser.id and currentUser._id
@@ -138,25 +139,41 @@ export function Header() {
         <nav className="hidden md:flex md:gap-6">
           <RouterLink
             to="/"
-            className="text-sm font-medium text-primary hover:underline"
+            className={`text-sm font-medium transition-colors hover:underline ${
+              location.pathname === "/"
+                ? "text-primary underline"
+                : "text-muted-foreground"
+            }`}
           >
             Home
           </RouterLink>
           <RouterLink
             to="/courses"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:underline"
+            className={`text-sm font-medium transition-colors hover:underline ${
+              location.pathname === "/courses"
+                ? "text-primary underline"
+                : "text-muted-foreground"
+            }`}
           >
             Courses
           </RouterLink>
           <RouterLink
             to="/paths"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:underline"
+            className={`text-sm font-medium transition-colors hover:underline ${
+              location.pathname === "/paths"
+                ? "text-primary underline"
+                : "text-muted-foreground"
+            }`}
           >
             Paths
           </RouterLink>
           <RouterLink
             to="/community"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary hover:underline"
+            className={`text-sm font-medium transition-colors hover:underline ${
+              location.pathname === "/community"
+                ? "text-primary underline"
+                : "text-muted-foreground"
+            }`}
           >
             Community
           </RouterLink>
@@ -384,31 +401,51 @@ export function Header() {
             </form>
             <RouterLink
               to="/"
-              className="text-lg font-medium text-primary hover:underline"
+              className={`text-lg font-medium hover:underline ${
+                location.pathname === "/"
+                  ? "text-primary underline"
+                  : "text-muted-foreground"
+              }`}
             >
               Home
             </RouterLink>
             <RouterLink
               to="/courses"
-              className="text-lg font-medium text-muted-foreground hover:underline"
+              className={`text-lg font-medium hover:underline ${
+                location.pathname === "/courses"
+                  ? "text-primary underline"
+                  : "text-muted-foreground"
+              }`}
             >
               Courses
             </RouterLink>
             <RouterLink
               to="/paths"
-              className="text-lg font-medium text-muted-foreground hover:underline"
+              className={`text-lg font-medium hover:underline ${
+                location.pathname === "/paths"
+                  ? "text-primary underline"
+                  : "text-muted-foreground"
+              }`}
             >
               Paths
             </RouterLink>
             <RouterLink
               to="/community"
-              className="text-lg font-medium text-muted-foreground hover:underline"
+              className={`text-lg font-medium hover:underline ${
+                location.pathname === "/community"
+                  ? "text-primary underline"
+                  : "text-muted-foreground"
+              }`}
             >
               Community
             </RouterLink>
             <RouterLink
               to="/about"
-              className="text-lg font-medium text-muted-foreground hover:underline"
+              className={`text-lg font-medium hover:underline ${
+                location.pathname === "/about"
+                  ? "text-primary underline"
+                  : "text-muted-foreground"
+              }`}
             >
               About
             </RouterLink>

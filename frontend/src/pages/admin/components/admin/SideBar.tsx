@@ -11,9 +11,11 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom"; // Added useLocation
 
 export function SideBar() {
+  const location = useLocation(); // Added to get current pathname
+
   return (
     <div className="flex h-full flex-col">
       <nav className="grid gap-1 px-2">
@@ -22,7 +24,6 @@ export function SideBar() {
             icon: <LayoutDashboard className="h-4 w-4" />,
             name: "Dashboard",
             path: "/admin/home",
-            active: true,
           },
           {
             icon: <Users className="h-4 w-4" />,
@@ -42,7 +43,7 @@ export function SideBar() {
           {
             icon: <DollarSign className="h-4 w-4" />,
             name: "Finances",
-            path: "/admin/finances", // Updated path to match admin routing
+            path: "/admin/finances",
           },
           {
             icon: <BarChart3 className="h-4 w-4" />,
@@ -67,7 +68,7 @@ export function SideBar() {
         ].map((item) => (
           <Button
             key={item.name}
-            variant={item.active ? "secondary" : "ghost"}
+            variant={location.pathname === item.path ? "secondary" : "ghost"} // Dynamic variant based on current path
             className="justify-start"
             asChild
           >
