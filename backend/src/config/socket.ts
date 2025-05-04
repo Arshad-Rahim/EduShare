@@ -6,6 +6,8 @@ import { v2 as cloudinary } from "cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import { createSecureUrl } from "../util/createSecureUrl";
 import { userModel } from "../models/userModels";
+import { s3 } from "../app";
+import { ObjectCannedACL, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
   const io = new Server(httpServer, {
@@ -289,77 +291,129 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           const base64Data = image.data.replace(/^data:image\/\w+;base64,/, "");
           const buffer = Buffer.from(base64Data, "base64");
 
-          const sanitizedImageName = image.name
-            .replace(/[^a-zA-Z0-9-_]/g, "_")
-            .replace(/\.[^/.]+$/, "");
-          const publicId = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}`;
 
-          const timestamp = Math.round(new Date().getTime() / 1000);
-          const signatureParams = {
-            timestamp,
-            folder: "chat_images",
-            access_mode: "authenticated",
-            public_id: publicId,
-          };
-          console.log("Signature parameters:", signatureParams);
-          const signature = cloudinary.utils.api_sign_request(
-            signatureParams,
-            process.env.CLOUDINARY_API_SECRET as string
-          );
 
-          const uploadResult = await new Promise<UploadApiResponse>(
-            (
-              resolve: (value: UploadApiResponse) => void,
-              reject: (reason?: any) => void
-            ) => {
-              const stream = cloudinary.uploader.upload_stream(
-                {
-                  resource_type: "image",
-                  folder: "chat_images",
-                  access_mode: "authenticated",
-                  timestamp,
-                  signature,
-                  api_key: process.env.CLOUDINARY_API_KEY as string,
-                  public_id: publicId,
-                },
-                (error, result) => {
-                  if (error) return reject(error);
-                  resolve(result as UploadApiResponse);
-                }
-              );
-              stream.end(buffer);
-            }
-          );
+          // this code is for saving the private image in the cloudinary
 
-          console.log(
-            "Uploaded Secure Image Public ID:",
-            uploadResult.public_id
-          );
 
-          const imageUrl = await createSecureUrl(
-            uploadResult.public_id,
-            "image"
-          );
 
-          const newMessage = new MessageModel({
-            communityId,
-            sender: message.sender,
-            content: message.content,
-            timestamp: new Date(message.timestamp),
-            status: message.status,
-            imageUrl,
-          });
-          await newMessage.save();
+          // const sanitizedImageName = image.name
+          //   .replace(/[^a-zA-Z0-9-_]/g, "_")
+          //   .replace(/\.[^/.]+$/, "");
+          // const publicId = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}`;
 
-          io.to(`community_${communityId}`).emit("receive_message", {
-            ...message,
-            _id: newMessage._id.toString(),
-            timestamp: newMessage.timestamp.toISOString(),
-            imageUrl,
-          });
-          console.log(
-            `Image message sent to community ${communityId}: ${imageUrl}`
-          );
+          // const timestamp = Math.round(new Date().getTime() / 1000);
+
+
+          // const signatureParams = {
+          //   timestamp,
+          //   folder: "chat_images",
+          //   access_mode: "authenticated",
+          //   public_id: publicId,
+          // };
+          // console.log("Signature parameters:", signatureParams);
+          // const signature = cloudinary.utils.api_sign_request(
+          //   signatureParams,
+          //   process.env.CLOUDINARY_API_SECRET as string
+          // );
+
+          // const uploadResult = await new Promise<UploadApiResponse>(
+          //   (
+          //     resolve: (value: UploadApiResponse) => void,
+          //     reject: (reason?: any) => void
+          //   ) => {
+          //     const stream = cloudinary.uploader.upload_stream(
+          //       {
+          //         resource_type: "image",
+          //         folder: "chat_images",
+          //         access_mode: "authenticated",
+          //         timestamp,
+          //         signature,
+          //         api_key: process.env.CLOUDINARY_API_KEY as string,
+          //         public_id: publicId,
+          //       },
+          //       (error, result) => {
+          //         if (error) return reject(error);
+          //         resolve(result as UploadApiResponse);
+          //       }
+          //     );
+          //     stream.end(buffer);
+          //   }
+          // );
+
+          // console.log(
+          //   "Uploaded Secure Image Public ID:",
+          //   uploadResult.public_id
+          // );
+
+          // const imageUrl = await createSecureUrl(
+          //   uploadResult.public_id,
+          //   "image"
+          // );
+
+          // const newMessage = new MessageModel({
+          //   communityId,
+          //   sender: message.sender,
+          //   content: message.content,
+          //   timestamp: new Date(message.timestamp),
+          //   status: message.status,
+          //   imageUrl,
+          // });
+          // await newMessage.save();
+
+          // io.to(`community_${communityId}`).emit("receive_message", {
+          //   ...message,
+          //   _id: newMessage._id.toString(),
+          //   timestamp: newMessage.timestamp.toISOString(),
+          //   imageUrl,
+          // });
+          // console.log(
+          //   `Image message sent to community ${communityId}: ${imageUrl}`
+          // );
+
+
+          // this code is for uploading the private image in the s3 bucket
+
+            const sanitizedImageName = image.name
+              .replace(/[^a-zA-Z0-9-_]/g, "_")
+              .replace(/\.[^/.]+$/, "");
+            const key = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}.${image.type.split("/")[1]}`;
+
+            const uploadParams = {
+              Bucket: process.env.AWS_S3_BUCKET as string,
+              Key: key,
+              Body: buffer,
+              ContentType: image.type,
+              ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
+            };
+
+            await s3.send(new PutObjectCommand(uploadParams));
+            console.log("Uploaded to S3 with Key:", key);
+
+            // Updated: Generate signed URL for the uploaded image
+            const imageUrl = await createSecureUrl(key, "image");
+
+            const newMessage = new MessageModel({
+              communityId,
+              sender: message.sender,
+              content: message.content,
+              timestamp: new Date(message.timestamp),
+              status: message.status,
+              imageUrl, // Store the signed URL
+            });
+            await newMessage.save();
+
+            io.to(`community_${communityId}`).emit("receive_message", {
+              ...message,
+              _id: newMessage._id.toString(),
+              timestamp: newMessage.timestamp.toISOString(),
+              imageUrl,
+            });
+            console.log(
+              `Image message sent to community ${communityId}: ${imageUrl}`
+            );
+
+
         } catch (err) {
           console.error(
             `Error saving image message to community ${communityId}:`,
@@ -392,101 +446,173 @@ export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
           const base64Data = image.data.replace(/^data:image\/\w+;base64,/, "");
           const buffer = Buffer.from(base64Data, "base64");
 
-          const sanitizedImageName = image.name
-            .replace(/[^a-zA-Z0-9-_]/g, "_")
-            .replace(/\.[^/.]+$/, "");
-          const publicId = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}`;
 
-          const timestamp = Math.round(new Date().getTime() / 1000);
-          const signatureParams = {
-            timestamp,
-            folder: "chat_images",
-            access_mode: "authenticated",
-            public_id: publicId,
-          };
-          console.log("Signature parameters:", signatureParams);
-          const signature = cloudinary.utils.api_sign_request(
-            signatureParams,
-            process.env.CLOUDINARY_API_SECRET as string
-          );
+          // this is the code for the clodinary upload 
 
-          const uploadResult = await new Promise<UploadApiResponse>(
-            (
-              resolve: (value: UploadApiResponse) => void,
-              reject: (reason?: any) => void
-            ) => {
-              const stream = cloudinary.uploader.upload_stream(
-                {
-                  resource_type: "image",
-                  folder: "chat_images",
-                  access_mode: "authenticated",
-                  timestamp,
-                  signature,
-                  api_key: process.env.CLOUDINARY_API_KEY as string,
-                  public_id: publicId,
-                },
-                (error, result) => {
-                  if (error) return reject(error);
-                  resolve(result as UploadApiResponse);
-                }
-              );
-              stream.end(buffer);
-            }
-          );
 
-          console.log(
-            "Uploaded Secure Image Public ID:",
-            uploadResult.public_id
-          );
+          // const sanitizedImageName = image.name
+          //   .replace(/[^a-zA-Z0-9-_]/g, "_")
+          //   .replace(/\.[^/.]+$/, "");
+          // const publicId = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}`;
 
-          const imageUrl = await createSecureUrl(
-            uploadResult.public_id,
-            "image"
-          );
+          // const timestamp = Math.round(new Date().getTime() / 1000);
+          // const signatureParams = {
+          //   timestamp,
+          //   folder: "chat_images",
+          //   access_mode: "authenticated",
+          //   public_id: publicId,
+          // };
+          // console.log("Signature parameters:", signatureParams);
+          // const signature = cloudinary.utils.api_sign_request(
+          //   signatureParams,
+          //   process.env.CLOUDINARY_API_SECRET as string
+          // );
 
-          const newMessage = new MessageModel({
-            privateChatId,
-            sender: message.sender,
-            content: message.content,
-            timestamp: new Date(message.timestamp),
-            status: message.status,
-            imageUrl,
-          });
-          await newMessage.save();
+          // const uploadResult = await new Promise<UploadApiResponse>(
+          //   (
+          //     resolve: (value: UploadApiResponse) => void,
+          //     reject: (reason?: any) => void
+          //   ) => {
+          //     const stream = cloudinary.uploader.upload_stream(
+          //       {
+          //         resource_type: "image",
+          //         folder: "chat_images",
+          //         access_mode: "authenticated",
+          //         timestamp,
+          //         signature,
+          //         api_key: process.env.CLOUDINARY_API_KEY as string,
+          //         public_id: publicId,
+          //       },
+          //       (error, result) => {
+          //         if (error) return reject(error);
+          //         resolve(result as UploadApiResponse);
+          //       }
+          //     );
+          //     stream.end(buffer);
+          //   }
+          // );
 
-          const course = await courseModel.findById(courseId).lean();
-          const student = await userModel.findById(studentId).lean();
+          // console.log(
+          //   "Uploaded Secure Image Public ID:",
+          //   uploadResult.public_id
+          // );
 
-          io.to(privateChatId).emit("receive_private_message", {
-            ...message,
-            _id: newMessage._id.toString(),
-            timestamp: newMessage.timestamp.toISOString(),
-            imageUrl,
-            courseId,
-            studentId,
-            tutorId,
-            courseTitle: course?.title || "Unknown Course",
-            studentName: student?.name || "Unknown Student",
-          });
-          console.log(
-            `Image message sent to private chat ${privateChatId}: ${imageUrl}`
-          );
+          // const imageUrl = await createSecureUrl(
+          //   uploadResult.public_id,
+          //   "image"
+          // );
 
-          // Notify the recipient (not the sender)
-          const recipientId = senderId === tutorId ? studentId : tutorId;
-          if (recipientId) {
-            io.to(recipientId).emit("notification", {
-              type: "chat_message",
-              message: `${message.sender} sent an image in ${course?.title || "course"}`,
-              courseId,
-              studentId,
-              tutorId,
-              courseTitle: course?.title || "Unknown Course",
-              timestamp: new Date().toISOString(),
-              senderId,
-            });
-            console.log(`Sent notification to ${recipientId} from ${senderId}`);
-          }
+          // const newMessage = new MessageModel({
+          //   privateChatId,
+          //   sender: message.sender,
+          //   content: message.content,
+          //   timestamp: new Date(message.timestamp),
+          //   status: message.status,
+          //   imageUrl,
+          // });
+          // await newMessage.save();
+
+          // const course = await courseModel.findById(courseId).lean();
+          // const student = await userModel.findById(studentId).lean();
+
+          // io.to(privateChatId).emit("receive_private_message", {
+          //   ...message,
+          //   _id: newMessage._id.toString(),
+          //   timestamp: newMessage.timestamp.toISOString(),
+          //   imageUrl,
+          //   courseId,
+          //   studentId,
+          //   tutorId,
+          //   courseTitle: course?.title || "Unknown Course",
+          //   studentName: student?.name || "Unknown Student",
+          // });
+          // console.log(
+          //   `Image message sent to private chat ${privateChatId}: ${imageUrl}`
+          // );
+
+          // // Notify the recipient (not the sender)
+          // const recipientId = senderId === tutorId ? studentId : tutorId;
+          // if (recipientId) {
+          //   io.to(recipientId).emit("notification", {
+          //     type: "chat_message",
+          //     message: `${message.sender} sent an image in ${course?.title || "course"}`,
+          //     courseId,
+          //     studentId,
+          //     tutorId,
+          //     courseTitle: course?.title || "Unknown Course",
+          //     timestamp: new Date().toISOString(),
+          //     senderId,
+          //   });
+          //   console.log(`Sent notification to ${recipientId} from ${senderId}`);
+          // }
+
+          // code for uploading image in the cloudinary
+
+
+ const sanitizedImageName = image.name
+   .replace(/[^a-zA-Z0-9-_]/g, "_")
+   .replace(/\.[^/.]+$/, "");
+ const key = `chat_images/${senderId}-${Date.now()}-${sanitizedImageName}.${image.type.split("/")[1]}`;
+
+ const uploadParams = {
+   Bucket: process.env.AWS_S3_BUCKET as string,
+   Key: key,
+   Body: buffer,
+   ContentType: image.type,
+   ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
+ };
+
+ await s3.send(new PutObjectCommand(uploadParams));
+ console.log("Uploaded to S3 with Key:", key);
+
+ // Updated: Generate signed URL for the uploaded image
+ const imageUrl = await createSecureUrl(key, "image");
+
+ const newMessage = new MessageModel({
+   privateChatId,
+   sender: message.sender,
+   content: message.content,
+   timestamp: new Date(message.timestamp),
+   status: message.status,
+   imageUrl, // Store the signed URL
+ });
+ await newMessage.save();
+
+ const course = await courseModel.findById(courseId).lean();
+ const student = await userModel.findById(studentId).lean();
+
+ io.to(privateChatId).emit("receive_private_message", {
+   ...message,
+   _id: newMessage._id.toString(),
+   timestamp: newMessage.timestamp.toISOString(),
+   imageUrl,
+   courseId,
+   studentId,
+   tutorId,
+   courseTitle: course?.title || "Unknown Course",
+   studentName: student?.name || "Unknown Student",
+ });
+ console.log(
+   `Image message sent to private chat ${privateChatId}: ${imageUrl}`
+ );
+
+ // Notify the recipient (not the sender)
+ const recipientId = senderId === tutorId ? studentId : tutorId;
+ if (recipientId) {
+   io.to(recipientId).emit("notification", {
+     type: "chat_message",
+     message: `${message.sender} sent an image in ${course?.title || "course"}`,
+     courseId,
+     studentId,
+     tutorId,
+     courseTitle: course?.title || "Unknown Course",
+     timestamp: new Date().toISOString(),
+     senderId,
+   });
+   console.log(`Sent notification to ${recipientId} from ${senderId}`);
+ }
+
+
         } catch (err) {
           console.error(
             `Error saving image message to private chat ${privateChatId}:`,

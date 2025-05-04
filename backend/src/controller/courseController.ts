@@ -10,6 +10,8 @@ import { UploadApiResponse } from "cloudinary";
 import { CustomRequest } from "../middleware/authMiddleware";
 import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
 import { createSecureUrl } from "../util/createSecureUrl";
+import { s3 } from "../app";
+import { ObjectCannedACL, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export class CourseController {
   constructor(private _courseService: ICourseService) {}
@@ -17,46 +19,75 @@ export class CourseController {
   async addCourse(req: Request, res: Response) {
     try {
       const tutor = (req as CustomRequest).user;
-      let publicId: string = "";
+      // let publicId: string = "";
+      let key: string = "";
 
       if (req.file) {
-        const timestamp = Math.round(new Date().getTime() / 1000);
-        const signature = cloudinary.utils.api_sign_request(
-          {
-            timestamp,
-            folder: "course_thumbnails",
-            access_mode: "authenticated",
-          },
-          process.env.CLOUDINARY_API_SECRET as string
-        );
+        // this code is for uploading the image in the clodinary
 
-        const uploadResult = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            {
-              resource_type: "auto",
-              folder: "course_thumbnails",
-              access_mode: "authenticated",
-              timestamp,
-              signature,
-              api_key: process.env.CLOUDINARY_API_KEY as string,
-            },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result as UploadApiResponse);
-            }
-          );
-          stream.end(req.file?.buffer);
-        });
+        //   const timestamp = Math.round(new Date().getTime() / 1000);
+        //   const signature = cloudinary.utils.api_sign_request(
+        //     {
+        //       timestamp,
+        //       folder: "course_thumbnails",
+        //       access_mode: "authenticated",
+        //     },
+        //     process.env.CLOUDINARY_API_SECRET as string
+        //   );
 
-        publicId = (uploadResult as UploadApiResponse).public_id;
-        console.log("Uploaded Secure Image Public ID:", publicId);
+        //   const uploadResult = await new Promise((resolve, reject) => {
+        //     const stream = cloudinary.uploader.upload_stream(
+        //       {
+        //         resource_type: "auto",
+        //         folder: "course_thumbnails",
+        //         access_mode: "authenticated",
+        //         timestamp,
+        //         signature,
+        //         api_key: process.env.CLOUDINARY_API_KEY as string,
+        //       },
+        //       (error, result) => {
+        //         if (error) return reject(error);
+        //         resolve(result as UploadApiResponse);
+        //       }
+        //     );
+        //     stream.end(req.file?.buffer);
+        //   });
+
+        //   publicId = (uploadResult as UploadApiResponse).public_id;
+        //   console.log("Uploaded Secure Image Public ID:", publicId);
+        // }
+
+        // await this._courseService.addCourse(req.body, publicId, tutor?.userId);
+        // res.status(201).json({
+        //   success: true,
+        //   message: "Course created successfully",
+        // });
+
+        // this code that upload the image to the cloudinary
+
+        const timestamp = Date.now();
+        const fileExtension = req.file.mimetype.split("/")[1];
+        key = `course_thumbnails/${tutor?.userId}-${timestamp}.${fileExtension}`;
+
+        const uploadParams = {
+          Bucket: process.env.AWS_S3_BUCKET as string,
+          Key: key,
+          Body: req.file.buffer,
+          ContentType: req.file.mimetype,
+          ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
+        };
+
+        await s3.send(new PutObjectCommand(uploadParams));
+        console.log("Uploaded to S3 with Key:", key);
       }
 
-      await this._courseService.addCourse(req.body, publicId, tutor?.userId);
+      await this._courseService.addCourse(req.body, key, tutor?.userId); // Updated: Pass S3 key instead of Cloudinary publicId
       res.status(201).json({
         success: true,
         message: "Course created successfully",
       });
+
+
     } catch (error) {
       console.error(error);
       res
@@ -108,49 +139,81 @@ export class CourseController {
   async updateCourse(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
-      // let thumbnail: string = "";
-      let publicId: string = "";
+      // let publicId: string = "";
+      let key: string = "";
       if (req.file) {
-        const timestamp = Math.round(new Date().getTime() / 1000);
-        const signature = cloudinary.utils.api_sign_request(
-          {
-            timestamp,
-            folder: "course_thumbnails",
-            access_mode: "authenticated",
-          },
-          process.env.CLOUDINARY_API_SECRET as string
-        );
+        // this code is for uploading the image in the cloudinary
 
-        const uploadResult = await new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            {
-              resource_type: "auto",
-              folder: "course_thumbnails",
-              access_mode: "authenticated",
-              timestamp,
-              signature,
-              api_key: process.env.CLOUDINARY_API_KEY as string,
-            },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result as UploadApiResponse);
-            }
-          );
-          stream.end(req.file?.buffer);
-        });
+        //   const timestamp = Math.round(new Date().getTime() / 1000);
+        //   const signature = cloudinary.utils.api_sign_request(
+        //     {
+        //       timestamp,
+        //       folder: "course_thumbnails",
+        //       access_mode: "authenticated",
+        //     },
+        //     process.env.CLOUDINARY_API_SECRET as string
+        //   );
 
-        publicId = (uploadResult as UploadApiResponse).public_id;
-        console.log("Uploaded Secure Image Public ID:", publicId);
+        //   const uploadResult = await new Promise((resolve, reject) => {
+        //     const stream = cloudinary.uploader.upload_stream(
+        //       {
+        //         resource_type: "auto",
+        //         folder: "course_thumbnails",
+        //         access_mode: "authenticated",
+        //         timestamp,
+        //         signature,
+        //         api_key: process.env.CLOUDINARY_API_KEY as string,
+        //       },
+        //       (error, result) => {
+        //         if (error) return reject(error);
+        //         resolve(result as UploadApiResponse);
+        //       }
+        //     );
+        //     stream.end(req.file?.buffer);
+        //   });
+
+        //   publicId = (uploadResult as UploadApiResponse).public_id;
+        //   console.log("Uploaded Secure Image Public ID:", publicId);
+        // }
+        // await this._courseService.updateCourse(
+        //   req.body,
+        //   publicId,
+        //   courseId.toString()
+        // );
+        // res.status(HTTP_STATUS.OK).json({
+        //   success: true,
+        //   message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
+        // });
+
+        // this code is for uploading the image in the s3 bucket
+
+        const timestamp = Date.now();
+        const fileExtension = req.file.mimetype.split("/")[1];
+        key = `course_thumbnails/${courseId}-${timestamp}.${fileExtension}`;
+
+        const uploadParams = {
+          Bucket: process.env.AWS_S3_BUCKET as string,
+          Key: key,
+          Body: req.file.buffer,
+          ContentType: req.file.mimetype,
+          ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
+        };
+
+        await s3.send(new PutObjectCommand(uploadParams));
+        console.log("Uploaded to S3 with Key:", key);
       }
+
       await this._courseService.updateCourse(
         req.body,
-        publicId,
+        key,
         courseId.toString()
-      );
+      ); // Updated: Pass S3 key instead of Cloudinary publicId
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
       });
+
+
     } catch (error) {
       if (error instanceof CustomError) {
         res
