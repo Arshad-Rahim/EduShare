@@ -46,9 +46,10 @@ export class LessonRoutes {
 
       this.router.put(
         "/:lessonId",
-          authMiddleware,
-          authorizeRole(["tutor","admin"]),
-          checkUserBlocked,
+        upload.single("file"),
+        authMiddleware,
+        authorizeRole(["tutor", "admin"]),
+        checkUserBlocked,
         (req: Request, res: Response) =>
           injectedLessonController.editLesson(req, res)
       );
