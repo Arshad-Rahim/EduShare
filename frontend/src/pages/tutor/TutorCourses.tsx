@@ -271,6 +271,25 @@ export function TutorCourses() {
       }
     };
 
+    // Function to shorten and truncate the thumbnail name
+    const getShortenedThumbnailName = (url) => {
+      let thumbnailName = url
+        ? url.split("/").pop() || "Current Thumbnail"
+        : "Current Thumbnail";
+      // Decode URL-encoded characters (e.g., %20 to space)
+      thumbnailName = decodeURIComponent(thumbnailName);
+      // Remove query parameters if present (e.g., S3 signed URL params)
+      thumbnailName = thumbnailName.split("?")[0];
+      // Truncate to 20 characters with ellipsis if too long
+      if (thumbnailName.length > 20) {
+        thumbnailName = `${thumbnailName.substring(
+          0,
+          10
+        )}...${thumbnailName.substring(thumbnailName.length - 7)}`;
+      }
+      return thumbnailName;
+    };
+
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
@@ -410,8 +429,7 @@ export function TutorCourses() {
                       />
                       <div className="flex-1 truncate">
                         <p className="text-sm font-medium">
-                          {existingThumbnailUrl.split("/").pop() ||
-                            "Current Thumbnail"}
+                          {getShortenedThumbnailName(existingThumbnailUrl)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Existing Thumbnail

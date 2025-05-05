@@ -934,7 +934,7 @@ export function VideoCall({
 
                 <Separator orientation="vertical" className="h-8 bg-zinc-700" />
 
-                <Tooltip>
+                {/* <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
@@ -945,7 +945,7 @@ export function VideoCall({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Chat</TooltipContent>
-                </Tooltip>
+                </Tooltip> */}
 
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -963,7 +963,7 @@ export function VideoCall({
                   </TooltipContent>
                 </Tooltip>
 
-                <Tooltip>
+                {/* <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       onClick={debugStream}
@@ -975,9 +975,9 @@ export function VideoCall({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Debug Streams</TooltipContent>
-                </Tooltip>
+                </Tooltip> */}
 
-                <Tooltip>
+                {/* <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
@@ -988,7 +988,7 @@ export function VideoCall({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Settings</TooltipContent>
-                </Tooltip>
+                </Tooltip> */}
 
                 <Separator orientation="vertical" className="h-8 bg-zinc-700" />
 

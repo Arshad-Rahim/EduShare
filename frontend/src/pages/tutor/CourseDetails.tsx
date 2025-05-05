@@ -132,11 +132,23 @@ export function CourseDetails() {
     setEditLessonTitle(lesson.title);
     setEditLessonDuration(lesson.duration || "");
     const videoUrl = lesson.file || lesson.videoUrl;
-    setCurrentVideoName(
-      videoUrl
-        ? videoUrl.split("/").pop() || "Current Video"
-        : "No video uploaded"
-    );
+
+    // Extract a shorter, readable video name and truncate if necessary
+    let videoName = videoUrl
+      ? videoUrl.split("/").pop() || "Current Video"
+      : "No video uploaded";
+    // Decode URL-encoded characters (e.g., %20 to space)
+    videoName = decodeURIComponent(videoName);
+    // Remove query parameters if present (e.g., S3 signed URL params)
+    videoName = videoName.split("?")[0];
+    // Truncate to 20 characters with ellipsis if too long
+    if (videoName.length > 20) {
+      videoName = `${videoName.substring(0, 10)}...${videoName.substring(
+        videoName.length - 7
+      )}`;
+    }
+
+    setCurrentVideoName(videoName);
     setEditLessonVideoFile(null);
     setEditLessonModalOpen(true);
   };
@@ -178,7 +190,7 @@ export function CourseDetails() {
       if (editLessonVideoFile) {
         formData.append("file", editLessonVideoFile);
       }
-      const response = await courseService.editLesson(selectedLesson,formData)
+      const response = await courseService.editLesson(selectedLesson, formData);
 
       if (response.data.success) {
         const updatedLesson = {

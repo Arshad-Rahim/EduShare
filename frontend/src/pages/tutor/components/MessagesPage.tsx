@@ -426,9 +426,9 @@ export function MessagesPage() {
                     <div className="flex items-center mt-2 text-xs text-gray-400">
                       <span>Private Chat</span>
                       <span className="mx-2">•</span>
-                      <span className="text-emerald-500">
+                      {/* <span className="text-emerald-500">
                         {chat.activeNow} active now
-                      </span>
+                      </span> */}
                     </div>
                   </div>
                 ))
