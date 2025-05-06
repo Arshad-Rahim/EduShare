@@ -4,18 +4,24 @@ import { TTransaction } from "../types/transaction";
 
 export class TransactionService implements ITransactionService {
   constructor(private _transactionRepository: ITransactionRepository) {}
-  async transactionDetails(
+  async  transactionDetails(
     walletId: string,
     page: number,
-    limit: number
+    limit: number,
+    filters: {
+      courseName?: string;
+      startDate?: string;
+      endDate?: string;
+    }
   ): Promise<{
     transactions: TTransaction[] | null;
     totalTransaction: number;
-  }> {
+  }>{
     return await this._transactionRepository.transactionDetails(
       walletId,
       page,
-      limit
+      limit,
+      filters
     );
   }
 }
