@@ -3,6 +3,7 @@
 import { NextFunction, Request, Response } from "express";
 import { userModel } from "../models/userModels";
 import { CustomRequest } from "./authMiddleware";
+import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 
 export const checkUserBlocked = async (
   req: Request,
@@ -38,10 +39,10 @@ export const checkUserBlocked = async (
     next();
   } catch (error) {
     console.error("Error in blocked status middleware:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error while checking blocked status",
-    });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+           success: false,
+           message: ERROR_MESSAGES.SERVER_ERROR,
+         });
     return;
   }
 };

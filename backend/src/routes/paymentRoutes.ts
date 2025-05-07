@@ -1,13 +1,9 @@
-
 import { Request, Response, Router } from "express";
 import Razorpay from "razorpay";
 import Stripe from "stripe";
 import crypto from "crypto";
 import { paymentService } from "../service/paymentService";
-import {
-  CustomRequest,
-  authMiddleware,
-} from "../middleware/authMiddleware";
+import { CustomRequest, authMiddleware } from "../middleware/authMiddleware";
 import mongoose from "mongoose";
 import { WalletModel } from "../models/walletModel";
 import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
@@ -15,6 +11,7 @@ import { CourseService } from "../service/courseService";
 import { CourseRepository } from "../repository/courseRepository";
 import { purchaseModel } from "../models/purchaseModel"; // Import PurchaseModel
 import { TransactionModel } from "../models/transactionModel";
+import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
@@ -70,7 +67,10 @@ export class PaymentRoutes {
           });
         } catch (error) {
           console.error("Error creating Razorpay order:", error);
-          res.status(500).json({ error: "Failed to create order" });
+          res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: ERROR_MESSAGES.SERVER_ERROR,
+          });
         }
       }
     );
@@ -94,7 +94,10 @@ export class PaymentRoutes {
             res.json({ status: "cancelled", message: "Payment cancelled" });
           } catch (error) {
             console.error("Error updating cancelled payment:", error);
-            res.status(500).json({ error: "Failed to update payment status" });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+              success: false,
+              message: ERROR_MESSAGES.SERVER_ERROR,
+            });
           }
           return;
         }
@@ -123,11 +126,14 @@ export class PaymentRoutes {
             res.json({ status: "success", message: "Payment verified" });
           } catch (error) {
             console.error("Error updating successful payment:", error);
-            res.status(500).json({ error: "Failed to update payment status" });
+            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+              success: false,
+              message: ERROR_MESSAGES.SERVER_ERROR,
+            });
           }
         } else {
           res
-            .status(400)
+            .status(HTTP_STATUS.BAD_REQUEST)
             .json({ status: "failure", message: "Invalid signature" });
         }
       }
@@ -144,7 +150,9 @@ export class PaymentRoutes {
           const userId = user?.userId;
 
           if (!amount || !currency || !courseId) {
-            res.status(400).json({ error: "Missing required fields" });
+            res
+              .status(HTTP_STATUS.BAD_REQUEST)
+              .json({ error: "Missing required fields" });
             return;
           }
 
@@ -165,7 +173,10 @@ export class PaymentRoutes {
           res.json({ clientSecret: paymentIntent.client_secret });
         } catch (error: any) {
           console.error("Error creating PaymentIntent:", error);
-          res.status(500).json({ error: error.message });
+          res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: ERROR_MESSAGES.SERVER_ERROR,
+          });
         }
       }
     );
@@ -181,7 +192,9 @@ export class PaymentRoutes {
           const userId = user?.userId;
 
           if (!paymentIntentId || !status) {
-            res.status(400).json({ error: "Missing required fields" });
+            res
+              .status(HTTP_STATUS.BAD_REQUEST)
+              .json({ error: "Missing required fields" });
             return;
           }
 
@@ -196,7 +209,10 @@ export class PaymentRoutes {
           res.json({ success: true });
         } catch (error: any) {
           console.error("Error updating Stripe payment:", error);
-          res.status(500).json({ error: error.message });
+          res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: ERROR_MESSAGES.SERVER_ERROR,
+          });
         }
       }
     );
@@ -321,7 +337,10 @@ export class PaymentRoutes {
         } catch (error: any) {
           await session.abortTransaction();
           console.error("Error updating enrollment or wallets:", error);
-          res.status(500).json({ error: error.message });
+          res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: ERROR_MESSAGES.SERVER_ERROR,
+          });
         } finally {
           session.endSession();
         }

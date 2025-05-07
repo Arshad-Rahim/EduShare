@@ -20,7 +20,7 @@ export class TransactionController {
    endDate: typeof endDate === "string" ? endDate : undefined,
  };
       if (!walletId || typeof walletId !== "string") {
-        res.status(400).json({ error: "walletId is required" });
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: "walletId is required" });
         return;
       }
 
