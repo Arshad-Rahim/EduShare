@@ -27,7 +27,7 @@ export class UserRoutes {
     this.router.get(
       "/:userId",
       authMiddleware,
-      authorizeRole(["user"]),
+      authorizeRole(["user","tutor"]),
       (req: Request, res: Response) =>
         injectedUserController.findUserData(req, res)
     );

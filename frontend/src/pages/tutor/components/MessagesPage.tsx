@@ -54,6 +54,9 @@ export function MessagesPage() {
   const [tutorId, setTutorId] = useState<string | null>(null);
   const [tutorName, setTutorName] = useState<string>("");
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [studentNames, setStudentNames] = useState<{ [key: string]: string }>(
+    {}
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +80,26 @@ export function MessagesPage() {
     fetchTutorDetails();
   }, []);
 
-  // Initialize Socket.IO and fetch private chats
+  // Fetch student name by studentId
+  const fetchStudentName = async (studentId: string): Promise<string> => {
+    if (studentNames[studentId]) {
+      return studentNames[studentId];
+    }
+    try {
+      const response = await tutorService.getStudentDetails(studentId);
+      const studentName = response?.data.users.name || `Student ${studentId}`;
+      setStudentNames((prev) => ({ ...prev, [studentId]: studentName }));
+      return studentName;
+    } catch (error) {
+      console.error(
+        `Failed to fetch student name for studentId ${studentId}:`,
+        error
+      );
+      return `Student ${studentId}`;
+    }
+  };
+
+  // Initialize Socket.IO and set up all event listeners
   useEffect(() => {
     if (!tutorId) return;
 
@@ -91,22 +113,32 @@ export function MessagesPage() {
       console.log("Socket connected on tutor side:", socketRef.current?.id);
       setIsSocketConnected(true);
 
-      // Join tutor room
-      socketRef.current?.emit("join_user", tutorId);
-      console.log("Tutor joined user room:", tutorId);
-
-      // Fetch private chats
-      socketRef.current?.emit("fetch_private_chats", { tutorId });
-      console.log("Fetching private chats for tutor:", tutorId);
+      socketRef.current?.emit("join_user", tutorId, () => {
+        console.log("Tutor joined user room:", tutorId);
+        socketRef.current?.emit("fetch_private_chats", { tutorId });
+        console.log("Fetching private chats for tutor:", tutorId);
+      });
     });
 
-    // Handle private chats response
-    socketRef.current.on("private_chats", (data: { chats: Chat[] }) => {
+    // Handle private chats response to populate the sidebar on page load
+    socketRef.current.on("private_chats", async (data: { chats: Chat[] }) => {
       console.log("Received private chats:", data.chats);
-      const updatedChats = data.chats.map((chat: Chat) => ({
+
+      // Fetch all student names in parallel
+      const studentNamePromises = data.chats.map(async (chat: Chat) => {
+        const studentName =
+          chat.studentName || (await fetchStudentName(chat.studentId));
+        return { ...chat, studentName };
+      });
+
+      const updatedChatsWithNames = await Promise.all(studentNamePromises);
+
+      // Update chats with fetched names and sort by timestamp
+      const updatedChats = updatedChatsWithNames.map((chat) => ({
         ...chat,
         activeNow: Math.floor(Math.random() * 5) + 1,
       }));
+
       setChats(updatedChats || []);
       if (updatedChats.length > 0 && !selectedChat) {
         setSelectedChat(updatedChats[0]);
@@ -114,7 +146,118 @@ export function MessagesPage() {
       }
     });
 
-    // Handle private message history
+    // Handle notifications to update the sidebar in real-time
+    socketRef.current.on(
+      "notification",
+      async ({
+        type,
+        message: notificationMessage,
+        courseId,
+        studentId,
+        tutorId: notificationTutorId,
+        courseTitle,
+        studentName: providedStudentName,
+        timestamp,
+        senderId,
+      }) => {
+        console.log("Received notification:", {
+          type,
+          notificationMessage,
+          courseId,
+          studentId,
+          tutorId: notificationTutorId,
+          courseTitle,
+          studentName: providedStudentName,
+          timestamp,
+          senderId,
+        });
+
+        if (
+          type !== "chat_message" ||
+          notificationTutorId !== tutorId ||
+          senderId === tutorId
+        ) {
+          console.log("Skipping notification:", {
+            type,
+            notificationTutorId,
+            tutorId,
+            senderId,
+          });
+          return;
+        }
+
+        const privateChatId = `private_${courseId}_${studentId}_${tutorId}`;
+        const messageContent = notificationMessage
+          .replace(
+            `${providedStudentName || "Unknown Student"} sent a message: `,
+            ""
+          )
+          .replace(/\.\.\.$/, "")
+          .trim();
+
+        const studentName =
+          providedStudentName ||
+          studentNames[studentId] ||
+          (await fetchStudentName(studentId));
+
+        setChats((prev) => {
+          const chatIndex = prev.findIndex(
+            (chat) => chat.privateChatId === privateChatId
+          );
+          let updatedChats: Chat[];
+
+          if (chatIndex === -1) {
+            const newChat: Chat = {
+              privateChatId,
+              courseId,
+              studentId,
+              courseTitle: courseTitle || "Unknown Course",
+              studentName,
+              latestMessage: {
+                content: messageContent,
+                timestamp: timestamp,
+              },
+              activeNow: Math.floor(Math.random() * 5) + 1,
+            };
+            updatedChats = [newChat, ...prev];
+            console.log("Added new chat from notification:", newChat);
+
+            if (!selectedChat) {
+              setSelectedChat(newChat);
+              console.log("Auto-selected new chat:", newChat);
+            }
+          } else {
+            updatedChats = [...prev];
+            updatedChats[chatIndex] = {
+              ...updatedChats[chatIndex],
+              studentName: updatedChats[chatIndex].studentName || studentName,
+              latestMessage: {
+                content: messageContent,
+                timestamp: timestamp,
+              },
+            };
+            updatedChats = [
+              updatedChats[chatIndex],
+              ...updatedChats.slice(0, chatIndex),
+              ...updatedChats.slice(chatIndex + 1),
+            ];
+            console.log(
+              "Updated existing chat from notification:",
+              updatedChats[chatIndex]
+            );
+          }
+
+          updatedChats.sort(
+            (a, b) =>
+              new Date(b.latestMessage.timestamp).getTime() -
+              new Date(a.latestMessage.timestamp).getTime()
+          );
+
+          return updatedChats;
+        });
+      }
+    );
+
     socketRef.current.on("private_message_history", (history: Message[]) => {
       console.log("Received private_message_history:", history);
       if (!selectedChat) {
@@ -146,73 +289,99 @@ export function MessagesPage() {
       console.log("Updated messages state with history:", mappedHistory);
     });
 
-    // Handle new private messages
-    socketRef.current.on("receive_private_message", (message: Message) => {
-      console.log("Received private message:", message);
-      const privateChatId = `private_${message.courseId}_${message.studentId}_${message.tutorId}`;
+    socketRef.current.on(
+      "receive_private_message",
+      async (message: Message) => {
+        console.log("Received private message:", message);
+        const privateChatId = `private_${message.courseId}_${message.studentId}_${message.tutorId}`;
 
-      // Update chat list
-      setChats((prev) => {
-        const chatIndex = prev.findIndex(
-          (chat) => chat.privateChatId === privateChatId
-        );
-        const newMessageData = {
-          content: message.content,
-          timestamp: message.timestamp,
-          imageUrl: message.imageUrl,
-        };
+        const studentName =
+          message.studentName ||
+          studentNames[message.studentId] ||
+          (await fetchStudentName(message.studentId));
 
-        if (chatIndex === -1) {
-          console.log("Adding new chat to list:", message);
-          return [
-            {
+        setChats((prev) => {
+          const chatIndex = prev.findIndex(
+            (chat) => chat.privateChatId === privateChatId
+          );
+          let updatedChats: Chat[] = [...prev];
+
+          if (chatIndex === -1) {
+            const newChat: Chat = {
               privateChatId,
               courseId: message.courseId,
               studentId: message.studentId,
               courseTitle: message.courseTitle,
-              studentName: message.studentName,
-              latestMessage: newMessageData,
+              studentName,
+              latestMessage: {
+                content: message.content,
+                timestamp: message.timestamp,
+                imageUrl: message.imageUrl,
+              },
               activeNow: Math.floor(Math.random() * 5) + 1,
-            },
-            ...prev,
-          ];
-        }
+            };
+            updatedChats = [newChat, ...updatedChats];
+            console.log(
+              "Added new chat from receive_private_message:",
+              newChat
+            );
 
-        const updatedChats = [...prev];
-        updatedChats[chatIndex] = {
-          ...updatedChats[chatIndex],
-          latestMessage: newMessageData,
-        };
-        return [
-          updatedChats[chatIndex],
-          ...updatedChats.slice(0, chatIndex),
-          ...updatedChats.slice(chatIndex + 1),
-        ];
-      });
+            if (!selectedChat) {
+              setSelectedChat(newChat);
+              console.log("Auto-selected new chat:", newChat);
+            }
+          } else {
+            updatedChats[chatIndex] = {
+              ...updatedChats[chatIndex],
+              studentName: updatedChats[chatIndex].studentName || studentName,
+              latestMessage: {
+                content: message.content,
+                timestamp: message.timestamp,
+                imageUrl: message.imageUrl,
+              },
+            };
+            updatedChats = [
+              updatedChats[chatIndex],
+              ...updatedChats.slice(0, chatIndex),
+              ...updatedChats.slice(chatIndex + 1),
+            ];
+            console.log(
+              "Updated chat with correct studentName:",
+              updatedChats[chatIndex]
+            );
+          }
 
-      // Update messages for the selected chat, but skip if sent by tutor
-      if (selectedChat && selectedChat.privateChatId === privateChatId) {
-        console.log(
-          "Updating messages for selected chat, sender:",
-          message.sender,
-          "tutorName:",
-          tutorName
-        );
-        if (message.sender !== tutorName) {
-          console.log("Adding received message from another user:", message);
-          setMessages((prev) => [...prev, message]);
-        } else {
-          console.log("Skipping duplicate message sent by tutor:", message);
-        }
-      } else {
-        console.log("Message received but not for selected chat:", {
-          message,
-          selectedChat,
+          updatedChats.sort(
+            (a, b) =>
+              new Date(b.latestMessage.timestamp).getTime() -
+              new Date(a.latestMessage.timestamp).getTime()
+          );
+
+          return updatedChats;
         });
-      }
-    });
 
-    // Handle errors
+        if (selectedChat && selectedChat.privateChatId === privateChatId) {
+          console.log(
+            "Updating messages for selected chat, sender:",
+            message.sender,
+            "tutorName:",
+            tutorName
+          );
+          if (message.sender !== tutorName) {
+            console.log("Adding received message from another user:", message);
+            setMessages((prev) => [...prev, { ...message, studentName }]);
+          } else {
+            console.log("Skipping duplicate message sent by tutor:", message);
+          }
+        } else {
+          console.log("Message received but not for selected chat:", {
+            message,
+            selectedChat,
+          });
+        }
+      }
+    );
+
     socketRef.current.on("error", (error: { message: string }) => {
       console.error("Socket error:", error);
       toast.error(error.message || "Failed to load chats");
@@ -226,6 +395,7 @@ export function MessagesPage() {
     return () => {
       socketRef.current?.off("connect");
       socketRef.current?.off("private_chats");
+      socketRef.current?.off("notification");
       socketRef.current?.off("receive_private_message");
       socketRef.current?.off("private_message_history");
       socketRef.current?.off("error");
@@ -233,9 +403,8 @@ export function MessagesPage() {
       socketRef.current?.disconnect();
       setIsSocketConnected(false);
     };
-  }, [tutorId, selectedChat]);
+  }, [tutorId, tutorName, selectedChat]);
 
-  // Handle joining private chat only when socket is connected
   useEffect(() => {
     if (!isSocketConnected || !selectedChat || !socketRef.current || !tutorId) {
       console.log("Skipping join_private_chat, conditions not met:", {
@@ -251,7 +420,7 @@ export function MessagesPage() {
       studentId: selectedChat.studentId,
       tutorId,
     });
-    setMessages([]); // Clear messages before joining new chat
+    setMessages([]);
     socketRef.current.emit("join_private_chat", {
       courseId: selectedChat.courseId,
       studentId: selectedChat.studentId,
@@ -259,7 +428,6 @@ export function MessagesPage() {
     });
   }, [isSocketConnected, selectedChat, tutorId]);
 
-  // Scroll to the bottom of the chat when messages update
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -268,13 +436,11 @@ export function MessagesPage() {
     scrollToBottom();
   }, [messages]);
 
-  // Handle selecting a chat
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
     setIsSidebarOpen(false);
   };
 
-  // Handle sending a text message
   const handleSendMessage = () => {
     if (newMessage.trim() && tutorId && selectedChat && tutorName) {
       const newMsg: Message = {
@@ -297,10 +463,31 @@ export function MessagesPage() {
       });
       setMessages((prev) => [...prev, newMsg]);
       setNewMessage("");
+
+      const privateChatId = `private_${selectedChat.courseId}_${selectedChat.studentId}_${tutorId}`;
+      setChats((prev) => {
+        const chatIndex = prev.findIndex(
+          (chat) => chat.privateChatId === privateChatId
+        );
+        if (chatIndex === -1) return prev;
+
+        const updatedChats = [...prev];
+        updatedChats[chatIndex] = {
+          ...updatedChats[chatIndex],
+          latestMessage: {
+            content: newMessage,
+            timestamp: new Date().toISOString(),
+          },
+        };
+        return [
+          updatedChats[chatIndex],
+          ...updatedChats.slice(0, chatIndex),
+          ...updatedChats.slice(chatIndex + 1),
+        ];
+      });
     }
   };
 
-  // Handle sending an image message
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && tutorId && selectedChat && tutorName) {
@@ -343,6 +530,29 @@ export function MessagesPage() {
           ...prev,
           { ...newMsg, imageUrl: reader.result as string },
         ]);
+
+        const privateChatId = `private_${selectedChat.courseId}_${selectedChat.studentId}_${tutorId}`;
+        setChats((prev) => {
+          const chatIndex = prev.findIndex(
+            (chat) => chat.privateChatId === privateChatId
+          );
+          if (chatIndex === -1) return prev;
+
+          const updatedChats = [...prev];
+          updatedChats[chatIndex] = {
+            ...updatedChats[chatIndex],
+            latestMessage: {
+              content: "",
+              timestamp: new Date().toISOString(),
+              imageUrl: reader.result as string,
+            },
+          };
+          return [
+            updatedChats[chatIndex],
+            ...updatedChats.slice(0, chatIndex),
+            ...updatedChats.slice(chatIndex + 1),
+          ];
+        });
       };
       reader.readAsDataURL(file);
       event.target.value = "";
@@ -382,7 +592,6 @@ export function MessagesPage() {
       <div className="flex flex-1">
         <SideBar sidebarOpen={sidebarOpen} />
         <div className={`flex-1 flex ${sidebarOpen ? "md:ml-64" : ""}`}>
-          {/* Chat list (aside) - Positioned beside SideBar */}
           <aside
             className={cn(
               "w-80 bg-white shadow-lg border-r",
@@ -426,16 +635,12 @@ export function MessagesPage() {
                     <div className="flex items-center mt-2 text-xs text-gray-400">
                       <span>Private Chat</span>
                       <span className="mx-2">•</span>
-                      {/* <span className="text-emerald-500">
-                        {chat.activeNow} active now
-                      </span> */}
                     </div>
                   </div>
                 ))
               )}
             </div>
           </aside>
-          {/* Chat content */}
           <div className="flex-1 flex flex-col min-w-0">
             {chats.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-6">

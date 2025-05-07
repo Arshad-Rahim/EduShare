@@ -200,12 +200,11 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Fetch students, tutors, wallet, transactions, and course count concurrently
+      // Fetch students, tutors, wallet, and course count concurrently
       const [
         studentResponse,
         tutorResponse,
         walletResponse,
-        transactionsResponse,
         courseCountResponse,
       ] = await Promise.all([
         userService.userList(1, 100, "", { signal: controller.signal }),
@@ -213,24 +212,33 @@ export function AdminHome() {
         authAxiosInstance.get("/wallet/get-data", {
           signal: controller.signal,
         }),
-        authAxiosInstance.get(
-          `/transaction/transaction-details?walletId=${
-            (
-              await authAxiosInstance.get("/wallet/get-data")
-            ).data.wallet._id
-          }`,
-          { signal: controller.signal }
-        ),
         authAxiosInstance.get("/courses/course-count", {
           signal: controller.signal,
         }),
       ]);
 
+      // Check if wallet exists, otherwise set defaults
+      let wallet = walletResponse.data.wallet || null;
+      let transactionsData: Transaction[] = [];
+      let walletId = wallet ? wallet._id : null;
+
+      if (walletId) {
+        const transactionsResponse = await authAxiosInstance.get(
+          `/transaction/transaction-details?walletId=${walletId}`,
+          { signal: controller.signal }
+        );
+        transactionsData = transactionsResponse.data.transactions || [];
+      } else {
+        console.log(
+          "No wallet exists for this admin, skipping transactions fetch"
+        );
+      }
+
       clearTimeout(timeoutId);
       console.log("Student Response:", studentResponse.data);
       console.log("Tutor Response:", tutorResponse.data);
       console.log("Wallet Response:", walletResponse.data);
-      console.log("Transactions Response:", transactionsResponse.data);
+      console.log("Transactions Data:", transactionsData);
       console.log("Course Count Response:", courseCountResponse.data);
 
       const students: TStudent[] =
@@ -239,15 +247,11 @@ export function AdminHome() {
         tutorResponse.data.users.filter((t) => t.role === "tutor") || [];
 
       setTutors(tutors);
-
-      // Set wallet data and transactions
-      const wallet = walletResponse.data.wallet || null;
       setWalletData(wallet);
-      const transactionData = transactionsResponse.data.transactions || [];
-      setTransactions(transactionData);
+      setTransactions(transactionsData);
 
       // Calculate total revenue from transactions (sum of credit transactions)
-      const totalRevenue = transactionData
+      const totalRevenue = transactionsData
         .filter((t: Transaction) => t.transaction_type === "credit")
         .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
 
@@ -516,7 +520,12 @@ export function AdminHome() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground font-medium">
+            Loading dashboard...
+          </p>
+        </div>
       </div>
     );
   }
@@ -524,17 +533,37 @@ export function AdminHome() {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">{error}</p>
+        <div className="text-center max-w-md mx-auto p-6 bg-card rounded-lg shadow-lg">
+          <p className="text-red-500 mb-4 font-medium">{error}</p>
           <Button
             onClick={() => {
               setLoading(true);
               setError(null);
               fetchDashboardData();
             }}
+            className="hover:scale-105 transition-transform"
           >
             Retry
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    !stats ||
+    !users ||
+    !courseStatuses ||
+    !performanceMetrics ||
+    !transactions
+  ) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium">
+            No data available.
+          </p>
         </div>
       </div>
     );
@@ -564,9 +593,12 @@ export function AdminHome() {
 
             {/* Stats Overview */}
             <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {stats && stats.length > 0 ? (
+              {stats.length > 0 ? (
                 stats.map((stat, index) => (
-                  <Card key={index}>
+                  <Card
+                    key={index}
+                    className="overflow-hidden transition-all hover:shadow-lg"
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
                         <div className="rounded-full bg-primary/10 p-2">
@@ -583,15 +615,18 @@ export function AdminHome() {
                   </Card>
                 ))
               ) : (
-                <p className="text-muted-foreground col-span-4">
-                  No stats available.
-                </p>
+                <div className="text-center col-span-4 py-12">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground font-medium">
+                    No stats available.
+                  </p>
+                </div>
               )}
             </div>
 
             {/* User Management */}
-            <Card className="mb-8">
-              <CardHeader>
+            <Card className="mb-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="border-b bg-muted/50">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>User Management</CardTitle>
@@ -613,19 +648,23 @@ export function AdminHome() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
-                {users && users.length > 0 ? (
-                  <ReusableTable columns={userColumns} data={users} />
+              <CardContent className="p-6">
+                {users.length > 0 ? (
+                  <div className="rounded-lg overflow-hidden border">
+                    <ReusableTable columns={userColumns} data={users} />
+                  </div>
                 ) : (
-                  <div className="text-center py-8">
+                  <div className="text-center py-12">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No users found.</p>
+                    <p className="text-muted-foreground font-medium">
+                      No users found.
+                    </p>
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="flex items-center justify-between">
+              <CardFooter className="border-t bg-muted/50 flex items-center justify-between px-6 py-4">
                 <div className="text-sm text-muted-foreground">
-                  Showing {users?.length || 0} of {totalUsers} users
+                  Showing {users.length} of {totalUsers} users
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -650,16 +689,16 @@ export function AdminHome() {
 
             {/* Course Management and Analytics */}
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
+              <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="border-b bg-muted/50">
                   <CardTitle>Course Status</CardTitle>
                   <CardDescription>
                     Overview of all courses on the platform
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <div className="grid grid-cols-2 gap-4">
-                    {courseStatuses && courseStatuses.length > 0 ? (
+                    {courseStatuses.length > 0 ? (
                       courseStatuses.map((status, index) => (
                         <Card key={index} className={`border ${status.color}`}>
                           <CardContent className="flex flex-col items-center justify-center p-6">
@@ -674,15 +713,18 @@ export function AdminHome() {
                         </Card>
                       ))
                     ) : (
-                      <p className="text-muted-foreground col-span-2">
-                        No course statuses available.
-                      </p>
+                      <div className="text-center col-span-2 py-12">
+                        <Layers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground font-medium">
+                          No course statuses available.
+                        </p>
+                      </div>
                     )}
                   </div>
                   <Separator className="my-6" />
                   <div className="space-y-3">
                     <h4 className="font-medium">Recent Transactions</h4>
-                    {transactions && transactions.length > 0 ? (
+                    {transactions.length > 0 ? (
                       transactions.slice(0, 3).map((transaction, index) => (
                         <div
                           key={index}
@@ -715,29 +757,32 @@ export function AdminHome() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-muted-foreground">
-                        No recent transactions.
-                      </p>
+                      <div className="text-center py-12">
+                        <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground font-medium">
+                          No recent transactions.
+                        </p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
+              <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
+                <CardHeader className="border-b bg-muted/50">
                   <CardTitle>Key Performance Metrics</CardTitle>
                   <CardDescription>
                     Platform analytics and trends
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <Tabs defaultValue="enrollment">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="enrollment">Enrollment</TabsTrigger>
                       <TabsTrigger value="revenue">Revenue</TabsTrigger>
                     </TabsList>
                     <TabsContent value="enrollment" className="pt-4">
-                      {performanceMetrics ? (
+                      {performanceMetrics.enrollment.value > 0 ? (
                         <>
                           <div className="flex items-end justify-between">
                             <div>
@@ -783,13 +828,16 @@ export function AdminHome() {
                           </div>
                         </>
                       ) : (
-                        <p className="text-muted-foreground">
-                          No enrollment data available.
-                        </p>
+                        <div className="text-center py-12">
+                          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground font-medium">
+                            No enrollment data available.
+                          </p>
+                        </div>
                       )}
                     </TabsContent>
                     <TabsContent value="revenue" className="pt-4">
-                      {performanceMetrics ? (
+                      {performanceMetrics.revenue.value > 0 ? (
                         <>
                           <div className="flex items-end justify-between">
                             <div>
@@ -811,15 +859,21 @@ export function AdminHome() {
                           </div>
                         </>
                       ) : (
-                        <p className="text-muted-foreground">
-                          No revenue data available.
-                        </p>
+                        <div className="text-center py-12">
+                          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground font-medium">
+                            No revenue data available.
+                          </p>
+                        </div>
                       )}
                     </TabsContent>
                   </Tabs>
                 </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
+                <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                  <Button
+                    variant="outline"
+                    className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
                     View Detailed Analytics
                   </Button>
                 </CardFooter>

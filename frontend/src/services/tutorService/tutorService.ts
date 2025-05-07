@@ -50,7 +50,7 @@ export const tutorService = {
     }
   },
 
-  async fetchPrivateChats(){
+  async fetchPrivateChats() {
     try {
       const response = await authAxiosInstance.get("/tutors/private-chat");
       return response;
@@ -60,18 +60,28 @@ export const tutorService = {
     }
   },
 
-  async profileUpdate(formData){
+  async profileUpdate(formData) {
     try {
       const response = await authAxiosInstance.post(
-              "/tutors/profileUpdate",
-              formData,
-              {
-                headers: { "Content-Type": "multipart/form-data" },
-              }
-            );
-            return response;
+        "/tutors/profileUpdate",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response;
     } catch (error) {
-      throw new Error("Failed to Update the profile")
+      throw new Error("Failed to Update the profile");
     }
-  }
+  },
+
+  async getStudentDetails(userId) {
+    try {
+      const response = await authAxiosInstance.get(`/users/${userId}`);
+      return response;
+    } catch (error) {
+      console.error("Failed to fetch userDetails:", error);
+      toast.error("Failed to fetch userDetails");
+    }
+  },
 };
