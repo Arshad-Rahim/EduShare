@@ -29,6 +29,7 @@ interface Chat {
     imageUrl?: string;
   };
   activeNow?: number;
+  unreadCount: number;
 }
 
 interface Message {
@@ -133,10 +134,11 @@ export function MessagesPage() {
 
       const updatedChatsWithNames = await Promise.all(studentNamePromises);
 
-      // Update chats with fetched names and sort by timestamp
+      // Update chats with fetched names, initialize unreadCount, and sort by timestamp
       const updatedChats = updatedChatsWithNames.map((chat) => ({
         ...chat,
         activeNow: Math.floor(Math.random() * 5) + 1,
+        unreadCount: 0,
       }));
 
       setChats(updatedChats || []);
@@ -218,6 +220,8 @@ export function MessagesPage() {
                 timestamp: timestamp,
               },
               activeNow: Math.floor(Math.random() * 5) + 1,
+              unreadCount:
+                selectedChat?.privateChatId === privateChatId ? 0 : 1,
             };
             updatedChats = [newChat, ...prev];
             console.log("Added new chat from notification:", newChat);
@@ -235,6 +239,10 @@ export function MessagesPage() {
                 content: messageContent,
                 timestamp: timestamp,
               },
+              unreadCount:
+                selectedChat?.privateChatId === privateChatId
+                  ? updatedChats[chatIndex].unreadCount
+                  : (updatedChats[chatIndex].unreadCount || 0) + 1,
             };
             updatedChats = [
               updatedChats[chatIndex],
@@ -319,6 +327,8 @@ export function MessagesPage() {
                 imageUrl: message.imageUrl,
               },
               activeNow: Math.floor(Math.random() * 5) + 1,
+              unreadCount:
+                selectedChat?.privateChatId === privateChatId ? 0 : 1,
             };
             updatedChats = [newChat, ...updatedChats];
             console.log(
@@ -339,6 +349,10 @@ export function MessagesPage() {
                 timestamp: message.timestamp,
                 imageUrl: message.imageUrl,
               },
+              unreadCount:
+                selectedChat?.privateChatId === privateChatId
+                  ? updatedChats[chatIndex].unreadCount
+                  : (updatedChats[chatIndex].unreadCount || 0) + 1,
             };
             updatedChats = [
               updatedChats[chatIndex],
@@ -439,6 +453,12 @@ export function MessagesPage() {
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
     setIsSidebarOpen(false);
+    // Reset unread count for the selected chat
+    setChats((prev) =>
+      prev.map((c) =>
+        c.privateChatId === chat.privateChatId ? { ...c, unreadCount: 0 } : c
+      )
+    );
   };
 
   const handleSendMessage = () => {
@@ -583,8 +603,16 @@ export function MessagesPage() {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
+          @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.9; }
+          }
           .animate-fade-in {
             animation: fade-in 0.3s ease-out;
+          }
+          .animate-pulse-on-update {
+            animation: pulse 0.5s ease-in-out;
           }
         `}
       </style>
@@ -626,9 +654,25 @@ export function MessagesPage() {
                     )}
                     onClick={() => handleSelectChat(chat)}
                   >
-                    <h3 className="font-semibold text-gray-800">
-                      {chat.studentName}
-                    </h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-semibold text-gray-800 truncate">
+                        {chat.studentName}
+                      </h3>
+                      {chat.unreadCount > 0 && (
+                        <span
+                          className={cn(
+                            "bg-gradient-to-r from-indigo-500 to-purple-600",
+                            "text-white text-sm font-medium rounded-full px-2.5 py-0.5",
+                            "shadow-sm opacity-90",
+                            "hover:scale-110 hover:brightness-110",
+                            "transition-all duration-200",
+                            "animate-pulse-on-update"
+                          )}
+                        >
+                          {chat.unreadCount}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 mt-1">
                       {chat.courseTitle}
                     </p>
