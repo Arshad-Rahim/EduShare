@@ -15,7 +15,7 @@ interface Notification {
   timestamp: string;
   read: boolean;
   userId: string;
-  senderId: string; // Added to track the sender
+  senderId: string;
 }
 
 export function Notifications() {
@@ -87,6 +87,27 @@ export function Notifications() {
         }
 
         console.log("Processing notification for recipient:", userId);
+
+        // Check if the user is on the chat page for this course or on the /community route
+        const currentPath = window.location.pathname;
+        const chatPageRegex = /^\/courses\/([a-f0-9]+)\/chat$/;
+        const match = currentPath.match(chatPageRegex);
+        const isOnChatPage = !!match;
+        const chatCourseId = match ? match[1] : null;
+        const isOnCommunityPage = currentPath === "/community";
+        const shouldSuppressNotification =
+          (isOnChatPage && chatCourseId === courseId) || isOnCommunityPage;
+
+        console.log("Notification check:", {
+          currentPath,
+          isOnChatPage,
+          chatCourseId,
+          isOnCommunityPage,
+          courseId,
+          shouldSuppressNotification,
+        });
+
+        // Create the notification, marking it as read if suppressed
         const notification: Notification = {
           id: Math.random().toString(36).substring(7),
           type,
@@ -95,15 +116,26 @@ export function Notifications() {
           studentId,
           tutorId,
           timestamp,
-          read: false,
+          read: shouldSuppressNotification, // Mark as read if suppressed
           userId: userId,
-          senderId: senderId, // Store senderId for debugging
+          senderId: senderId,
         };
+
+        // Always add to notifications state
         setNotifications((prev) => {
           const newNotifications = [notification, ...prev];
           console.log("New notifications state:", newNotifications);
           return newNotifications;
         });
+
+        // Suppress the toast if the user is on the chat page for this course or on /community
+        if (shouldSuppressNotification) {
+          console.log(
+            "Suppressing notification toast and marking as read: User is on relevant page",
+            { courseId, isOnCommunityPage }
+          );
+          return;
+        }
 
         const redirectPath = isTutor ? `/tutor/messages` : `/community`;
 

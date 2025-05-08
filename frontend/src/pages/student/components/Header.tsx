@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { removeUser } from "@/redux/slice/userSlice";
-import { useNavigate, useLocation } from "react-router-dom"; // Added useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -40,7 +40,7 @@ export function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const location = useLocation(); // Added to get current pathname
+  const location = useLocation();
   const currentUser = useSelector((state: any) => state.user.userDatas);
 
   // Determine user ID, checking both currentUser.id and currentUser._id
@@ -59,7 +59,42 @@ export function Header() {
   );
   const markNotificationRead = (window as any).markNotificationRead;
   const clearNotifications = (window as any).clearNotifications;
-  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // Determine if the user is on a chat page, extract the courseId, or check if on /community
+  const chatPageRegex = /^\/courses\/([a-f0-9]+)\/chat$/;
+  const match = location.pathname.match(chatPageRegex);
+  const isOnChatPage = !!match;
+  const chatCourseId = match ? match[1] : null;
+  const isOnCommunityPage = location.pathname === "/community";
+
+  // Filter notifications for display (exclude those for the current course if on chat page, or all if on /community)
+  const displayNotifications = notifications.filter(
+    (notification) =>
+      !isOnCommunityPage &&
+      (!isOnChatPage || chatCourseId !== notification.courseId)
+  );
+  const unreadCount = displayNotifications.filter((n) => !n.read).length;
+
+  // Log the filtering for debugging
+  useEffect(() => {
+    console.log("Notification filtering:", {
+      currentPath: location.pathname,
+      isOnChatPage,
+      chatCourseId,
+      isOnCommunityPage,
+      totalNotifications: notifications.length,
+      displayNotifications: displayNotifications.length,
+      unreadCount,
+    });
+  }, [
+    notifications,
+    location.pathname,
+    isOnChatPage,
+    chatCourseId,
+    isOnCommunityPage,
+    displayNotifications,
+    unreadCount,
+  ]);
 
   // Listen for notifications-updated event
   useEffect(() => {
@@ -68,11 +103,10 @@ export function Header() {
         "Notifications updated event received:",
         (window as any).notifications
       );
-      setNotifications(
-        ((window as any).notifications || []).filter(
-          (n: Notification) => n.userId === userId
-        )
+      const updatedNotifications = ((window as any).notifications || []).filter(
+        (n: Notification) => n.userId === userId
       );
+      setNotifications(updatedNotifications);
     };
 
     window.addEventListener(
@@ -157,16 +191,6 @@ export function Header() {
           >
             Courses
           </RouterLink>
-          {/* <RouterLink
-            to="/paths"
-            className={`text-sm font-medium transition-colors hover:underline ${
-              location.pathname === "/paths"
-                ? "text-primary underline"
-                : "text-muted-foreground"
-            }`}
-          >
-            Paths
-          </RouterLink> */}
           <RouterLink
             to="/community"
             className={`text-sm font-medium transition-colors hover:underline ${
@@ -226,12 +250,12 @@ export function Header() {
                       </Button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {notifications.length === 0 ? (
+                      {displayNotifications.length === 0 ? (
                         <p className="p-4 text-sm text-muted-foreground">
                           No notifications
                         </p>
                       ) : (
-                        notifications.map((notification) => (
+                        displayNotifications.map((notification) => (
                           <div
                             key={notification.id}
                             onClick={() =>
@@ -258,7 +282,7 @@ export function Header() {
                         ))
                       )}
                     </div>
-                    {notifications.length > 0 && (
+                    {displayNotifications.length > 0 && (
                       <div className="p-4 border-t border-muted/20">
                         <Button
                           variant="ghost"
