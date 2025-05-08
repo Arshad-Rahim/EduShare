@@ -64,6 +64,17 @@ export class TutorRoutes {
        (req: Request, res: Response) =>
          injectedTutorController.getEnrolledStudent(req, res)
      );
+
+
+     this.router.get(
+       "/trending",
+       authMiddleware,
+       authorizeRole(["admin","tutor"]),
+       checkUserBlocked,
+
+       (req: Request, res: Response) =>
+         injectedTutorController.tutorPurchaseCount(req, res)
+     );
   }
 }
 

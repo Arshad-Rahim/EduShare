@@ -1,7 +1,7 @@
 import { ITutorRepository } from "../interfaces/repositoryInterfaces/ITutorRepository";
 import { ITutorService } from "../interfaces/serviceInterfaces/tutorServiceInterface";
 import { TNotification } from "../types/notification";
-import { TTutorModel, TUpdateTutorProfileBody } from "../types/tutor";
+import { TrendingTutor, TTutorModel, TUpdateTutorProfileBody } from "../types/tutor";
 import { TStudent } from "../types/user";
 
 export class TutorService implements ITutorService {
@@ -38,6 +38,10 @@ export class TutorService implements ITutorService {
       const { students, totalRevenue } =
         await this._tutorRepository.getEnrolledStudent(tutorId);
       return {students,totalRevenue};
+  }
+
+  async tutorPurchaseCount(): Promise<TrendingTutor[]>{
+    return await this._tutorRepository.tutorPurchaseCount();
   }
 
 

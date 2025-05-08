@@ -205,20 +205,20 @@ export class CourseRepository implements ICourseRepository {
     return courseCount;
   }
 
-  async coursePurchaseCount(): Promise<CoursePurchaseCount[]> {
-    const allCourses = await courseModel.find().lean();
+                        async coursePurchaseCount(): Promise<CoursePurchaseCount[]> {
+                          const allCourses = await courseModel.find().lean();
 
-    const coursePurchaseCounts: CoursePurchaseCount[] = allCourses.map(
-      (course) => ({
-        courseId: course._id.toString(),
-        courseName: course.title,
-        purchaseCount: Array.isArray(course.enrollments)
-          ? course.enrollments.length
-          : 0,
-      })
-    );
+                          const coursePurchaseCounts: CoursePurchaseCount[] = allCourses.map(
+                            (course) => ({
+                              courseId: course._id.toString(),
+                              courseName: course.title,
+                              purchaseCount: Array.isArray(course.enrollments)
+                                ? course.enrollments.length
+                                : 0,
+                            })
+                          );
 
-    coursePurchaseCounts.sort((a, b) => b.purchaseCount - a.purchaseCount);
-    return coursePurchaseCounts;
-  }
+                          coursePurchaseCounts.sort((a, b) => b.purchaseCount - a.purchaseCount);
+                          return coursePurchaseCounts;
+                        }
 }

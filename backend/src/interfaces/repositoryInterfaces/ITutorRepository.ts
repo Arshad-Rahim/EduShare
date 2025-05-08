@@ -1,5 +1,5 @@
 import { TNotification } from "../../types/notification";
-import { TTutorModel, TUpdateTutorProfileBody } from "../../types/tutor";
+import { TrendingTutor, TTutorModel, TUpdateTutorProfileBody } from "../../types/tutor";
 import { TStudent } from "../../types/user";
 
 export interface ITutorRepository {
@@ -15,4 +15,5 @@ export interface ITutorRepository {
   getEnrolledStudent(
       tutorId: string
     ): Promise<{ students: TStudent[]; totalRevenue: number }>
+    tutorPurchaseCount(): Promise<TrendingTutor[]>
 }

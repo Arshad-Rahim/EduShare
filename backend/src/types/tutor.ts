@@ -53,3 +53,10 @@ export type TEnrolledStudentsResponse = {
   students: TEnrolledStudent[];
   totalRevenue: number;
 };
+
+
+export interface TrendingTutor {
+  tutorId: string;
+  tutorName: string;
+  enrollmentCount: number;
+}

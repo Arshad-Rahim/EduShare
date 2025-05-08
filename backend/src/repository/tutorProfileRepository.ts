@@ -5,6 +5,7 @@ import { tutorProfileModel } from "../models/tutorProfileModel";
 import { userModel } from "../models/userModels";
 import { TNotification } from "../types/notification";
 import {
+  TrendingTutor,
   TTutorModel,
   TUpdateData,
   TUpdateTutorProfileBody,
@@ -238,5 +239,42 @@ export class TutorRepository implements ITutorRepository {
     });
 
     return { students: result, totalRevenue };
+  }
+  async tutorPurchaseCount(): Promise<TrendingTutor[]> {
+    // Fetch all approved tutors
+    const allTutors = await userModel
+      .find({ role: "tutor", isAccepted: true, isBlocked: false })
+      .lean();
+
+    // Fetch all courses to get their enrollment counts
+    const allCourses = await courseModel.find().lean();
+
+    // Create a map of tutorId to total enrollment count
+    const tutorEnrollmentMap: { [key: string]: number } = {};
+    for (const course of allCourses) {
+      if (course.tutorId) {
+        const tutorId = course.tutorId.toString();
+        const enrollmentCount = Array.isArray(course.enrollments)
+          ? course.enrollments.length
+          : 0;
+        tutorEnrollmentMap[tutorId] =
+          (tutorEnrollmentMap[tutorId] || 0) + enrollmentCount;
+      }
+    }
+
+    // Map tutors to TrendingTutor objects
+    const tutorPurchaseCounts: TrendingTutor[] = allTutors.map((tutor) => {
+      const enrollmentCount = tutorEnrollmentMap[tutor._id.toString()] || 0;
+      return {
+        tutorId: tutor._id.toString(),
+        tutorName: tutor.name,
+        enrollmentCount,
+      };
+    });
+
+    // Sort by enrollmentCount in descending order
+    tutorPurchaseCounts.sort((a, b) => b.enrollmentCount - a.enrollmentCount);
+
+    return tutorPurchaseCounts;
   }
 }

@@ -169,6 +169,12 @@ interface CoursePurchaseCount {
   purchaseCount: number;
 }
 
+interface TrendingTutor {
+  tutorId: string;
+  tutorName: string;
+  enrollmentCount: number;
+}
+
 export function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<Stat[] | null>(null);
@@ -184,16 +190,19 @@ export function AdminHome() {
   const [coursePurchaseCounts, setCoursePurchaseCounts] = useState<
     CoursePurchaseCount[] | null
   >(null);
+  const [trendingTutors, setTrendingTutors] = useState<TrendingTutor[] | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
-  const [userLoading, setUserLoading] = useState(false); // New state for user table loading
+  const [userLoading, setUserLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const pageSize = 5;
   const user = useSelector((state: any) => state.admin.adminDatas);
-  const [studentsData, setStudentsData] = useState<TStudent[]>([]); // Store students data
-  const [tutorsData, setTutorsData] = useState<TTutor[]>([]); // Store tutors data
+  const [studentsData, setStudentsData] = useState<TStudent[]>([]);
+  const [tutorsData, setTutorsData] = useState<TTutor[]>([]);
 
   // Fetch dashboard data (excluding users)
   const fetchDashboardData = async () => {
@@ -213,19 +222,26 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Fetch wallet, course count, and course purchase counts concurrently
-      const [walletResponse, courseCountResponse, coursePurchaseCountResponse] =
-        await Promise.all([
-          authAxiosInstance.get("/wallet/get-data", {
-            signal: controller.signal,
-          }),
-          authAxiosInstance.get("/courses/course-count", {
-            signal: controller.signal,
-          }),
-          authAxiosInstance.get("/courses/purchase-count", {
-            signal: controller.signal,
-          }),
-        ]);
+      // Fetch wallet, course count, course purchase counts, and trending tutors concurrently
+      const [
+        walletResponse,
+        courseCountResponse,
+        coursePurchaseCountResponse,
+        trendingTutorsResponse,
+      ] = await Promise.all([
+        authAxiosInstance.get("/wallet/get-data", {
+          signal: controller.signal,
+        }),
+        authAxiosInstance.get("/courses/course-count", {
+          signal: controller.signal,
+        }),
+        authAxiosInstance.get("/courses/purchase-count", {
+          signal: controller.signal,
+        }),
+        authAxiosInstance.get("/tutors/trending", {
+          signal: controller.signal,
+        }),
+      ]);
 
       console.log("WALLET RESPONSE", walletResponse);
       // Check if wallet exists, otherwise set defaults
@@ -253,12 +269,14 @@ export function AdminHome() {
         "Course Purchase Count Response:",
         coursePurchaseCountResponse.data
       );
+      console.log("Trending Tutors Response:", trendingTutorsResponse.data);
 
       setWalletData(wallet);
       setTransactions(transactionsData);
       setCoursePurchaseCounts(
         coursePurchaseCountResponse.data.coursePurchaseCount || []
       );
+      setTrendingTutors(trendingTutorsResponse.data.tutorPurchaseCount || []);
 
       // Calculate total revenue from transactions (sum of credit transactions)
       const totalRevenue = transactionsData
@@ -309,7 +327,7 @@ export function AdminHome() {
       // Set performance metrics (enrollment will be updated after fetching users)
       setPerformanceMetrics({
         enrollment: {
-          value: 0, // Will be updated after fetching users
+          value: 0,
           categories: [],
         },
         revenue: {
@@ -323,6 +341,7 @@ export function AdminHome() {
       console.log("Wallet Data:", walletData);
       console.log("Transactions:", transactions);
       console.log("Course Purchase Counts:", coursePurchaseCounts);
+      console.log("Trending Tutors:", trendingTutors);
     } catch (error: any) {
       console.error("Fetch error:", error);
       let errorMessage = "Failed to load dashboard data";
@@ -621,10 +640,19 @@ export function AdminHome() {
     { header: "Enrollments", accessor: "purchaseCount" },
   ];
 
+  // Trending Tutors table columns
+  const trendingTutorColumns: Column<TrendingTutor>[] = [
+    { header: "Tutor Name", accessor: "tutorName" },
+    { header: "Total Enrollments", accessor: "enrollmentCount" },
+  ];
+
   // Take top 5 trending courses
   const topTrendingCourses = coursePurchaseCounts
     ? coursePurchaseCounts.slice(0, 5)
     : [];
+
+  // Take top 5 trending tutors
+  const topTrendingTutors = trendingTutors ? trendingTutors.slice(0, 5) : [];
 
   if (loading) {
     return (
@@ -1024,6 +1052,41 @@ export function AdminHome() {
                   className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
                   View All Courses
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Trending Tutors Section */}
+            <Card className="mt-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="border-b bg-muted/50">
+                <CardTitle>Trending Tutors</CardTitle>
+                <CardDescription>
+                  Top tutors by student enrollments in their courses
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {topTrendingTutors.length > 0 ? (
+                  <div className="rounded-lg overflow-hidden border">
+                    <ReusableTable
+                      columns={trendingTutorColumns}
+                      data={topTrendingTutors}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                      No trending tutors available.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  View All Tutors
                 </Button>
               </CardFooter>
             </Card>
