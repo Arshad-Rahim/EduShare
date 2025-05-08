@@ -3,6 +3,7 @@ import { courseModel } from "../models/courseModel";
 import { lessonModel } from "../models/lessonModel";
 import { purchaseModel } from "../models/purchaseModel";
 import {
+  CoursePurchaseCount,
   FilterQuery,
   IUpdateData,
   SortOption,
@@ -194,16 +195,30 @@ export class CourseRepository implements ICourseRepository {
     }
   }
 
-
-  async getCourseDetails(courseId:string):Promise<TCourseAdd | null>{
-    
-    const course = await courseModel.findById(courseId)
+  async getCourseDetails(courseId: string): Promise<TCourseAdd | null> {
+    const course = await courseModel.findById(courseId);
     return course;
   }
 
-  async getCourseTotalCount():Promise<number>{
-      const courseCount = await courseModel.countDocuments();
+  async getCourseTotalCount(): Promise<number> {
+    const courseCount = await courseModel.countDocuments();
     return courseCount;
   }
 
+  async coursePurchaseCount(): Promise<CoursePurchaseCount[]> {
+    const allCourses = await courseModel.find().lean();
+
+    const coursePurchaseCounts: CoursePurchaseCount[] = allCourses.map(
+      (course) => ({
+        courseId: course._id.toString(),
+        courseName: course.title,
+        purchaseCount: Array.isArray(course.enrollments)
+          ? course.enrollments.length
+          : 0,
+      })
+    );
+
+    coursePurchaseCounts.sort((a, b) => b.purchaseCount - a.purchaseCount);
+    return coursePurchaseCounts;
+  }
 }

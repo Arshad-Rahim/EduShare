@@ -1,6 +1,6 @@
 import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
 import { CourseRepository } from "../repository/courseRepository";
-import { TCourseAdd } from "../types/course";
+import { CoursePurchaseCount, TCourseAdd } from "../types/course";
 import { TCourseFilterOptions } from "../types/user";
 
 export class CourseService implements ICourseService {
@@ -60,6 +60,11 @@ export class CourseService implements ICourseService {
 
   async getCourseTotalCount(): Promise<number> {
       return this._courseRepository.getCourseTotalCount();
+  }
+
+
+  async coursePurchaseCount(): Promise<CoursePurchaseCount[]> {
+    return this._courseRepository.coursePurchaseCount();
   }
 
 

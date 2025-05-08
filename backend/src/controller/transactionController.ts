@@ -24,8 +24,8 @@ export class TransactionController {
         return;
       }
 
-      const page = parseInt(req.query.page as string);
-      const limit = parseInt(req.query.limit as string);
+      const page = parseInt(req.query.page as string)||1;
+      const limit = parseInt(req.query.limit as string)||6;
       console.log("PAGE AND LIMIT", page, limit, filters);
       const { transactions, totalTransaction } =
         await this._transactionService.transactionDetails(

@@ -8,6 +8,7 @@ import {
   ArrowDownRight,
   CheckCircle2,
   MoreHorizontal,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,6 +163,12 @@ interface WalletResponse {
   updatedAt: string;
 }
 
+interface CoursePurchaseCount {
+  courseId: string;
+  courseName: string;
+  purchaseCount: number;
+}
+
 export function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<Stat[] | null>(null);
@@ -174,15 +181,21 @@ export function AdminHome() {
     useState<PerformanceMetric | null>(null);
   const [walletData, setWalletData] = useState<WalletResponse | null>(null);
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
+  const [coursePurchaseCounts, setCoursePurchaseCounts] = useState<
+    CoursePurchaseCount[] | null
+  >(null);
   const [loading, setLoading] = useState(true);
+  const [userLoading, setUserLoading] = useState(false); // New state for user table loading
   const [error, setError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
   const pageSize = 5;
   const user = useSelector((state: any) => state.admin.adminDatas);
+  const [studentsData, setStudentsData] = useState<TStudent[]>([]); // Store students data
+  const [tutorsData, setTutorsData] = useState<TTutor[]>([]); // Store tutors data
 
-  // Fetch dashboard data
+  // Fetch dashboard data (excluding users)
   const fetchDashboardData = async () => {
     console.log("fetchDashboardData called");
     console.log("User:", user);
@@ -200,23 +213,21 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Fetch students, tutors, wallet, and course count concurrently
-      const [
-        studentResponse,
-        tutorResponse,
-        walletResponse,
-        courseCountResponse,
-      ] = await Promise.all([
-        userService.userList(1, 100, "", { signal: controller.signal }),
-        tutorService.userList(1, 100, "", { signal: controller.signal }),
-        authAxiosInstance.get("/wallet/get-data", {
-          signal: controller.signal,
-        }),
-        authAxiosInstance.get("/courses/course-count", {
-          signal: controller.signal,
-        }),
-      ]);
+      // Fetch wallet, course count, and course purchase counts concurrently
+      const [walletResponse, courseCountResponse, coursePurchaseCountResponse] =
+        await Promise.all([
+          authAxiosInstance.get("/wallet/get-data", {
+            signal: controller.signal,
+          }),
+          authAxiosInstance.get("/courses/course-count", {
+            signal: controller.signal,
+          }),
+          authAxiosInstance.get("/courses/purchase-count", {
+            signal: controller.signal,
+          }),
+        ]);
 
+      console.log("WALLET RESPONSE", walletResponse);
       // Check if wallet exists, otherwise set defaults
       let wallet = walletResponse.data.wallet || null;
       let transactionsData: Transaction[] = [];
@@ -235,20 +246,19 @@ export function AdminHome() {
       }
 
       clearTimeout(timeoutId);
-      console.log("Student Response:", studentResponse.data);
-      console.log("Tutor Response:", tutorResponse.data);
       console.log("Wallet Response:", walletResponse.data);
       console.log("Transactions Data:", transactionsData);
       console.log("Course Count Response:", courseCountResponse.data);
+      console.log(
+        "Course Purchase Count Response:",
+        coursePurchaseCountResponse.data
+      );
 
-      const students: TStudent[] =
-        studentResponse.data.users.filter((u) => u.role === "user") || [];
-      const tutors: TTutor[] =
-        tutorResponse.data.users.filter((t) => t.role === "tutor") || [];
-
-      setTutors(tutors);
       setWalletData(wallet);
       setTransactions(transactionsData);
+      setCoursePurchaseCounts(
+        coursePurchaseCountResponse.data.coursePurchaseCount || []
+      );
 
       // Calculate total revenue from transactions (sum of credit transactions)
       const totalRevenue = transactionsData
@@ -258,11 +268,11 @@ export function AdminHome() {
       // Get course count
       const uniqueCourses = courseCountResponse?.data.courseCount || 0;
 
-      // Derive stats
+      // Derive stats (Total Users will be updated after fetching users)
       setStats([
         {
           title: "Total Users",
-          value: students.length.toLocaleString(),
+          value: "0", // Will be updated after fetching users
           icon: <Users className="h-5 w-5" />,
         },
         {
@@ -285,6 +295,83 @@ export function AdminHome() {
           ),
         },
       ]);
+
+      // Derive course statuses (only "Active" since others are not supported)
+      setCourseStatuses([
+        {
+          title: "Active",
+          value: uniqueCourses,
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          color: "bg-green-50 border-green-200",
+        },
+      ]);
+
+      // Set performance metrics (enrollment will be updated after fetching users)
+      setPerformanceMetrics({
+        enrollment: {
+          value: 0, // Will be updated after fetching users
+          categories: [],
+        },
+        revenue: {
+          value: totalRevenue,
+        },
+      });
+
+      console.log("Stats:", stats);
+      console.log("Course Statuses:", courseStatuses);
+      console.log("Performance Metrics:", performanceMetrics);
+      console.log("Wallet Data:", walletData);
+      console.log("Transactions:", transactions);
+      console.log("Course Purchase Counts:", coursePurchaseCounts);
+    } catch (error: any) {
+      console.error("Fetch error:", error);
+      let errorMessage = "Failed to load dashboard data";
+      if (error.name === "AbortError") {
+        errorMessage = "Request timed out. Please try again.";
+      } else if (error.response) {
+        errorMessage = `Server error: ${error.response.status} ${
+          error.response.data?.message || ""
+        }`;
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      console.log("Setting loading to false");
+      setLoading(false);
+    }
+  };
+
+  // Fetch users separately based on roleFilter and page
+  const fetchUsers = async () => {
+    if (!user?.id) {
+      console.warn("No user.id, cannot fetch users");
+      toast.error("Please log in to view users");
+      return;
+    }
+
+    try {
+      setUserLoading(true);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      // Fetch students and tutors
+      const [studentResponse, tutorResponse] = await Promise.all([
+        userService.userList(1, 100, "", { signal: controller.signal }),
+        tutorService.userList(1, 100, "", { signal: controller.signal }),
+      ]);
+
+      clearTimeout(timeoutId);
+      console.log("Student Response:", studentResponse.data);
+      console.log("Tutor Response:", tutorResponse.data);
+
+      const students: TStudent[] =
+        studentResponse.data.users.filter((u) => u.role === "user") || [];
+      const tutors: TTutor[] =
+        tutorResponse.data.users.filter((t) => t.role === "tutor") || [];
+
+      setStudentsData(students);
+      setTutorsData(tutors);
+      setTutors(tutors);
 
       // Derive users based on role filter
       let filteredUsers: User[] = [];
@@ -348,17 +435,19 @@ export function AdminHome() {
       setUsers(paginatedUsers);
       setTotalUsers(filteredUsers.length);
 
-      // Derive course statuses (only "Active" since others are not supported)
-      setCourseStatuses([
-        {
-          title: "Active",
-          value: uniqueCourses,
-          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-          color: "bg-green-50 border-green-200",
-        },
-      ]);
+      // Update stats with total users
+      if (stats) {
+        setStats(
+          (prevStats) =>
+            prevStats?.map((stat) =>
+              stat.title === "Total Users"
+                ? { ...stat, value: students.length.toLocaleString() }
+                : stat
+            ) || null
+        );
+      }
 
-      // Derive performance metrics
+      // Update performance metrics with enrollment data
       const totalEnrollments = students.reduce(
         (sum, s) => sum + (Number(s.enrolledCourses) || 0),
         0
@@ -392,25 +481,22 @@ export function AdminHome() {
         .sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
         .slice(0, 3);
 
-      setPerformanceMetrics({
-        enrollment: {
-          value: totalEnrollments,
-          categories,
-        },
-        revenue: {
-          value: totalRevenue,
-        },
-      });
+      setPerformanceMetrics((prevMetrics) =>
+        prevMetrics
+          ? {
+              ...prevMetrics,
+              enrollment: {
+                value: totalEnrollments,
+                categories,
+              },
+            }
+          : null
+      );
 
-      console.log("Stats:", stats);
       console.log("Users:", paginatedUsers);
-      console.log("Course Statuses:", courseStatuses);
-      console.log("Performance Metrics:", performanceMetrics);
-      console.log("Wallet Data:", walletData);
-      console.log("Transactions:", transactions);
     } catch (error: any) {
-      console.error("Fetch error:", error);
-      let errorMessage = "Failed to load dashboard data";
+      console.error("Fetch users error:", error);
+      let errorMessage = "Failed to load users";
       if (error.name === "AbortError") {
         errorMessage = "Request timed out. Please try again.";
       } else if (error.response) {
@@ -418,16 +504,14 @@ export function AdminHome() {
           error.response.data?.message || ""
         }`;
       }
-      setError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      console.log("Setting loading to false");
-      setLoading(false);
+      setUserLoading(false);
     }
   };
 
   useEffect(() => {
-    console.log("useEffect ran, user.id:", user?.id);
+    console.log("useEffect for fetchDashboardData ran, user.id:", user?.id);
     if (user?.id) {
       fetchDashboardData();
     } else {
@@ -436,7 +520,21 @@ export function AdminHome() {
       setLoading(false);
       toast.error("Please log in to view dashboard");
     }
-  }, [user?.id, page, roleFilter]);
+  }, [user?.id]);
+
+  useEffect(() => {
+    console.log(
+      "useEffect for fetchUsers ran, user.id:",
+      user?.id,
+      "roleFilter:",
+      roleFilter,
+      "page:",
+      page
+    );
+    if (user?.id) {
+      fetchUsers();
+    }
+  }, [user?.id, roleFilter, page]);
 
   // User table columns
   const userColumns: Column<User>[] = [
@@ -517,6 +615,17 @@ export function AdminHome() {
     },
   ];
 
+  // Trending Courses table columns
+  const trendingCourseColumns: Column<CoursePurchaseCount>[] = [
+    { header: "Course Name", accessor: "courseName" },
+    { header: "Enrollments", accessor: "purchaseCount" },
+  ];
+
+  // Take top 5 trending courses
+  const topTrendingCourses = coursePurchaseCounts
+    ? coursePurchaseCounts.slice(0, 5)
+    : [];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -550,13 +659,7 @@ export function AdminHome() {
     );
   }
 
-  if (
-    !stats ||
-    !users ||
-    !courseStatuses ||
-    !performanceMetrics ||
-    !transactions
-  ) {
+  if (!stats || !courseStatuses || !performanceMetrics || !transactions) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -635,7 +738,13 @@ export function AdminHome() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <Select
+                      value={roleFilter}
+                      onValueChange={(value) => {
+                        setRoleFilter(value);
+                        setPage(1); // Reset to first page when filter changes
+                      }}
+                    >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Filter by role" />
                       </SelectTrigger>
@@ -649,7 +758,11 @@ export function AdminHome() {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                {users.length > 0 ? (
+                {userLoading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : users && users.length > 0 ? (
                   <div className="rounded-lg overflow-hidden border">
                     <ReusableTable columns={userColumns} data={users} />
                   </div>
@@ -664,7 +777,7 @@ export function AdminHome() {
               </CardContent>
               <CardFooter className="border-t bg-muted/50 flex items-center justify-between px-6 py-4">
                 <div className="text-sm text-muted-foreground">
-                  Showing {users.length} of {totalUsers} users
+                  Showing {users ? users.length : 0} of {totalUsers} users
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -879,6 +992,41 @@ export function AdminHome() {
                 </CardFooter>
               </Card>
             </div>
+
+            {/* Trending Courses Section */}
+            <Card className="mt-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="border-b bg-muted/50">
+                <CardTitle>Trending Courses</CardTitle>
+                <CardDescription>
+                  Top courses by student enrollments
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                {topTrendingCourses.length > 0 ? (
+                  <div className="rounded-lg overflow-hidden border">
+                    <ReusableTable
+                      columns={trendingCourseColumns}
+                      data={topTrendingCourses}
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                      No trending courses available.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  View All Courses
+                </Button>
+              </CardFooter>
+            </Card>
           </div>
         </main>
       </div>

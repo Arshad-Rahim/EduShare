@@ -100,6 +100,16 @@ export class CourseRoutes {
               injectedCourseController.getCourseTotalCount(req, res)
           );
 
+
+           this.router.get(
+             "/purchase-count",
+             authMiddleware,
+             authorizeRole(["admin"]),
+
+             (req: Request, res: Response) =>
+               injectedCourseController.coursePurchaseCount(req, res)
+           );
+
   }
 }
 

@@ -61,3 +61,11 @@ export type TLessonModel = {
   };
 
  export type SortOption = Record<string, 1 | -1>;
+
+
+
+ export type CoursePurchaseCount ={
+  courseId: string;
+  courseName: string;
+  purchaseCount: number;
+}

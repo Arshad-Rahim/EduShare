@@ -1,4 +1,4 @@
-import { TCourseAdd } from "../../types/course";
+import { CoursePurchaseCount, TCourseAdd } from "../../types/course";
 import { TCourseFilterOptions } from "../../types/user";
 
 export interface ICourseService {
@@ -25,4 +25,5 @@ export interface ICourseService {
   getEnrolledCourses(userId: string): Promise<TCourseAdd[]>;
   getCourseDetails(courseId: string): Promise<TCourseAdd | null>;
   getCourseTotalCount(): Promise<number>;
+  coursePurchaseCount(): Promise<CoursePurchaseCount[]> 
 }
