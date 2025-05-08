@@ -64,6 +64,9 @@ import {
   PointElement,
 } from "chart.js";
 import { Pie, Line, Bar } from "react-chartjs-2";
+import { walletService } from "@/services/walletService";
+import { courseService } from "@/services/courseService";
+import { purchaseService } from "@/services/purchaseService";
 
 // Register Chart.js components
 ChartJS.register(
@@ -246,26 +249,11 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      // Fetch wallet, course count, course purchase counts, and trending tutors concurrently
-      const [
-        walletResponse,
-        courseCountResponse,
-        coursePurchaseCountResponse,
-        trendingTutorsResponse,
-      ] = await Promise.all([
-        authAxiosInstance.get("/wallet/get-data", {
-          signal: controller.signal,
-        }),
-        authAxiosInstance.get("/courses/course-count", {
-          signal: controller.signal,
-        }),
-        authAxiosInstance.get("/courses/purchase-count", {
-          signal: controller.signal,
-        }),
-        authAxiosInstance.get("/tutors/trending", {
-          signal: controller.signal,
-        }),
-      ]);
+
+      const walletResponse = await walletService.getWalletData();
+      const courseCountResponse = await courseService.courseCount();
+      const coursePurchaseCountResponse = await purchaseService.coursePurchaseCount();
+      const trendingTutorsResponse = await tutorService.trendingTutors();
 
       console.log("WALLET RESPONSE", walletResponse);
       // Check if wallet exists, otherwise set defaults

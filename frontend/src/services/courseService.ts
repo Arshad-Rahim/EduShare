@@ -190,4 +190,14 @@ export const courseService = {
  
   },
 
+
+  async courseCount(){
+    try {
+      const resposne = await  authAxiosInstance.get("/courses/course-count");
+      return resposne;
+    } catch (error) {
+      throw new Error("Failed to get course count")
+    }
+  }
+
 };

@@ -48,4 +48,13 @@ export const tutorService = {
       throw error;
     }
   },
+
+  async trendingTutors() {
+    try {
+      const response = await authAxiosInstance.get("/tutors/trending");
+      return response;
+    } catch (error) {
+      throw new Error("Failed to get trending tutors");
+    }
+  },
 };
