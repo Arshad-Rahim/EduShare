@@ -52,6 +52,30 @@ import { useSelector } from "react-redux";
 import { userService } from "@/services/adminService/userService";
 import { tutorService } from "@/services/adminService/tutorService";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  LineElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+} from "chart.js";
+import { Pie, Line, Bar } from "react-chartjs-2";
+
+// Register Chart.js components
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  LineElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  PointElement
+);
 
 // Reusable Table Component
 type Column<T> = {
@@ -555,6 +579,363 @@ export function AdminHome() {
     }
   }, [user?.id, roleFilter, page]);
 
+  // Data for Pie Chart (Students vs Tutors)
+  const userDistributionData = {
+    labels: ["Students", "Tutors"],
+    datasets: [
+      {
+        data: [studentsData.length, tutorsData.length],
+        backgroundColor: ["#34D399", "#F87171"],
+        borderColor: ["#2FBC85", "#EF4444"],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  // Data for Line Chart (Revenue Trend Over Last 6 Months)
+  const getLastSixMonths = () => {
+    const months: string[] = [];
+    const currentDate = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i
+      );
+      months.push(
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+      );
+    }
+    return months;
+  };
+
+  const revenueTrendData = {
+    labels: getLastSixMonths(),
+    datasets: [
+      {
+        label: "Revenue (₹)",
+        data: getLastSixMonths().map((month) => {
+          const revenue =
+            transactions
+              ?.filter((t) => t.transaction_type === "credit")
+              ?.filter((t) => {
+                const transactionMonth = new Date(t.createdAt)
+                  .toISOString()
+                  .slice(0, 7);
+                return transactionMonth === month;
+              })
+              ?.reduce((sum, t) => sum + t.amount, 0) || 0;
+          return revenue;
+        }),
+        fill: true,
+        backgroundColor: "rgba(59, 130, 246, 0.1)",
+        borderColor: "#3B82F6",
+        tension: 0.3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      },
+    ],
+  };
+
+  // Data for Bar Chart (Top 5 Revenue-Generating Transactions)
+  const topTransactions =
+    transactions
+      ?.filter((t) => t.transaction_type === "credit")
+      ?.sort((a, b) => b.amount - a.amount)
+      ?.slice(0, 5) || [];
+
+  const topTransactionsData = {
+    labels: topTransactions.map((t) => t.transactionId.slice(0, 8) + "..."),
+    datasets: [
+      {
+        label: "Revenue (₹)",
+        data: topTransactions.map((t) => t.amount),
+        backgroundColor: "#FBBF24",
+        borderColor: "#F59E0B",
+        borderWidth: 1,
+        borderRadius: 6,
+      },
+    ],
+  };
+
+  // Chart options with improved styling
+  const pieChartOptions = {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom" as const,
+        labels: {
+          font: {
+            size: 12,
+            weight: "500",
+          },
+          padding: 20,
+          color: "#4B5563",
+        },
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleFont: { size: 14, weight: "600" },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || "";
+            const value = context.raw || 0;
+            const total = context.dataset.data.reduce(
+              (sum: number, val: number) => sum + val,
+              0
+            );
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${label}: ${value} (${percentage}%)`;
+          },
+        },
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart",
+    },
+  };
+
+  const lineChartOptions = {
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Revenue (₹)",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          color: "#6B7280",
+          callback: (value: any) => `₹${value.toLocaleString("en-IN")}`,
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Month",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: true,
+        position: "top" as const,
+        labels: {
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleFont: { size: 14, weight: "600" },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw || 0;
+            return `Revenue: ₹${value.toLocaleString("en-IN")}`;
+          },
+        },
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart",
+    },
+  };
+
+  const barChartOptions = {
+    maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Revenue (₹)",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          color: "#6B7280",
+          callback: (value: any) => `₹${value.toLocaleString("en-IN")}`,
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Transaction ID",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleFont: { size: 14, weight: "600" },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw || 0;
+            return `Revenue: ₹${value.toLocaleString("en-IN")}`;
+          },
+        },
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart",
+    },
+  };
+
+  const trendingCoursesChartOptions = {
+    maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Enrollments",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Course Name",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleFont: { size: 14, weight: "600" },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw || 0;
+            return `Enrollments: ${value}`;
+          },
+        },
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart",
+    },
+  };
+
+  const trendingTutorsChartOptions = {
+    maintainAspectRatio: false,
+    indexAxis: "y" as const,
+    scales: {
+      x: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Total Enrollments",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+      y: {
+        title: {
+          display: true,
+          text: "Tutor Name",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleFont: { size: 14, weight: "600" },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw || 0;
+            return `Total Enrollments: ${value}`;
+          },
+        },
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart",
+    },
+  };
+
   // User table columns
   const userColumns: Column<User>[] = [
     {
@@ -634,13 +1015,13 @@ export function AdminHome() {
     },
   ];
 
-  // Trending Courses table columns
+  // Trending Courses table columns (no longer needed, but kept for reference)
   const trendingCourseColumns: Column<CoursePurchaseCount>[] = [
     { header: "Course Name", accessor: "courseName" },
     { header: "Enrollments", accessor: "purchaseCount" },
   ];
 
-  // Trending Tutors table columns
+  // Trending Tutors table columns (no longer needed, but kept for reference)
   const trendingTutorColumns: Column<TrendingTutor>[] = [
     { header: "Tutor Name", accessor: "tutorName" },
     { header: "Total Enrollments", accessor: "enrollmentCount" },
@@ -653,6 +1034,36 @@ export function AdminHome() {
 
   // Take top 5 trending tutors
   const topTrendingTutors = trendingTutors ? trendingTutors.slice(0, 5) : [];
+
+  // Data for Bar Chart (Trending Courses) - Moved after topTrendingCourses
+  const trendingCoursesData = {
+    labels: topTrendingCourses.map((course) => course.courseName),
+    datasets: [
+      {
+        label: "Enrollments",
+        data: topTrendingCourses.map((course) => course.purchaseCount),
+        backgroundColor: "#60A5FA",
+        borderColor: "#3B82F6",
+        borderWidth: 1,
+        borderRadius: 6,
+      },
+    ],
+  };
+
+  // Data for Bar Chart (Trending Tutors) - Moved after topTrendingTutors
+  const trendingTutorsData = {
+    labels: topTrendingTutors.map((tutor) => tutor.tutorName),
+    datasets: [
+      {
+        label: "Total Enrollments",
+        data: topTrendingTutors.map((tutor) => tutor.enrollmentCount),
+        backgroundColor: "#34D399",
+        borderColor: "#2FBC85",
+        borderWidth: 1,
+        borderRadius: 6,
+      },
+    ],
+  };
 
   if (loading) {
     return (
@@ -754,6 +1165,131 @@ export function AdminHome() {
                 </div>
               )}
             </div>
+
+            {/* Platform Insights Section with Multiple Graphs */}
+            <Card className="mt-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="border-b bg-muted/50">
+                <CardTitle>Platform Insights</CardTitle>
+                <CardDescription>
+                  Visual insights into platform users and revenue
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {/* Pie Chart: User Distribution */}
+                  <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        User Distribution
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {studentsData.length > 0 || tutorsData.length > 0 ? (
+                        <div className="h-[280px]">
+                          <Pie
+                            data={userDistributionData}
+                            options={pieChartOptions}
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground font-medium">
+                            No user data available
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={fetchUsers}
+                          >
+                            Refresh Data
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Line Chart: Revenue Trend */}
+                  <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Revenue Trend (Last 6 Months)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {revenueTrendData.datasets[0].data.some(
+                        (value) => value > 0
+                      ) ? (
+                        <div className="h-[280px]">
+                          <Line
+                            data={revenueTrendData}
+                            options={lineChartOptions}
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground font-medium">
+                            No revenue data available
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={fetchDashboardData}
+                          >
+                            Refresh Data
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Bar Chart: Top Transactions */}
+                  <Card className="shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Top Revenue Transactions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {topTransactions.length > 0 ? (
+                        <div className="h-[280px]">
+                          <Bar
+                            data={topTransactionsData}
+                            options={barChartOptions}
+                          />
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                          <p className="text-sm text-muted-foreground font-medium">
+                            No transaction data available
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={fetchDashboardData}
+                          >
+                            Refresh Data
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                {/* <Button
+                  variant="outline"
+                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                >
+                  View Detailed Insights
+                </Button> */}
+              </CardFooter>
+            </Card>
 
             {/* User Management */}
             <Card className="mb-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
@@ -1031,18 +1567,26 @@ export function AdminHome() {
               </CardHeader>
               <CardContent className="p-6">
                 {topTrendingCourses.length > 0 ? (
-                  <div className="rounded-lg overflow-hidden border">
-                    <ReusableTable
-                      columns={trendingCourseColumns}
-                      data={topTrendingCourses}
+                  <div className="h-[300px]">
+                    <Bar
+                      data={trendingCoursesData}
+                      options={trendingCoursesChartOptions}
                     />
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">
-                      No trending courses available.
+                  <div className="text-center py-8">
+                    <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground font-medium">
+                      No trending courses available
                     </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={fetchDashboardData}
+                    >
+                      Refresh Data
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -1066,18 +1610,26 @@ export function AdminHome() {
               </CardHeader>
               <CardContent className="p-6">
                 {topTrendingTutors.length > 0 ? (
-                  <div className="rounded-lg overflow-hidden border">
-                    <ReusableTable
-                      columns={trendingTutorColumns}
-                      data={topTrendingTutors}
+                  <div className="h-[300px]">
+                    <Bar
+                      data={trendingTutorsData}
+                      options={trendingTutorsChartOptions}
                     />
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">
-                      No trending tutors available.
+                  <div className="text-center py-8">
+                    <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground font-medium">
+                      No trending tutors available
                     </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={fetchDashboardData}
+                    >
+                      Refresh Data
+                    </Button>
                   </div>
                 )}
               </CardContent>
