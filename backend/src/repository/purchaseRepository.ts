@@ -2,6 +2,7 @@ import { IPurchaseRepository } from "../interfaces/repositoryInterfaces/IPurchas
 import { courseModel } from "../models/courseModel";
 import { purchaseModel } from "../models/purchaseModel";
 import { TOrderSave } from "../types/order";
+import { TPurchase } from "../types/purchase";
 
 export class PurchaseRepository implements IPurchaseRepository {
   async saveOrder(userId: string, data: TOrderSave): Promise<void> {
@@ -11,11 +12,11 @@ export class PurchaseRepository implements IPurchaseRepository {
         (item) => item.courseId.toString() === data.courseId.toString()
       );
       if (purchaseExist) {
-         await courseModel.findByIdAndUpdate(
-           data.courseId,
-           { $addToSet: { enrollments: userId } },
-           { new: true }
-         );
+        await courseModel.findByIdAndUpdate(
+          data.courseId,
+          { $addToSet: { enrollments: userId } },
+          { new: true }
+        );
         return;
       }
 
@@ -26,7 +27,7 @@ export class PurchaseRepository implements IPurchaseRepository {
         status: "succeeded",
       });
       await purchase.save();
-     
+
       return;
     } else {
       purchase = await purchaseModel.create({
@@ -40,10 +41,13 @@ export class PurchaseRepository implements IPurchaseRepository {
           },
         ],
       });
-      
+
       return;
     }
   }
 
-  
+  async allPurchase(): Promise<TPurchase[]> {
+    const allPurchases = await purchaseModel.find().lean();
+    return allPurchases as unknown as TPurchase[];
+  }
 }

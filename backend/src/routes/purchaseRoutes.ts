@@ -22,6 +22,15 @@ export class PurchaseRoute {
       (req: Request, res: Response) =>
         injectedPurchaseController.saveOrder(req, res)
     );
+
+     this.router.get(
+       "/all",
+       authMiddleware,
+       authorizeRole(["admin"]),
+       checkUserBlocked,
+       (req: Request, res: Response) =>
+         injectedPurchaseController.allPurchase(req, res)
+     );
   }
 }
 

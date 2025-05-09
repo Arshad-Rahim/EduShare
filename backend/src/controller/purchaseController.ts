@@ -35,4 +35,27 @@ export class PurchaseController {
         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
     }
   }
+
+
+  async allPurchase(req:Request,res:Response){
+    try {
+      const purchases = await this._purchaseService.allPurchase();
+       res.status(HTTP_STATUS.OK).json({
+         success: true,
+         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+         purchases,
+       });
+    } catch (error) {
+       if (error instanceof CustomError) {
+         res
+           .status(error.statusCode)
+           .json({ success: false, message: error.message });
+         return;
+       }
+       console.log(error);
+       res
+         .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+    }
+  }
 }

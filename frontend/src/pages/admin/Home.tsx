@@ -202,6 +202,24 @@ interface TrendingTutor {
   enrollmentCount: number;
 }
 
+interface Purchase {
+  _id: string;
+  userId: string;
+  purchase: {
+    courseId: string;
+    orderId: string;
+    amount: number;
+    status: string;
+    createdAt: string;
+  }[];
+}
+
+interface PurchaseApiResponse {
+  success: boolean;
+  message: string;
+  purchases: Purchase[];
+}
+
 export function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<Stat[] | null>(null);
@@ -220,6 +238,7 @@ export function AdminHome() {
   const [trendingTutors, setTrendingTutors] = useState<TrendingTutor[] | null>(
     null
   );
+  const [purchases, setPurchases] = useState<Purchase[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [userLoading, setUserLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -228,10 +247,22 @@ export function AdminHome() {
   const [totalUsers, setTotalUsers] = useState(0);
   const pageSize = 5;
   const user = useSelector((state: any) => state.admin.adminDatas);
+
   const [studentsData, setStudentsData] = useState<TStudent[]>([]);
   const [tutorsData, setTutorsData] = useState<TTutor[]>([]);
 
-  // Fetch dashboard data (excluding users)
+  const [period1, setPeriod1] = useState<{
+    year: string;
+    month: string;
+    date: string;
+  }>({ year: "", month: "", date: "" });
+  const [period2, setPeriod2] = useState<{
+    year: string;
+    month: string;
+    date: string;
+  }>({ year: "", month: "", date: "" });
+  const [salesComparisonData, setSalesComparisonData] = useState<any>(null);
+
   const fetchDashboardData = async () => {
     console.log("fetchDashboardData called");
     console.log("User:", user);
@@ -249,151 +280,22 @@ export function AdminHome() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-
+      // Fetch wallet, course, purchase, and tutor data
       const walletResponse = await walletService.getWalletData();
       const courseCountResponse = await courseService.courseCount();
-      const coursePurchaseCountResponse = await purchaseService.coursePurchaseCount();
+      const coursePurchaseCountResponse =
+        await purchaseService.coursePurchaseCount();
       const trendingTutorsResponse = await tutorService.trendingTutors();
+      const purchasesResponse =
+        await authAxiosInstance.get<PurchaseApiResponse>("/purchase/all", {
+          signal: controller.signal,
+        });
 
-      console.log("WALLET RESPONSE", walletResponse);
-      // Check if wallet exists, otherwise set defaults
-      let wallet = walletResponse.data.wallet || null;
-      let transactionsData: Transaction[] = [];
-      let walletId = wallet ? wallet._id : null;
-
-      if (walletId) {
-        const transactionsResponse = await authAxiosInstance.get(
-          `/transaction/transaction-details?walletId=${walletId}`,
-          { signal: controller.signal }
-        );
-        transactionsData = transactionsResponse.data.transactions || [];
-      } else {
-        console.log(
-          "No wallet exists for this admin, skipping transactions fetch"
-        );
-      }
-
-      clearTimeout(timeoutId);
-      console.log("Wallet Response:", walletResponse.data);
-      console.log("Transactions Data:", transactionsData);
-      console.log("Course Count Response:", courseCountResponse.data);
-      console.log(
-        "Course Purchase Count Response:",
-        coursePurchaseCountResponse.data
-      );
-      console.log("Trending Tutors Response:", trendingTutorsResponse.data);
-
-      setWalletData(wallet);
-      setTransactions(transactionsData);
-      setCoursePurchaseCounts(
-        coursePurchaseCountResponse.data.coursePurchaseCount || []
-      );
-      setTrendingTutors(trendingTutorsResponse.data.tutorPurchaseCount || []);
-
-      // Calculate total revenue from transactions (sum of credit transactions)
-      const totalRevenue = transactionsData
-        .filter((t: Transaction) => t.transaction_type === "credit")
-        .reduce((sum: number, t: Transaction) => sum + t.amount, 0);
-
-      // Get course count
-      const uniqueCourses = courseCountResponse?.data.courseCount || 0;
-
-      // Derive stats (Total Users will be updated after fetching users)
-      setStats([
-        {
-          title: "Total Users",
-          value: "0", // Will be updated after fetching users
-          icon: <Users className="h-5 w-5" />,
-        },
-        {
-          title: "Active Courses",
-          value: uniqueCourses.toString(),
-          icon: <Layers className="h-5 w-5" />,
-        },
-        {
-          title: "Total Revenue",
-          value: `₹${totalRevenue.toLocaleString("en-IN")}`,
-          icon: (
-            <span className="h-5 w-5 flex items-center justify-center">₹</span>
-          ),
-        },
-        {
-          title: "Wallet Balance",
-          value: wallet ? `₹${wallet.balance.toLocaleString("en-IN")}` : "₹0",
-          icon: (
-            <span className="h-5 w-5 flex items-center justify-center">₹</span>
-          ),
-        },
-      ]);
-
-      // Derive course statuses (only "Active" since others are not supported)
-      setCourseStatuses([
-        {
-          title: "Active",
-          value: uniqueCourses,
-          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
-          color: "bg-green-50 border-green-200",
-        },
-      ]);
-
-      // Set performance metrics (enrollment will be updated after fetching users)
-      setPerformanceMetrics({
-        enrollment: {
-          value: 0,
-          categories: [],
-        },
-        revenue: {
-          value: totalRevenue,
-        },
-      });
-
-      console.log("Stats:", stats);
-      console.log("Course Statuses:", courseStatuses);
-      console.log("Performance Metrics:", performanceMetrics);
-      console.log("Wallet Data:", walletData);
-      console.log("Transactions:", transactions);
-      console.log("Course Purchase Counts:", coursePurchaseCounts);
-      console.log("Trending Tutors:", trendingTutors);
-    } catch (error: any) {
-      console.error("Fetch error:", error);
-      let errorMessage = "Failed to load dashboard data";
-      if (error.name === "AbortError") {
-        errorMessage = "Request timed out. Please try again.";
-      } else if (error.response) {
-        errorMessage = `Server error: ${error.response.status} ${
-          error.response.data?.message || ""
-        }`;
-      }
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      console.log("Setting loading to false");
-      setLoading(false);
-    }
-  };
-
-  // Fetch users separately based on roleFilter and page
-  const fetchUsers = async () => {
-    if (!user?.id) {
-      console.warn("No user.id, cannot fetch users");
-      toast.error("Please log in to view users");
-      return;
-    }
-
-    try {
-      setUserLoading(true);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-      // Fetch students and tutors
+      // Fetch user data (students and tutors)
       const [studentResponse, tutorResponse] = await Promise.all([
         userService.userList(1, 100, "", { signal: controller.signal }),
         tutorService.userList(1, 100, "", { signal: controller.signal }),
       ]);
-
-      clearTimeout(timeoutId);
-      console.log("Student Response:", studentResponse.data);
-      console.log("Tutor Response:", tutorResponse.data);
 
       const students: TStudent[] =
         studentResponse.data.users.filter((u) => u.role === "user") || [];
@@ -404,7 +306,10 @@ export function AdminHome() {
       setTutorsData(tutors);
       setTutors(tutors);
 
-      // Derive users based on role filter
+      // Calculate total users (students + tutors)
+      const totalUsersCount = students.length + tutors.length;
+
+      // Populate initial user list for "User Management" section
       let filteredUsers: User[] = [];
       if (roleFilter === "all") {
         filteredUsers = [
@@ -466,19 +371,7 @@ export function AdminHome() {
       setUsers(paginatedUsers);
       setTotalUsers(filteredUsers.length);
 
-      // Update stats with total users
-      if (stats) {
-        setStats(
-          (prevStats) =>
-            prevStats?.map((stat) =>
-              stat.title === "Total Users"
-                ? { ...stat, value: students.length.toLocaleString() }
-                : stat
-            ) || null
-        );
-      }
-
-      // Update performance metrics with enrollment data
+      // Calculate enrollment metrics
       const totalEnrollments = students.reduce(
         (sum, s) => sum + (Number(s.enrolledCourses) || 0),
         0
@@ -512,17 +405,209 @@ export function AdminHome() {
         .sort((a, b) => parseFloat(b.value) - parseFloat(a.value))
         .slice(0, 3);
 
-      setPerformanceMetrics((prevMetrics) =>
-        prevMetrics
-          ? {
-              ...prevMetrics,
-              enrollment: {
-                value: totalEnrollments,
-                categories,
-              },
-            }
-          : null
+      console.log("WALLET RESPONSE", walletResponse);
+      let wallet = walletResponse.data.wallet || null;
+      let transactionsData: Transaction[] = [];
+      let walletId = wallet ? wallet._id : null;
+
+      if (walletId) {
+        const transactionsResponse = await authAxiosInstance.get(
+          `/transaction/transaction-details?walletId=${walletId}`,
+          { signal: controller.signal }
+        );
+        transactionsData = transactionsResponse.data.transactions || [];
+      } else {
+        console.log(
+          "No wallet exists for this admin, skipping transactions fetch"
+        );
+      }
+
+      if (!purchasesResponse.data.success) {
+        throw new Error(
+          purchasesResponse.data.message || "Failed to fetch purchases"
+        );
+      }
+
+      clearTimeout(timeoutId);
+      console.log("Wallet Response:", walletResponse.data);
+      console.log("Transactions Data:", transactionsData);
+      console.log("Course Count Response:", courseCountResponse.data);
+      console.log(
+        "Course Purchase Count Response:",
+        coursePurchaseCountResponse.data
       );
+      console.log("Trending Tutors Response:", trendingTutorsResponse.data);
+      console.log("Purchases Response:", purchasesResponse.data);
+      console.log("Student Response:", studentResponse.data);
+      console.log("Tutor Response:", tutorResponse.data);
+
+      setWalletData(wallet);
+      setTransactions(transactionsData);
+      setCoursePurchaseCounts(
+        coursePurchaseCountResponse.data.coursePurchaseCount || []
+      );
+      setTrendingTutors(trendingTutorsResponse.data.tutorPurchaseCount || []);
+      setPurchases(purchasesResponse.data.purchases ?? []);
+
+      // Calculate total revenue from purchasesResponse directly
+      const totalRevenue =
+        purchasesResponse.data.purchases
+          ?.flatMap((p) => p.purchase)
+          ?.reduce((sum, pur) => sum + pur.amount, 0) || 0;
+
+      const uniqueCourses = courseCountResponse?.data.courseCount || 0;
+
+      setStats([
+        {
+          title: "Total Users",
+          value: totalUsersCount.toLocaleString(),
+          icon: <Users className="h-5 w-5" />,
+        },
+        {
+          title: "Active Courses",
+          value: uniqueCourses.toString(),
+          icon: <Layers className="h-5 w-5" />,
+        },
+        {
+          title: "Total Revenue",
+          value: `₹${totalRevenue.toLocaleString("en-IN")}`,
+          icon: (
+            <span className="h-5 w-5 flex items-center justify-center">₹</span>
+          ),
+        },
+        {
+          title: "Wallet Balance",
+          value: wallet ? `₹${wallet.balance.toLocaleString("en-IN")}` : "₹0",
+          icon: (
+            <span className="h-5 w-5 flex items-center justify-center">₹</span>
+          ),
+        },
+      ]);
+
+      setCourseStatuses([
+        {
+          title: "Active",
+          value: uniqueCourses,
+          icon: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+          color: "bg-green-50 border-green-200",
+        },
+      ]);
+
+      setPerformanceMetrics({
+        enrollment: {
+          value: totalEnrollments,
+          categories,
+        },
+        revenue: {
+          value: totalRevenue,
+        },
+      });
+    } catch (error: any) {
+      console.error("Fetch error:", error);
+      let errorMessage = "Failed to load dashboard data";
+      if (error.name === "AbortError") {
+        errorMessage = "Request timed out. Please try again.";
+      } else if (error.response) {
+        errorMessage = `Server error: ${error.response.status} ${
+          error.response.data?.message || ""
+        }`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      console.log("Setting loading to false");
+      setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    if (!user?.id) {
+      console.warn("No user.id, cannot fetch users");
+      toast.error("Please log in to view users");
+      return;
+    }
+
+    try {
+      setUserLoading(true);
+
+      // Use already fetched students and tutors data
+      const students = studentsData;
+      const tutors = tutorsData;
+
+      let filteredUsers: User[] = [];
+      if (roleFilter === "all") {
+        filteredUsers = [
+          ...students.map((s) => ({
+            _id: s._id,
+            name: s.name,
+            email: s.email,
+            role: "Student" as const,
+            status: s.isBlocked ? ("Blocked" as const) : ("Active" as const),
+            joined: s.lastActive,
+            lastLogin: s.lastActive,
+            avatar: undefined,
+          })),
+          ...tutors.map((t) => ({
+            _id: t._id,
+            name: t.name,
+            email: t.email,
+            role: "Tutor" as const,
+            status:
+              t.isBlocked || t.approvalStatus !== "approved"
+                ? ("Blocked" as const)
+                : ("Active" as const),
+            joined: t.lastActive,
+            lastLogin: t.lastActive,
+            avatar: undefined,
+          })),
+        ];
+      } else if (roleFilter === "students") {
+        filteredUsers = students.map((s) => ({
+          _id: s._id,
+          name: s.name,
+          email: s.email,
+          role: "Student" as const,
+          status: s.isBlocked ? ("Blocked" as const) : ("Active" as const),
+          joined: s.lastActive,
+          lastLogin: s.lastActive,
+          avatar: undefined,
+        }));
+      } else if (roleFilter === "tutors") {
+        filteredUsers = tutors.map((t) => ({
+          _id: t._id,
+          name: t.name,
+          email: t.email,
+          role: "Tutor" as const,
+          status:
+            t.isBlocked || t.approvalStatus !== "approved"
+              ? ("Blocked" as const)
+              : ("Active" as const),
+          joined: t.lastActive,
+          lastLogin: t.lastActive,
+          avatar: undefined,
+        }));
+      }
+
+      const paginatedUsers = filteredUsers.slice(
+        (page - 1) * pageSize,
+        page * pageSize
+      );
+      setUsers(paginatedUsers);
+      setTotalUsers(filteredUsers.length);
+
+      // Update stats with the filtered users count
+      if (stats) {
+        setStats(
+          (prevStats) =>
+            prevStats?.map((stat) =>
+              stat.title === "Total Users"
+                ? { ...stat, value: filteredUsers.length.toLocaleString() }
+                : stat
+            ) || null
+        );
+      }
 
       console.log("Users:", paginatedUsers);
     } catch (error: any) {
@@ -562,12 +647,11 @@ export function AdminHome() {
       "page:",
       page
     );
-    if (user?.id) {
+    if (user?.id && studentsData.length > 0 && tutorsData.length > 0) {
       fetchUsers();
     }
-  }, [user?.id, roleFilter, page]);
+  }, [user?.id, roleFilter, page, studentsData, tutorsData]);
 
-  // Data for Pie Chart (Students vs Tutors)
   const userDistributionData = {
     labels: ["Students", "Tutors"],
     datasets: [
@@ -580,7 +664,6 @@ export function AdminHome() {
     ],
   };
 
-  // Data for Line Chart (Revenue Trend Over Last 6 Months)
   const getLastSixMonths = () => {
     const months: string[] = [];
     const currentDate = new Date();
@@ -603,15 +686,15 @@ export function AdminHome() {
         label: "Revenue (₹)",
         data: getLastSixMonths().map((month) => {
           const revenue =
-            transactions
-              ?.filter((t) => t.transaction_type === "credit")
-              ?.filter((t) => {
-                const transactionMonth = new Date(t.createdAt)
+            purchases
+              ?.flatMap((p) => p.purchase)
+              ?.filter((pur) => {
+                const purchaseMonth = new Date(pur.createdAt)
                   .toISOString()
                   .slice(0, 7);
-                return transactionMonth === month;
+                return purchaseMonth === month;
               })
-              ?.reduce((sum, t) => sum + t.amount, 0) || 0;
+              ?.reduce((sum, pur) => sum + pur.amount, 0) || 0;
           return revenue;
         }),
         fill: true,
@@ -624,7 +707,6 @@ export function AdminHome() {
     ],
   };
 
-  // Data for Bar Chart (Top 5 Revenue-Generating Transactions)
   const topTransactions =
     transactions
       ?.filter((t) => t.transaction_type === "credit")
@@ -645,7 +727,6 @@ export function AdminHome() {
     ],
   };
 
-  // Chart options with improved styling
   const pieChartOptions = {
     maintainAspectRatio: false,
     plugins: {
@@ -924,7 +1005,64 @@ export function AdminHome() {
     },
   };
 
-  // User table columns
+  const salesComparisonChartOptions = {
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Sales (₹)",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          color: "rgba(0, 0, 0, 0.05)",
+        },
+        ticks: {
+          color: "#6B7280",
+          callback: (value: any) => `₹${value.toLocaleString("en-IN")}`,
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Period",
+          font: { size: 12, weight: "500" },
+          color: "#4B5563",
+        },
+        grid: {
+          display: false,
+        },
+        ticks: {
+          color: "#6B7280",
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "#1F2937",
+        titleFont: { size: 14, weight: "600" },
+        bodyFont: { size: 12 },
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (context: any) => {
+            const value = context.raw || 0;
+            return `Sales: ₹${value.toLocaleString("en-IN")}`;
+          },
+        },
+      },
+    },
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart",
+    },
+  };
+
   const userColumns: Column<User>[] = [
     {
       header: "User",
@@ -1003,27 +1141,12 @@ export function AdminHome() {
     },
   ];
 
-  // Trending Courses table columns (no longer needed, but kept for reference)
-  const trendingCourseColumns: Column<CoursePurchaseCount>[] = [
-    { header: "Course Name", accessor: "courseName" },
-    { header: "Enrollments", accessor: "purchaseCount" },
-  ];
-
-  // Trending Tutors table columns (no longer needed, but kept for reference)
-  const trendingTutorColumns: Column<TrendingTutor>[] = [
-    { header: "Tutor Name", accessor: "tutorName" },
-    { header: "Total Enrollments", accessor: "enrollmentCount" },
-  ];
-
-  // Take top 5 trending courses
   const topTrendingCourses = coursePurchaseCounts
     ? coursePurchaseCounts.slice(0, 5)
     : [];
 
-  // Take top 5 trending tutors
   const topTrendingTutors = trendingTutors ? trendingTutors.slice(0, 5) : [];
 
-  // Data for Bar Chart (Trending Courses) - Moved after topTrendingCourses
   const trendingCoursesData = {
     labels: topTrendingCourses.map((course) => course.courseName),
     datasets: [
@@ -1038,7 +1161,6 @@ export function AdminHome() {
     ],
   };
 
-  // Data for Bar Chart (Trending Tutors) - Moved after topTrendingTutors
   const trendingTutorsData = {
     labels: topTrendingTutors.map((tutor) => tutor.tutorName),
     datasets: [
@@ -1051,6 +1173,132 @@ export function AdminHome() {
         borderRadius: 6,
       },
     ],
+  };
+
+  // Sales Comparison Logic
+  const years = Array.from(
+    new Set(
+      purchases?.flatMap((p) =>
+        p.purchase.map((pur) =>
+          new Date(pur.createdAt).getFullYear().toString()
+        )
+      ) || []
+    )
+  ).sort((a, b) => parseInt(b) - parseInt(a));
+
+  const months = [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
+  ];
+
+  const getDaysInMonth = (year: string, month: string) => {
+    if (!year || !month) return [];
+    const daysInMonth = new Date(parseInt(year), parseInt(month), 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) =>
+      (i + 1).toString().padStart(2, "0")
+    );
+  };
+
+  const handleCompareSales = () => {
+    if (!period1.year || !period2.year) {
+      toast.error("Please select years for both periods.");
+      return;
+    }
+
+    const filterPurchasesByPeriod = (
+      period: { year: string; month: string; date: string },
+      periodLabel: string
+    ) => {
+      let filteredPurchases: { amount: number; createdAt: string }[] = [];
+
+      // Flatten the purchases array
+      console.log("Initial purchases:", purchases);
+      purchases?.forEach((p) => {
+        p.purchase.forEach((pur) => {
+          filteredPurchases.push({
+            amount: pur.amount,
+            createdAt: pur.createdAt,
+          });
+        });
+      });
+
+      console.log("Filtered purchases (after flattening):", filteredPurchases);
+
+      const purchaseDate = (p: { createdAt: string }) => new Date(p.createdAt);
+
+      // Filter by year
+      filteredPurchases = filteredPurchases.filter(
+        (p) => purchaseDate(p).getFullYear().toString() === period.year
+      );
+      console.log("Filtered purchases (after year):", filteredPurchases);
+
+      // Filter by month if selected
+      if (period.month) {
+        filteredPurchases = filteredPurchases.filter(
+          (p) =>
+            (purchaseDate(p).getMonth() + 1).toString().padStart(2, "0") ===
+            period.month
+        );
+        console.log("Filtered purchases (after month):", filteredPurchases);
+      }
+
+      // Filter by date if selected
+      if (period.date) {
+        filteredPurchases = filteredPurchases.filter(
+          (p) =>
+            purchaseDate(p).getDate().toString().padStart(2, "0") ===
+            period.date
+        );
+        console.log("Filtered purchases (after date):", filteredPurchases);
+      }
+
+      const totalSales = filteredPurchases.reduce(
+        (sum, p) => sum + p.amount,
+        0
+      );
+      console.log(`Total sales for ${periodLabel}:`, totalSales);
+
+      let label = period.year;
+      if (period.month) label += `-${period.month}`;
+      if (period.date) label += `-${period.date}`;
+      else label = `${periodLabel} (${label})`;
+
+      return { totalSales, label };
+    };
+
+    const period1Data = filterPurchasesByPeriod(period1, "Period 1");
+    const period2Data = filterPurchasesByPeriod(period2, "Period 2");
+
+    // Check if both periods have zero sales
+    if (period1Data.totalSales === 0 && period2Data.totalSales === 0) {
+      toast.info("No sales data available for the selected periods.");
+      setSalesComparisonData(null); // Reset the chart data
+      return;
+    }
+
+    setSalesComparisonData({
+      labels: [period1Data.label, period2Data.label],
+      datasets: [
+        {
+          label: "Sales (₹)",
+          data: [period1Data.totalSales, period2Data.totalSales],
+          backgroundColor: ["#F87171", "#34D399"],
+          borderColor: ["#EF4444", "#2FBC85"],
+          borderWidth: 1,
+          borderRadius: 6,
+        },
+      ],
+    });
   };
 
   if (loading) {
@@ -1164,7 +1412,6 @@ export function AdminHome() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {/* Pie Chart: User Distribution */}
                   <Card className="shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader>
                       <CardTitle className="text-lg font-semibold">
@@ -1198,7 +1445,6 @@ export function AdminHome() {
                     </CardContent>
                   </Card>
 
-                  {/* Line Chart: Revenue Trend */}
                   <Card className="shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader>
                       <CardTitle className="text-lg font-semibold">
@@ -1234,7 +1480,6 @@ export function AdminHome() {
                     </CardContent>
                   </Card>
 
-                  {/* Bar Chart: Top Transactions */}
                   <Card className="shadow-sm hover:shadow-md transition-shadow">
                     <CardHeader>
                       <CardTitle className="text-lg font-semibold">
@@ -1269,14 +1514,7 @@ export function AdminHome() {
                   </Card>
                 </div>
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-6 py-4">
-                {/* <Button
-                  variant="outline"
-                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
-                >
-                  View Detailed Insights
-                </Button> */}
-              </CardFooter>
+              <CardFooter className="border-t bg-muted/50 px-6 py-4"></CardFooter>
             </Card>
 
             {/* User Management */}
@@ -1294,7 +1532,7 @@ export function AdminHome() {
                       value={roleFilter}
                       onValueChange={(value) => {
                         setRoleFilter(value);
-                        setPage(1); // Reset to first page when filter changes
+                        setPage(1);
                       }}
                     >
                       <SelectTrigger className="w-[180px]">
@@ -1627,6 +1865,211 @@ export function AdminHome() {
                   className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
                 >
                   View All Tutors
+                </Button>
+              </CardFooter>
+            </Card>
+
+            {/* Sales Comparison Section */}
+            <Card className="mt-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <CardHeader className="border-b bg-muted/50">
+                <CardTitle>Sales Comparison</CardTitle>
+                <CardDescription>
+                  Compare sales revenue between two time periods
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Period 1 Selection */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Period 1</h4>
+                    <div className="flex gap-2">
+                      <Select
+                        value={period1.year}
+                        onValueChange={(value) =>
+                          setPeriod1((prev) => ({
+                            ...prev,
+                            year: value,
+                            month: "",
+                            date: "",
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={period1.month}
+                        onValueChange={(value) =>
+                          setPeriod1((prev) => ({
+                            ...prev,
+                            month: value,
+                            date: "",
+                          }))
+                        }
+                        disabled={!period1.year}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month) => (
+                            <SelectItem key={month} value={month}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={period1.date}
+                        onValueChange={(value) =>
+                          setPeriod1((prev) => ({ ...prev, date: value }))
+                        }
+                        disabled={!period1.year || !period1.month}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Date" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getDaysInMonth(period1.year, period1.month).map(
+                            (day) => (
+                              <SelectItem key={day} value={day}>
+                                {day}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Period 2 Selection */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Period 2</h4>
+                    <div className="flex gap-2">
+                      <Select
+                        value={period2.year}
+                        onValueChange={(value) =>
+                          setPeriod2((prev) => ({
+                            ...prev,
+                            year: value,
+                            month: "",
+                            date: "",
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={period2.month}
+                        onValueChange={(value) =>
+                          setPeriod2((prev) => ({
+                            ...prev,
+                            month: value,
+                            date: "",
+                          }))
+                        }
+                        disabled={!period2.year}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {months.map((month) => (
+                            <SelectItem key={month} value={month}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={period2.date}
+                        onValueChange={(value) =>
+                          setPeriod2((prev) => ({ ...prev, date: value }))
+                        }
+                        disabled={!period2.year || !period2.month}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Date" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getDaysInMonth(period2.year, period2.month).map(
+                            (day) => (
+                              <SelectItem key={day} value={day}>
+                                {day}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  className="mt-4 w-full md:w-auto"
+                  onClick={handleCompareSales}
+                >
+                  Compare
+                </Button>
+
+                {/* Sales Comparison Chart */}
+                <div className="mt-6">
+                  {salesComparisonData ? (
+                    salesComparisonData.datasets[0].data.some(
+                      (value: number) => value > 0
+                    ) ? (
+                      <div className="h-[300px]">
+                        <Bar
+                          data={salesComparisonData}
+                          options={salesComparisonChartOptions}
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm text-muted-foreground font-medium">
+                          No sales data available for the selected periods
+                        </p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-center py-8">
+                      <TrendingUp className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground font-medium">
+                        Select periods to compare sales
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  onClick={() => {
+                    setPeriod1({ year: "", month: "", date: "" });
+                    setPeriod2({ year: "", month: "", date: "" });
+                    setSalesComparisonData(null);
+                  }}
+                >
+                  Reset Comparison
                 </Button>
               </CardFooter>
             </Card>
