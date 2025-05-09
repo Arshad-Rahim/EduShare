@@ -1,4 +1,5 @@
-import { TPaginatedResult, TPaginationOptions } from "../../types/user";
+import { TPaginatedResult } from "../../types/tutor";
+import { TPaginationOptions } from "../../types/user";
 
 export interface IAdminService {
   acceptTutor(tutorId: string): Promise<void>;
