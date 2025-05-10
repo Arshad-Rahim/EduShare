@@ -220,7 +220,7 @@ export function Header() {
     try {
       const response = await tutorService.logoutTutor();
       toast.success(response?.data.message);
-      localStorage.removeItem("userData");
+      localStorage.removeItem("userDatas");
       dispatch(removeUser());
       navigate("/auth");
     } catch (error) {

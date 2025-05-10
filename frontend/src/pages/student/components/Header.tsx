@@ -141,7 +141,7 @@ export function Header() {
     try {
       const response = await userAuthService.logoutUser();
       toast.success(response.data.message);
-      localStorage.removeItem("userData");
+      localStorage.removeItem("userDatas");
       dispatch(removeUser());
       clearNotifications?.();
       navigate("/auth");

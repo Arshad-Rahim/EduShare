@@ -122,10 +122,13 @@ export class AuthController {
 
   async logoutUser(req: Request, res: Response) {
     try {
-      res.clearCookie("userAccessToken");
-      res
-        .clearCookie("tutorAccessToken")
-        .status(200)
+     res.clearCookie("userAccessToken");
+    res.clearCookie("tutorAccessToken");
+    res.clearCookie("adminAccessToken");
+    res.clearCookie("userRefreshToken");
+    res.clearCookie("tutorRefreshToken");
+    res.clearCookie("adminRefreshToken");
+        res.status(200)
         .json({ message: "Logout successful" });
     } catch (error) {
       if (error instanceof CustomError) {
