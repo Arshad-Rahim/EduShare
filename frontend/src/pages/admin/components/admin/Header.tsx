@@ -19,7 +19,13 @@ import { useDispatch } from "react-redux";
 import { logoutAdmin } from "@/redux/slice/adminSlice";
 import { adminService } from "@/services/adminService/authService";
 
-export function Header({ setSidebarOpen, sidebarOpen }: unknown) {
+// Define props interface
+interface HeaderProps {
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  sidebarOpen: boolean;
+}
+
+export function Header({ setSidebarOpen, sidebarOpen }: HeaderProps) {
   const [user] = useState<{ name: string; email: string } | null>(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();

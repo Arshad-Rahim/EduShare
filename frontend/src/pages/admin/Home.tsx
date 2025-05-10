@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Users,
   Layers,
-  ArrowUpRight,
-  ArrowDownRight,
   CheckCircle2,
   MoreHorizontal,
   TrendingUp,
@@ -67,6 +65,7 @@ import { Pie, Line, Bar } from "react-chartjs-2";
 import { walletService } from "@/services/walletService";
 import { courseService } from "@/services/courseService";
 import { purchaseService } from "@/services/purchaseService";
+import { ReactNode } from "react";
 
 // Register Chart.js components
 ChartJS.register(
@@ -83,7 +82,7 @@ ChartJS.register(
 // Reusable Table Component
 type Column<T> = {
   header: string;
-  accessor: keyof T | ((item: T) => React.ReactNode);
+  accessor: keyof T | ((item: T) => ReactNode);
 };
 
 type ReusableTableProps<T> = {
@@ -108,7 +107,7 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
               <TableCell key={colIndex}>
                 {typeof column.accessor === "function"
                   ? column.accessor(item)
-                  : item[column.accessor as keyof T]}
+                  : String(item[column.accessor as keyof T])}
               </TableCell>
             ))}
           </TableRow>
@@ -121,7 +120,7 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
 interface Stat {
   title: string;
   value: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 interface User {
@@ -138,7 +137,7 @@ interface User {
 interface CourseStatus {
   title: string;
   value: number;
-  icon: React.ReactNode;
+  icon: ReactNode;
   color: string;
 }
 
@@ -182,14 +181,6 @@ interface Transaction {
   createdAt: string;
 }
 
-interface WalletResponse {
-  _id: string;
-  userId: string;
-  balance: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface CoursePurchaseCount {
   courseId: string;
   courseName: string;
@@ -220,17 +211,29 @@ interface PurchaseApiResponse {
   purchases: Purchase[];
 }
 
+// Interface for userList response
+interface UserResponse {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  isBlocked: boolean;
+  lastActive: string;
+  enrolledCourses?: number;
+  specialization?: string;
+  verificationDocUrl?: string;
+  approvalStatus?: "pending" | "approved" | "rejected";
+}
+
 export function AdminHome() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [stats, setStats] = useState<Stat[] | null>(null);
   const [users, setUsers] = useState<User[] | null>(null);
-  const [tutors, setTutors] = useState<TTutor[] | null>(null);
   const [courseStatuses, setCourseStatuses] = useState<CourseStatus[] | null>(
     null
   );
   const [performanceMetrics, setPerformanceMetrics] =
     useState<PerformanceMetric | null>(null);
-  const [walletData, setWalletData] = useState<WalletResponse | null>(null);
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [coursePurchaseCounts, setCoursePurchaseCounts] = useState<
     CoursePurchaseCount[] | null
@@ -293,18 +296,25 @@ export function AdminHome() {
 
       // Fetch user data (students and tutors)
       const [studentResponse, tutorResponse] = await Promise.all([
-        userService.userList(1, 100, "", { signal: controller.signal }),
-        tutorService.userList(1, 100, "", { signal: controller.signal }),
+        (userService.userList as any)(1, 100, "", {
+          signal: controller.signal,
+        }),
+        (tutorService.userList as any)(1, 100, "", {
+          signal: controller.signal,
+        }),
       ]);
 
       const students: TStudent[] =
-        studentResponse.data.users.filter((u) => u.role === "user") || [];
+        studentResponse.data.users.filter(
+          (u: UserResponse) => u.role === "user"
+        ) || [];
       const tutors: TTutor[] =
-        tutorResponse.data.users.filter((t) => t.role === "tutor") || [];
+        tutorResponse.data.users.filter(
+          (t: UserResponse) => t.role === "tutor"
+        ) || [];
 
       setStudentsData(students);
       setTutorsData(tutors);
-      setTutors(tutors);
 
       // Calculate total users (students + tutors)
       const totalUsersCount = students.length + tutors.length;
@@ -441,7 +451,6 @@ export function AdminHome() {
       console.log("Student Response:", studentResponse.data);
       console.log("Tutor Response:", tutorResponse.data);
 
-      setWalletData(wallet);
       setTransactions(transactionsData);
       setCoursePurchaseCounts(
         coursePurchaseCountResponse.data.coursePurchaseCount || []
@@ -735,7 +744,7 @@ export function AdminHome() {
         labels: {
           font: {
             size: 12,
-            weight: "500",
+            weight: "bold" as const,
           },
           padding: 20,
           color: "#4B5563",
@@ -743,7 +752,7 @@ export function AdminHome() {
       },
       tooltip: {
         backgroundColor: "#1F2937",
-        titleFont: { size: 14, weight: "600" },
+        titleFont: { size: 14, weight: "bold" as const },
         bodyFont: { size: 12 },
         padding: 10,
         cornerRadius: 6,
@@ -763,7 +772,7 @@ export function AdminHome() {
     },
     animation: {
       duration: 1000,
-      easing: "easeOutQuart",
+      easing: "easeOutQuart" as const,
     },
   };
 
@@ -775,7 +784,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Revenue (₹)",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -790,7 +799,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Month",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -806,13 +815,13 @@ export function AdminHome() {
         display: true,
         position: "top" as const,
         labels: {
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
       },
       tooltip: {
         backgroundColor: "#1F2937",
-        titleFont: { size: 14, weight: "600" },
+        titleFont: { size: 14, weight: "bold" as const },
         bodyFont: { size: 12 },
         padding: 10,
         cornerRadius: 6,
@@ -826,7 +835,7 @@ export function AdminHome() {
     },
     animation: {
       duration: 1000,
-      easing: "easeOutQuart",
+      easing: "easeOutQuart" as const,
     },
   };
 
@@ -839,7 +848,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Revenue (₹)",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -854,7 +863,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Transaction ID",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -871,7 +880,7 @@ export function AdminHome() {
       },
       tooltip: {
         backgroundColor: "#1F2937",
-        titleFont: { size: 14, weight: "600" },
+        titleFont: { size: 14, weight: "bold" as const },
         bodyFont: { size: 12 },
         padding: 10,
         cornerRadius: 6,
@@ -885,7 +894,7 @@ export function AdminHome() {
     },
     animation: {
       duration: 1000,
-      easing: "easeOutQuart",
+      easing: "easeOutQuart" as const,
     },
   };
 
@@ -898,7 +907,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Enrollments",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -912,7 +921,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Course Name",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -929,7 +938,7 @@ export function AdminHome() {
       },
       tooltip: {
         backgroundColor: "#1F2937",
-        titleFont: { size: 14, weight: "600" },
+        titleFont: { size: 14, weight: "bold" as const },
         bodyFont: { size: 12 },
         padding: 10,
         cornerRadius: 6,
@@ -943,7 +952,7 @@ export function AdminHome() {
     },
     animation: {
       duration: 1000,
-      easing: "easeOutQuart",
+      easing: "easeOutQuart" as const,
     },
   };
 
@@ -956,7 +965,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Total Enrollments",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -970,7 +979,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Tutor Name",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -987,7 +996,7 @@ export function AdminHome() {
       },
       tooltip: {
         backgroundColor: "#1F2937",
-        titleFont: { size: 14, weight: "600" },
+        titleFont: { size: 14, weight: "bold" as const },
         bodyFont: { size: 12 },
         padding: 10,
         cornerRadius: 6,
@@ -1001,7 +1010,7 @@ export function AdminHome() {
     },
     animation: {
       duration: 1000,
-      easing: "easeOutQuart",
+      easing: "easeOutQuart" as const,
     },
   };
 
@@ -1013,7 +1022,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Sales (₹)",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -1028,7 +1037,7 @@ export function AdminHome() {
         title: {
           display: true,
           text: "Period",
-          font: { size: 12, weight: "500" },
+          font: { size: 12, weight: "bold" as const },
           color: "#4B5563",
         },
         grid: {
@@ -1045,7 +1054,7 @@ export function AdminHome() {
       },
       tooltip: {
         backgroundColor: "#1F2937",
-        titleFont: { size: 14, weight: "600" },
+        titleFont: { size: 14, weight: "bold" as const },
         bodyFont: { size: 12 },
         padding: 10,
         cornerRadius: 6,
@@ -1059,7 +1068,7 @@ export function AdminHome() {
     },
     animation: {
       duration: 1000,
-      easing: "easeOutQuart",
+      easing: "easeOutQuart" as const,
     },
   };
 

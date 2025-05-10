@@ -48,42 +48,66 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { Header } from "./components/Header";
 import { wishlistService } from "@/services/wishlistService";
 import { courseService } from "@/services/courseService";
 
+// Define interfaces
+interface Course {
+  _id: string;
+  title: string;
+  thumbnail?: string;
+  tagline: string;
+  difficulty: string;
+  category: string;
+  price: string | number;
+  about: string;
+  duration?: string;
+  students?: string;
+}
+
+interface CourseParams {
+  search: string;
+  category: string;
+  difficulty: string;
+  minPrice: number;
+  maxPrice: number;
+  sort: string;
+  page: string;
+  limit: string;
+}
+
 export function CourseListingPage() {
-  const [courses, setCourses] = useState([]); // Only current page courses
-  const [wishlist, setWishlist] = useState([]); // State to store wishlisted course IDs
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sortOption, setSortOption] = useState("popular");
-  const [priceRange, setPriceRange] = useState([0, 1500]); // Adjusted max based on sample data
+  const [priceRange, setPriceRange] = useState<number[]>([0, 1500]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState([]);
-  const coursesPerPage = 12; // Consistent with original pagination
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const coursesPerPage = 12;
   const [debouncedValue] = useDebounce(searchQuery, 500);
 
   const categories = [
     { id: "web-dev", name: "Web Development", count: 120 },
     { id: "mobile-dev", name: "Mobile Development", count: 72 },
     { id: "data-science", name: "Data Science", count: 85 },
-    { id: "programming", name: "Programming", count: 90 }, // Added with a reasonable count
+    { id: "programming", name: "Programming", count: 90 },
     { id: "cloud", name: "Cloud Computing", count: 64 },
     { id: "design", name: "UI/UX Design", count: 48 },
     { id: "devops", name: "DevOps", count: 36 },
     { id: "ai-ml", name: "AI & Machine Learning", count: 54 },
     { id: "cybersecurity", name: "Cybersecurity", count: 42 },
-    { id: "other", name: "Other", count: 30 }, // Added with a reasonable count
+    { id: "other", name: "Other", count: 30 },
   ];
 
   const difficulties = [
@@ -96,20 +120,20 @@ export function CourseListingPage() {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
+      const params: CourseParams = {
         search: searchQuery,
-        category: selectedCategories.join(","), // Comma-separated categories
-        difficulty: selectedDifficulties.join(","), // Comma-separated difficulties
-        minPrice: priceRange[0].toString(),
-        maxPrice: priceRange[1].toString(),
+        category: selectedCategories.join(","),
+        difficulty: selectedDifficulties.join(","),
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
         sort: sortOption,
         page: currentPage.toString(),
         limit: coursesPerPage.toString(),
-      });
+      };
 
       const response = await courseService.getAllCourse(params);
       const coursesData = response.data.courses.courses || [];
-      const totalCourses = response.data.courses.total || 0; // Assuming backend returns total count
+      const totalCourses = response.data.courses.total || 0;
 
       setCourses(coursesData);
       setTotalPages(Math.ceil(totalCourses / coursesPerPage));
@@ -124,10 +148,15 @@ export function CourseListingPage() {
   // Fetch wishlist courses from backend
   const fetchWishlistCourses = async () => {
     try {
-      const response = await wishlistService.getWishlist({});
-      const wishlistData = response.data.courses || [];
-      const wishlistIds = wishlistData.map((course) => course._id);
-      setWishlist(wishlistIds);
+      const response = await wishlistService.getWishlist({
+        page: 1,
+        limit: 100,
+      });
+      if (response) {
+        const wishlistData = response.data.courses || [];
+        const wishlistIds = wishlistData.map((course: Course) => course._id);
+        setWishlist(wishlistIds);
+      }
     } catch (error) {
       console.error("Failed to fetch wishlist courses:", error);
       toast.error("Failed to load wishlist");
@@ -145,7 +174,7 @@ export function CourseListingPage() {
       } else {
         const response = await wishlistService.addToWishlist(courseId);
         setWishlist((prev) => [...prev, courseId]);
-        toast.success(response.data.message);
+        toast.success(response?.data.message || "Course added to wishlist");
       }
     } catch (error) {
       console.error("Failed to toggle wishlist:", error);
@@ -158,7 +187,7 @@ export function CourseListingPage() {
     if (categoryParam && !selectedCategories.includes(categoryParam)) {
       setSelectedCategories([categoryParam]);
     }
-    fetchWishlistCourses(); // Fetch wishlist on mount
+    fetchWishlistCourses();
   }, [searchParams]);
 
   // Fetch courses whenever filters, sort, or page changes
@@ -173,27 +202,27 @@ export function CourseListingPage() {
     currentPage,
   ]);
 
-  const handleCategoryToggle = (category) => {
+  const handleCategoryToggle = (category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
-  const handleDifficultyToggle = (difficulty) => {
+  const handleDifficultyToggle = (difficulty: string) => {
     setSelectedDifficulties((prev) =>
       prev.includes(difficulty)
         ? prev.filter((d) => d !== difficulty)
         : [...prev, difficulty]
     );
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
-  const handlePriceRangeChange = (value) => {
+  const handlePriceRangeChange = (value: number[]) => {
     setPriceRange(value);
-    setCurrentPage(1); // Reset to first page on filter change
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
@@ -201,21 +230,21 @@ export function CourseListingPage() {
     setSearchQuery("");
     setSelectedCategories([]);
     setSelectedDifficulties([]);
-    setPriceRange([0, 1500]); // Adjusted max based on sample data
+    setPriceRange([0, 1500]);
     setSortOption("popular");
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
   };
 
-  const handleEnroll = (courseId) => {
-    navigate(`/courses/${courseId}`); // Navigate to CourseDetailsPage
+  const handleEnroll = (courseId: string) => {
+    navigate(`/courses/${courseId}`);
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -301,7 +330,7 @@ export function CourseListingPage() {
               <Slider
                 defaultValue={priceRange}
                 min={0}
-                max={1500} // Adjusted max based on sample data
+                max={1500}
                 step={10}
                 value={priceRange}
                 onValueChange={handlePriceRangeChange}
@@ -416,7 +445,7 @@ export function CourseListingPage() {
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
-                      setCurrentPage(1); // Reset to first page on search
+                      setCurrentPage(1);
                     }}
                   />
                 </div>
@@ -455,7 +484,7 @@ export function CourseListingPage() {
                         <Slider
                           defaultValue={priceRange}
                           min={0}
-                          max={1500} // Adjusted max based on sample data
+                          max={1500}
                           step={10}
                           value={priceRange}
                           onValueChange={handlePriceRangeChange}
@@ -567,7 +596,7 @@ export function CourseListingPage() {
                       value={sortOption}
                       onValueChange={(value) => {
                         setSortOption(value);
-                        setCurrentPage(1); // Reset to first page on sort change
+                        setCurrentPage(1);
                       }}
                     >
                       <SelectTrigger className="w-full sm:w-[180px]">
@@ -727,7 +756,7 @@ export function CourseListingPage() {
                                 </div>
                                 <div className="flex items-center gap-1.5 text-slate-600">
                                   <span className="font-medium">
-                                    ₹{parseFloat(course.price) || 0}
+                                    ₹{parseFloat(String(course.price)) || 0}
                                   </span>
                                 </div>
                               </div>
@@ -848,7 +877,7 @@ export function CourseListingPage() {
                                 </div>
                                 <div className="flex items-center justify-between mt-4">
                                   <div className="text-xl font-bold">
-                                    ₹{parseFloat(course.price) || 0}
+                                    ₹{parseFloat(String(course.price)) || 0}
                                   </div>
                                   <div className="flex gap-2">
                                     <Button

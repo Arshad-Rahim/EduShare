@@ -1,4 +1,4 @@
-"use client";
+
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -35,27 +35,29 @@ import {
   Upload,
   FileIcon,
 } from "lucide-react";
-import { courseService } from "@/services/courseService";
+import { Course, courseService, Lesson } from "@/services/courseService";
 import { useSelector } from "react-redux";
 import { VideoCall } from "@/components/videoCall/VideoCall";
 
 export function CourseDetails() {
-  const { courseId } = useParams();
+  const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [course, setCourse] = useState(null);
-  const [lessons, setLessons] = useState([]);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [editLessonModalOpen, setEditLessonModalOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [editLessonTitle, setEditLessonTitle] = useState("");
   const [editLessonDuration, setEditLessonDuration] = useState("");
-  const [editLessonVideoFile, setEditLessonVideoFile] = useState(null);
+  const [editLessonVideoFile, setEditLessonVideoFile] = useState<File | null>(
+    null
+  );
   const [currentVideoName, setCurrentVideoName] = useState("");
   const [isInCall, setIsInCall] = useState(false);
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = useSelector((state: any) => state.user.userDatas);
   const tutorId = currentUser?.id ? currentUser?.id : currentUser?._id;
 
@@ -78,11 +80,18 @@ export function CourseDetails() {
   const fetchCourseDetails = async () => {
     try {
       const response = await courseService.getSpecificTutorCourse(1, 50);
-      const foundCourse = response.data.courses.find((c) => c._id === courseId);
-      if (foundCourse) {
-        setCourse(foundCourse);
+      if (response?.data?.courses) {
+        const foundCourse = response.data.courses.find(
+          (c: Course) => c._id === courseId
+        );
+        if (foundCourse) {
+          setCourse(foundCourse);
+        } else {
+          toast.error("Course not found");
+          navigate("/tutor/courses");
+        }
       } else {
-        toast.error("Course not found");
+        toast.error("No course data received");
         navigate("/tutor/courses");
       }
     } catch (error) {
@@ -96,15 +105,19 @@ export function CourseDetails() {
 
   const fetchLessons = async () => {
     try {
-      const response = await courseService.getLessons(courseId);
-      setLessons(response.data.lessons || []);
+      if (courseId) {
+        const response = await courseService.getLessons(courseId);
+        if (response) {
+          setLessons(response.data.lessons || []);
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
       toast.error("Failed to load lessons");
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -117,8 +130,8 @@ export function CourseDetails() {
     }
   };
 
-  const handlePlayVideo = (lesson) => {
-    const videoUrl = lesson.file || lesson.videoUrl;
+  const handlePlayVideo = (lesson: Lesson) => {
+    const videoUrl = lesson.file;
     if (videoUrl) {
       setSelectedVideo(videoUrl);
       setVideoModalOpen(true);
@@ -127,11 +140,11 @@ export function CourseDetails() {
     }
   };
 
-  const handleEditLesson = (lesson) => {
+  const handleEditLesson = (lesson: Lesson) => {
     setSelectedLesson(lesson);
     setEditLessonTitle(lesson.title);
-    setEditLessonDuration(lesson.duration || "");
-    const videoUrl = lesson.file || lesson.videoUrl;
+    setEditLessonDuration(lesson.duration ? String(lesson.duration) : "");
+    const videoUrl = lesson.file;
 
     // Extract a shorter, readable video name and truncate if necessary
     let videoName = videoUrl
@@ -153,7 +166,7 @@ export function CourseDetails() {
     setEditLessonModalOpen(true);
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) {
@@ -185,21 +198,26 @@ export function CourseDetails() {
       formData.append("title", editLessonTitle);
       formData.append(
         "duration",
-        editLessonDuration ? parseInt(editLessonDuration) : null
+        editLessonDuration ? String(parseInt(editLessonDuration)) : ""
       );
       if (editLessonVideoFile) {
         formData.append("file", editLessonVideoFile);
       }
-      const response = await courseService.editLesson(selectedLesson, formData);
+      const response = await courseService.editLesson(
+        selectedLesson._id,
+        formData
+      );
 
       if (response.data.success) {
-        const updatedLesson = {
+        const updatedLesson: Lesson = {
           ...selectedLesson,
           title: editLessonTitle,
-          duration: editLessonDuration ? parseInt(editLessonDuration) : null,
+          duration: editLessonDuration
+            ? parseInt(editLessonDuration)
+            : undefined,
           file: editLessonVideoFile
             ? URL.createObjectURL(editLessonVideoFile)
-            : selectedLesson.file || selectedLesson.videoUrl,
+            : selectedLesson.file,
         };
 
         setLessons((prevLessons) =>
@@ -221,7 +239,7 @@ export function CourseDetails() {
   const handleEndCall = useCallback(() => {
     console.log("Call ended, isInCall set to false");
     setIsInCall(false);
-    navigate(`/tutor/courses/${courseId}`); // Remove call query param
+    navigate(`/tutor/courses/${courseId}`);
   }, [courseId, navigate]);
 
   if (loading) {

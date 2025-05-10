@@ -37,9 +37,41 @@ import { Header } from "./components/Header";
 import { wishlistService } from "@/services/wishlistService";
 import { courseService } from "@/services/courseService";
 
+// Define interfaces
+interface Course {
+  _id: string;
+  title: string;
+  thumbnail?: string;
+  tagline: string;
+  difficulty: string;
+  category: string;
+  price: string | number;
+  about: string;
+}
+
+interface CategoryCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  count: number;
+}
+
+interface TestimonialCardProps {
+  name: string;
+  role: string;
+  image: string;
+  quote: string;
+  rating: number;
+}
+
+interface FeatureCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}
+
 // Category Card Component
-const CategoryCard = ({ icon: Icon, title, count }) => (
-  <Card className="group  group overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 hover:border-primary/20 h-full">
+const CategoryCard = ({ icon: Icon, title, count }: CategoryCardProps) => (
+  <Card className="group overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 hover:border-primary/20 h-full">
     <CardContent className="p-6 flex flex-col items-center text-center">
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
         <Icon className="h-8 w-8 text-primary" />
@@ -51,7 +83,13 @@ const CategoryCard = ({ icon: Icon, title, count }) => (
 );
 
 // Testimonial Card Component
-const TestimonialCard = ({ name, role, image, quote, rating }) => (
+const TestimonialCard = ({
+  name,
+  role,
+  image,
+  quote,
+  rating,
+}: TestimonialCardProps) => (
   <Card className="overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 h-full">
     <CardContent className="p-6">
       <div className="flex items-center gap-4 mb-4">
@@ -82,7 +120,7 @@ const TestimonialCard = ({ name, role, image, quote, rating }) => (
 );
 
 // Feature Card Component
-const FeatureCard = ({ icon: Icon, title, description }) => (
+const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => (
   <div className="flex flex-col items-center text-center p-6 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all">
     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
       <Icon className="h-7 w-7 text-primary" />
@@ -94,8 +132,8 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
 
 // Main UserHomePage Component
 export function UserHomePage() {
-  const [courses, setCourses] = useState([]);
-  const [wishlist, setWishlist] = useState([]); // State to store wishlisted course IDs
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -105,9 +143,9 @@ export function UserHomePage() {
 
   const fetchCourses = async () => {
     try {
-      const response = await courseService.getAllCourse("");
-      setCourses(response.data.courses.courses || []);
-      console.log("Courses in Home", response.data.courses);
+      const response = await courseService.getAllCourse();
+      setCourses(response?.data.courses.courses || []);
+      console.log("Courses in Home", response?.data.courses);
     } catch (error) {
       console.error("Failed to fetch courses:", error);
     }
@@ -115,10 +153,16 @@ export function UserHomePage() {
 
   const fetchWishlistCourses = async () => {
     try {
-      const response = await wishlistService.getWishlist({});
-      const wishlistData = response.data.courses || []; // Adjust based on your API response structure
-      const wishlistIds = wishlistData.map((course) => course._id);
-      setWishlist(wishlistIds);
+      const response = await wishlistService.getWishlist({
+        userId: "", // Replace with actual userId if available
+        page: 1,
+        limit: 100,
+      });
+      if (response) {
+        const wishlistData = response.data.courses || [];
+        const wishlistIds = wishlistData.map((course: Course) => course._id);
+        setWishlist(wishlistIds);
+      }
     } catch (error) {
       console.error("Failed to fetch wishlist courses:", error);
       toast.error("Failed to load wishlist");
@@ -129,21 +173,21 @@ export function UserHomePage() {
     const isWishlisted = wishlist.includes(courseId);
     try {
       if (isWishlisted) {
-        await wishlistService.removeFromWishlist(courseId)
+        await wishlistService.removeFromWishlist(courseId);
         setWishlist((prev) => prev.filter((id) => id !== courseId));
         toast.success("Course removed from wishlist");
       } else {
-        const response = await wishlistService.addToWishlist(courseId)
+        const response = await wishlistService.addToWishlist(courseId);
         setWishlist((prev) => [...prev, courseId]);
-        toast.success(response.data.message);
+        toast.success(response?.data.message || "Course added to wishlist");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to toggle wishlist:", error);
       toast.error(error.response?.data?.message || "Failed to update wishlist");
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -161,7 +205,7 @@ export function UserHomePage() {
   };
 
   // Sample data for categories
-  const categories = [
+  const categories: CategoryCardProps[] = [
     { icon: Code, title: "Web Development", count: 120 },
     { icon: Database, title: "Data Science", count: 85 },
     { icon: Server, title: "Cloud Computing", count: 64 },
@@ -169,7 +213,7 @@ export function UserHomePage() {
   ];
 
   // Sample data for testimonials
-  const testimonials = [
+  const testimonials: TestimonialCardProps[] = [
     {
       name: "Sarah Johnson",
       role: "Frontend Developer",
@@ -197,7 +241,7 @@ export function UserHomePage() {
   ];
 
   // Sample data for features
-  const features = [
+  const features: FeatureCardProps[] = [
     {
       icon: Laptop,
       title: "Learn Anywhere",

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Dialog,
@@ -20,15 +19,12 @@ import io from "socket.io-client";
 import { toast } from "sonner";
 import {
   Loader2,
-  Bug,
   PhoneOff,
   Mic,
   MicOff,
   Video,
   VideoOff,
   Maximize2,
-  MessageSquare,
-  Settings,
   X,
 } from "lucide-react";
 
@@ -75,30 +71,6 @@ export function VideoCall({
   const hasInitializedPeer = useRef(false);
   const pendingSignals = useRef<{ signal: any; callerID: string }[]>([]);
   const candidateQueue = useRef<RTCIceCandidateInit[]>([]);
-
-  // Debug stream state
-  const debugStream = useCallback(() => {
-    if (localStream) {
-      console.log("Local stream tracks:", localStream.getTracks());
-      localStream
-        .getTracks()
-        .forEach((track) =>
-          console.log(
-            `Local track ${track.kind} - enabled: ${track.enabled}, readyState: ${track.readyState}`
-          )
-        );
-    }
-    if (remoteStream) {
-      console.log("Remote stream tracks:", remoteStream.getTracks());
-      remoteStream
-        .getTracks()
-        .forEach((track) =>
-          console.log(
-            `Remote track ${track.kind} - enabled: ${track.enabled}, readyState: ${track.readyState}`
-          )
-        );
-    }
-  }, [localStream, remoteStream]);
 
   // Toggle audio
   const toggleMute = useCallback(() => {

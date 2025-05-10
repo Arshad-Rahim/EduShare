@@ -11,7 +11,7 @@ export const profileService = {
     }
   },
 
-  async profileUpdate(data) {
+  async profileUpdate(data: ProfileUpdate) {
     try {
       const response = authAxiosInstance.post("/users/profileUpdate", data);
       return response;
@@ -19,7 +19,6 @@ export const profileService = {
       throw error;
     }
   },
-
 
   async getUserById(userId: string) {
     try {
@@ -31,4 +30,13 @@ export const profileService = {
       throw error;
     }
   },
+};
+
+export type ProfileUpdate = {
+  name?: string;
+  email?: string;
+  bio?: string;
+  interests?: string;
+  education?: string;
+  password?: string;
 };

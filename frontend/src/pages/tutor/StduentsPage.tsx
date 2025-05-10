@@ -1,4 +1,3 @@
-// src/pages/tutor/StudentsPage.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,13 +40,18 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
       <TableBody>
         {data.map((item, rowIndex) => (
           <TableRow key={rowIndex}>
-            {columns.map((column, colIndex) => (
-              <TableCell key={colIndex}>
-                {typeof column.accessor === "function"
-                  ? column.accessor(item)
-                  : item[column.accessor as keyof T]}
-              </TableCell>
-            ))}
+            {columns.map((column, colIndex) => {
+              const displayValue = typeof column.accessor === "function"
+                ? column.accessor(item)
+                : item[column.accessor as keyof T] instanceof Date
+                ? (item[column.accessor as keyof T] as Date).toLocaleDateString()
+                : String(item[column.accessor as keyof T] ?? '-');
+              return (
+                <TableCell key={colIndex}>
+                  {displayValue}
+                </TableCell>
+              );
+            })}
           </TableRow>
         ))}
       </TableBody>

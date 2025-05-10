@@ -48,19 +48,57 @@ import { ClipLoader } from "react-spinners";
 import { Progress } from "@/components/ui/progress";
 import { courseService } from "@/services/courseService";
 
+// Define interfaces
+interface Course {
+  _id: string;
+  title: string;
+  tagline: string;
+  category: string;
+  difficulty: string;
+  price: number;
+  about: string;
+  thumbnail?: string;
+  tutorName: string;
+}
+
+interface Lesson {
+  _id: string;
+  title: string;
+  duration?: number;
+  description?: string;
+  order?: number;
+}
+
+interface CourseFormModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  course?: Course | null;
+  onCourseSaved: () => void;
+  isEditMode?: boolean;
+}
+
+interface LessonFormModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  courseId: string;
+  onLessonSaved: () => void;
+}
+
 export function AdminCourses() {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [lessonModalOpen, setLessonModalOpen] = useState(false);
   const [addLessonModalOpen, setAddLessonModalOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [lessons, setLessons] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [confirmDeleteCourseOpen, setConfirmDeleteCourseOpen] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState(null);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
-  const [lessonToDelete, setLessonToDelete] = useState(null);
+  const [lessonToDelete, setLessonToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage] = useState(6);
@@ -99,16 +137,18 @@ export function AdminCourses() {
     }
   };
 
-  const handleDeleteCourse = (courseId) => {
+  const handleDeleteCourse = (courseId: string) => {
     setCourseToDelete(courseId);
     setConfirmDeleteCourseOpen(true);
   };
 
   const confirmDeleteCourse = async () => {
+    if (!courseToDelete) return;
+
     setIsLoading(true);
     try {
       const response = await courseService.deleteCourse(courseToDelete);
-      toast.success(response.data.message);
+      toast.success(response?.data.message || "Course deleted successfully");
       fetchCourses(currentPage);
       if (courses.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
@@ -123,7 +163,7 @@ export function AdminCourses() {
     }
   };
 
-  const handleDeleteLesson = (lessonId) => {
+  const handleDeleteLesson = (lessonId: string) => {
     setLessonToDelete(lessonId);
     setConfirmDeleteLessonOpen(true);
   };
@@ -135,7 +175,7 @@ export function AdminCourses() {
     try {
       const response = await courseService.deleteLesson(lessonToDelete);
       setLessons(lessons.filter((lesson) => lesson._id !== lessonToDelete));
-      toast.success(response.data.message);
+      toast.success(response.data.message || "Lesson deleted successfully");
     } catch (error) {
       console.error("Failed to delete lesson:", error);
       toast.error("Failed to delete lesson");
@@ -146,7 +186,7 @@ export function AdminCourses() {
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -161,7 +201,7 @@ export function AdminCourses() {
 
   const totalPages = Math.ceil(totalCourses / coursesPerPage);
 
-  const paginate = (pageNumber) => {
+  const paginate = (pageNumber: number) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
@@ -173,21 +213,21 @@ export function AdminCourses() {
     course,
     onCourseSaved,
     isEditMode = false,
-  }) => {
+  }: CourseFormModalProps) => {
     const [title, setTitle] = useState(course?.title || "");
     const [tagline, setTagline] = useState(course?.tagline || "");
     const [category, setCategory] = useState(course?.category || "");
     const [difficulty, setDifficulty] = useState(course?.difficulty || "");
     const [price, setPrice] = useState(course?.price?.toString() || "");
     const [about, setAbout] = useState(course?.about || "");
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [existingThumbnailUrl, setExistingThumbnailUrl] = useState(
       course?.thumbnail || null
     );
     const [formLoading, setFormLoading] = useState(false);
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (event) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (file) {
         if (file.size > 2 * 1024 * 1024) {
@@ -241,8 +281,8 @@ export function AdminCourses() {
       setFormLoading(true);
       try {
         if (isEditMode && course?._id) {
-          const response = await courseService.editCourse(course, formData);
-          toast.success(response.data.message);
+          const response = await courseService.editCourse(course._id, formData);
+          toast.success(response.data.message || "Course updated successfully");
         } else {
           const response = await courseService.addCourse(formData);
           toast.success(response.data.message || "Course added successfully!");
@@ -465,17 +505,22 @@ export function AdminCourses() {
     );
   };
 
-  const LessonFormModal = ({ open, onOpenChange, courseId, onLessonSaved }) => {
+  const LessonFormModal = ({
+    open,
+    onOpenChange,
+    courseId,
+    onLessonSaved,
+  }: LessonFormModalProps) => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [file, setFile] = useState(null);
+    const [file, setFile] = useState<File | null>(null);
     const [duration, setDuration] = useState("");
     const [order, setOrder] = useState("");
     const [formLoading, setFormLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [displayProgress, setDisplayProgress] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       if (!formLoading || uploadProgress === 0) return;
@@ -496,7 +541,7 @@ export function AdminCourses() {
       return () => clearInterval(interval);
     }, [formLoading, uploadProgress]);
 
-    const handleFileChange = (event) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFile = event.target.files?.[0];
       if (selectedFile) {
         if (selectedFile.size > 50 * 1024 * 1024) {
@@ -546,7 +591,7 @@ export function AdminCourses() {
           headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (progressEvent) => {
             const { loaded, total } = progressEvent;
-            const percent = Math.floor((loaded * 100) / total);
+            const percent = total ? Math.floor((loaded * 100) / total) : 0;
             setUploadProgress(percent);
           },
         });
@@ -725,10 +770,10 @@ export function AdminCourses() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
-      <Header />
+      <Header setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
-          <SideBar sidebarOpen={true} />
+          <SideBar />
         </div>
         <div className="flex-1 w-full relative">
           {isLoading && (
@@ -966,8 +1011,8 @@ export function AdminCourses() {
                             key={lesson._id}
                             className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
                           >
-                            <div className="flex items-center gap-3">
-                              <Video className="h-5 w-5 text-primary" />
+                            <div className="flex items-start gap-3">
+                              <Video className="h-5 w-5 text-primary mt-0.5" />
                               <div>
                                 <p className="text-sm font-medium">
                                   {lesson.title}

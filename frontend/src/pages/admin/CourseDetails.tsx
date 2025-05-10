@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -34,50 +34,64 @@ import {
   FileIcon,
 } from "lucide-react";
 import { courseService } from "@/services/courseService";
-import { useSelector } from "react-redux";
 import { Header } from "./components/admin/Header";
 import { SideBar } from "./components/admin/SideBar";
 
+// Define interfaces
+interface Course {
+  _id: string;
+  title: string;
+  tagline: string;
+  category: string;
+  difficulty: string;
+  price: number;
+  about: string;
+  thumbnail?: string;
+  tutorName: string;
+}
+
+interface Lesson {
+  _id: string;
+  title: string;
+  duration?: number;
+  file?: string;
+  videoUrl?: string;
+}
+
 export function AdminCourseDetails() {
-  const { courseId } = useParams();
+  const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [course, setCourse] = useState(null);
-  const [lessons, setLessons] = useState([]);
+  const [course, setCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
   const [editLessonModalOpen, setEditLessonModalOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [editLessonTitle, setEditLessonTitle] = useState("");
   const [editLessonDuration, setEditLessonDuration] = useState("");
-  const [editLessonVideoFile, setEditLessonVideoFile] = useState(null);
+  const [editLessonVideoFile, setEditLessonVideoFile] = useState<File | null>(
+    null
+  );
   const [currentVideoName, setCurrentVideoName] = useState("");
-  const [isInCall, setIsInCall] = useState(false);
-  const fileInputRef = useRef(null);
-  const currentUser = useSelector((state: any) => state.user.userDatas);
-  const tutorId = currentUser?.id ? currentUser?.id : currentUser?._id;
-
-  // Check for call query parameter
-  const queryParams = new URLSearchParams(location.search);
-  const callRoomId = queryParams.get("call");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
+    if (!courseId) {
+      toast.error("Invalid course ID");
+      navigate("/admin/courses");
+      return;
+    }
     fetchCourseDetails();
     fetchLessons();
-  }, [courseId]);
-
-  useEffect(() => {
-    if (callRoomId) {
-      console.log("Call query detected, starting video call:", callRoomId);
-      setIsInCall(true);
-    }
-  }, [callRoomId]);
+  }, [courseId, navigate]);
 
   const fetchCourseDetails = async () => {
+    if (!courseId) return;
+
     try {
       const foundCourse = await courseService.getCourseDetails(courseId);
-
       if (foundCourse) {
         setCourse(foundCourse);
       } else {
@@ -94,16 +108,18 @@ export function AdminCourseDetails() {
   };
 
   const fetchLessons = async () => {
+    if (!courseId) return;
+
     try {
       const response = await courseService.getLessons(courseId);
-      setLessons(response.data.lessons || []);
+      setLessons(response?.data?.lessons || []);
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
       toast.error("Failed to load lessons");
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -116,7 +132,7 @@ export function AdminCourseDetails() {
     }
   };
 
-  const handlePlayVideo = (lesson) => {
+  const handlePlayVideo = (lesson: Lesson) => {
     const videoUrl = lesson.file || lesson.videoUrl;
     if (videoUrl) {
       setSelectedVideo(videoUrl);
@@ -126,10 +142,10 @@ export function AdminCourseDetails() {
     }
   };
 
-  const handleEditLesson = (lesson) => {
+  const handleEditLesson = (lesson: Lesson) => {
     setSelectedLesson(lesson);
     setEditLessonTitle(lesson.title);
-    setEditLessonDuration(lesson.duration || "");
+    setEditLessonDuration(lesson.duration?.toString() || "");
     const videoUrl = lesson.file || lesson.videoUrl;
     setCurrentVideoName(
       videoUrl
@@ -140,7 +156,7 @@ export function AdminCourseDetails() {
     setEditLessonModalOpen(true);
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 50 * 1024 * 1024) {
@@ -170,23 +186,25 @@ export function AdminCourseDetails() {
     try {
       const formData = new FormData();
       formData.append("title", editLessonTitle);
-      formData.append(
-        "duration",
-        editLessonDuration ? parseInt(editLessonDuration) : null
-      );
+      if (editLessonDuration) {
+        formData.append("duration", editLessonDuration);
+      }
       if (editLessonVideoFile) {
         formData.append("file", editLessonVideoFile);
       }
 
-    
-
-      const response = await courseService.editLesson(selectedLesson, formData);
+      const response = await courseService.editLesson(
+        selectedLesson._id,
+        formData
+      );
 
       if (response.data.success) {
-        const updatedLesson = {
+        const updatedLesson: Lesson = {
           ...selectedLesson,
           title: editLessonTitle,
-          duration: editLessonDuration ? parseInt(editLessonDuration) : null,
+          duration: editLessonDuration
+            ? parseInt(editLessonDuration)
+            : undefined,
           file: editLessonVideoFile
             ? URL.createObjectURL(editLessonVideoFile)
             : selectedLesson.file || selectedLesson.videoUrl,
@@ -208,12 +226,6 @@ export function AdminCourseDetails() {
     }
   };
 
-  const handleEndCall = useCallback(() => {
-    console.log("Call ended, isInCall set to false");
-    setIsInCall(false);
-    navigate(`/admin/courses/${courseId}`); // Remove call query param
-  }, [courseId, navigate]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center w-full">
@@ -228,10 +240,10 @@ export function AdminCourseDetails() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
-      <Header />
+      <Header setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
-          <SideBar sidebarOpen={true} />
+          <SideBar />
         </div>
         <div className="flex-1 w-full">
           <Card className="border-0 shadow-md w-full">
@@ -488,17 +500,6 @@ export function AdminCourseDetails() {
               </DialogContent>
             </Dialog>
           )}
-
-          {/* Video Call Modal
-          {isInCall && callRoomId && course && (
-            <VideoCall
-              roomId={callRoomId}
-              userId={tutorId}
-              isInitiator={false}
-              courseTitle={course.title}
-              onEndCall={handleEndCall}
-            />
-          )} */}
         </div>
       </div>
     </div>

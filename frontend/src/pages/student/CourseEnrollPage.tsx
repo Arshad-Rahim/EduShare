@@ -364,6 +364,12 @@ export function CourseEnrollPage() {
   }, [courseId]);
 
   const fetchCourseDetails = async () => {
+    if (!courseId) {
+      toast.error("Invalid course ID");
+      navigate("/courses");
+      return;
+    }
+
     try {
       const foundCourse = await courseService.getCourseDetails(courseId);
       if (foundCourse) {
@@ -382,6 +388,12 @@ export function CourseEnrollPage() {
   };
 
   const checkEnrollmentStatus = async () => {
+    if (!courseId) {
+      toast.error("Invalid course ID");
+      navigate("/courses");
+      return;
+    }
+
     try {
       const response = await enrollmentService.checkEnrollmentStatus(courseId);
       setEnrollmentStatus(response.data.isEnrolled ? "enrolled" : null);

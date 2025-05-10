@@ -1,13 +1,9 @@
 import { Button } from "@/components/ui/button";
 import {
-  AlertCircle,
-  BarChart3,
   Building,
-  Database,
   DollarSign,
   Layers,
   LayoutDashboard,
-  MessageSquare,
   Settings,
   Users,
 } from "lucide-react";

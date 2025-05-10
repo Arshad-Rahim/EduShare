@@ -1,21 +1,23 @@
 import { Button } from "@/components/ui/button";
 import {
-  BarChart3,
-  Calendar,
+
   FileText,
   HelpCircle,
   LayoutDashboard,
   MessageSquare,
   Settings,
   Users,
-  Video,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
 
-export function SideBar({ sidebarOpen }) {
+interface SideBarProps {
+  sidebarOpen: boolean;
+}
+
+export function SideBar({ sidebarOpen }:SideBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAccepted, setIsAccepted] = useState(null);
@@ -97,7 +99,7 @@ export function SideBar({ sidebarOpen }) {
     },
   ];
 
-  const handleNavigation = (path) => {
+  const handleNavigation = (path:string) => {
     navigate(path);
   };
 

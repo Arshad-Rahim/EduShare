@@ -50,7 +50,7 @@ export function PrivateChat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const user = useSelector((state: any) => state.user.userDatas);
   const [isTutor, setIsTutor] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Adjust based on layout
+  const [sidebarOpen] = useState(true); // Adjust based on layout
 
   const courseId = stateCourseId || paramCourseId;
   const studentId = stateStudentId || paramStudentId;
@@ -134,7 +134,7 @@ export function PrivateChat() {
       reconnection: true,
     });
 
-    const chatRoomId = `private_${courseId}_${studentId}_${tutorId}`;
+    // const chatRoomId = `private_${courseId}_${studentId}_${tutorId}`;
     socketRef.current.emit("join_private_chat", {
       courseId,
       studentId,

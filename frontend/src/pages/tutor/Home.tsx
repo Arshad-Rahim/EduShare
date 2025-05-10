@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import { Users, BarChart3, Wallet, History } from "lucide-react";
@@ -51,13 +50,18 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
       <TableBody>
         {data.map((item, rowIndex) => (
           <TableRow key={rowIndex}>
-            {columns.map((column, colIndex) => (
-              <TableCell key={colIndex}>
-                {typeof column.accessor === "function"
-                  ? column.accessor(item)
-                  : item[column.accessor as keyof T]}
-              </TableCell>
-            ))}
+            {columns.map((column, colIndex) => {
+              const displayValue = typeof column.accessor === "function"
+                ? column.accessor(item)
+                : item[column.accessor as keyof T] instanceof Date
+                ? (item[column.accessor as keyof T] as Date).toLocaleDateString()
+                : String(item[column.accessor as keyof T] ?? '-');
+              return (
+                <TableCell key={colIndex}>
+                  {displayValue}
+                </TableCell>
+              );
+            })}
           </TableRow>
         ))}
       </TableBody>
@@ -95,19 +99,12 @@ interface Transaction {
   createdAt: string;
 }
 
-interface WalletResponse {
-  balance: number;
-  walletId: string;
-}
-
 export function TutorHome() {
   const [sidebarOpen] = useState(true);
   const [students, setStudents] = useState<TStudent[] | null>(null);
-  const [totalRevenue, setTotalRevenue] = useState(0);
   const [stats, setStats] = useState<Stat[] | null>(null);
   const [courseStats, setCourseStats] = useState<CourseStat[] | null>(null);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
-  const [walletId, setWalletId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +142,6 @@ export function TutorHome() {
       const totalRevenue = studentsResponse.data?.totalRevenue || 0;
 
       setStudents(studentsData);
-      setTotalRevenue(totalRevenue);
 
       // Fetch wallet balance and walletId
       console.log("Fetching /wallet/get-data");
@@ -163,7 +159,6 @@ export function TutorHome() {
       }
 
       setWalletBalance(balance);
-      setWalletId(fetchedWalletId);
 
       // Fetch wallet transactions only if walletId exists
       let transactionsData: Transaction[] = [];

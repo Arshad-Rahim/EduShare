@@ -45,20 +45,20 @@ import { Link } from "react-router-dom";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { ClipLoader } from "react-spinners";
 import { Progress } from "@/components/ui/progress";
-import { courseService } from "@/services/courseService";
+import { Course, courseService, Lesson } from "@/services/courseService";
 
 export function TutorCourses() {
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [lessonModalOpen, setLessonModalOpen] = useState(false);
   const [addLessonModalOpen, setAddLessonModalOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [lessons, setLessons] = useState([]); // Ensure lessons is initialized as an array
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [confirmDeleteCourseOpen, setConfirmDeleteCourseOpen] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState(null);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
   const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
-  const [lessonToDelete, setLessonToDelete] = useState(null);
+  const [lessonToDelete, setLessonToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,15 +69,20 @@ export function TutorCourses() {
     fetchCourses(currentPage);
   }, [currentPage]); // Fetch courses whenever the page changes
 
-  const fetchCourses = async (page) => {
+  const fetchCourses = async (page: number) => {
     setIsLoading(true);
     try {
       const response = await courseService.getSpecificTutorCourse(
         page,
         coursesPerPage
       );
-      setCourses(response.data.courses || []);
-      setTotalCourses(response.data.totalCourses || 0); // Assuming backend returns totalCourses
+      if (response?.data) {
+        setCourses(response.data.courses || []);
+        setTotalCourses(response.data.totalCourses || 0);
+      } else {
+        setCourses([]);
+        setTotalCourses(0);
+      }
     } catch (error) {
       console.error("Failed to fetch courses:", error);
       toast.error("Failed to load courses");
@@ -86,7 +91,7 @@ export function TutorCourses() {
     }
   };
 
-  const fetchLessons = async (courseId) => {
+  const fetchLessons = async (courseId: string) => {
     setIsLoading(true);
     try {
       const response = await courseService.getLessons(courseId);
@@ -100,7 +105,7 @@ export function TutorCourses() {
     }
   };
 
-  const handleDeleteCourse = (courseId) => {
+  const handleDeleteCourse = (courseId: string) => {
     setCourseToDelete(courseId);
     setConfirmDeleteCourseOpen(true);
   };
@@ -111,8 +116,9 @@ export function TutorCourses() {
     setIsLoading(true);
     try {
       const response = await courseService.deleteCourse(courseToDelete);
-
-      toast.success(response.data.message);
+      if (response) {
+        toast.success(response.data.message);
+      }
       // Refetch courses for the current page
       fetchCourses(currentPage);
       // If the page becomes empty and it's not the first page, go to the previous page
@@ -128,7 +134,7 @@ export function TutorCourses() {
     }
   };
 
-  const handleDeleteLesson = (lessonId) => {
+  const handleDeleteLesson = (lessonId: string) => {
     setLessonToDelete(lessonId);
     setConfirmDeleteLessonOpen(true);
   };
@@ -150,7 +156,7 @@ export function TutorCourses() {
     }
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -166,11 +172,19 @@ export function TutorCourses() {
   // Calculate total pages based on totalCourses from backend
   const totalPages = Math.ceil(totalCourses / coursesPerPage);
 
-  const paginate = (pageNumber) => {
+  const paginate = (pageNumber: number) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
     }
   };
+
+  interface CourseFormModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    course: Course | null;
+    onCourseSaved: () => void;
+    isEditMode?: boolean;
+  }
 
   const CourseFormModal = ({
     open,
@@ -178,21 +192,21 @@ export function TutorCourses() {
     course,
     onCourseSaved,
     isEditMode = false,
-  }) => {
+  }: CourseFormModalProps) => {
     const [title, setTitle] = useState(course?.title || "");
     const [tagline, setTagline] = useState(course?.tagline || "");
     const [category, setCategory] = useState(course?.category || "");
     const [difficulty, setDifficulty] = useState(course?.difficulty || "");
     const [price, setPrice] = useState(course?.price?.toString() || "");
     const [about, setAbout] = useState(course?.about || "");
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [existingThumbnailUrl, setExistingThumbnailUrl] = useState(
       course?.thumbnail || null
     );
     const [formLoading, setFormLoading] = useState(false);
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (event) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (file) {
         if (file.size > 2 * 1024 * 1024) {
@@ -246,7 +260,7 @@ export function TutorCourses() {
       setFormLoading(true);
       try {
         if (isEditMode && course?._id) {
-          const response = await courseService.editCourse(course, formData);
+          const response = await courseService.editCourse(course._id, formData);
           toast.success(response.data.message);
         } else {
           const response = await courseService.addCourse(formData);
@@ -272,7 +286,7 @@ export function TutorCourses() {
     };
 
     // Function to shorten and truncate the thumbnail name
-    const getShortenedThumbnailName = (url) => {
+    const getShortenedThumbnailName = (url: string | null) => {
       let thumbnailName = url
         ? url.split("/").pop() || "Current Thumbnail"
         : "Current Thumbnail";
@@ -497,17 +511,29 @@ export function TutorCourses() {
     );
   };
 
-  const LessonFormModal = ({ open, onOpenChange, courseId, onLessonSaved }) => {
+  interface LessonFormModalProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    courseId: string;
+    onLessonSaved: () => void;
+  }
+
+  const LessonFormModal: React.FC<LessonFormModalProps> = ({
+    open,
+    onOpenChange,
+    courseId,
+    onLessonSaved,
+  }) => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [file, setFile] = useState(null);
+    const [file, setFile] = useState<File | null>(null);
     const [duration, setDuration] = useState("");
     const [order, setOrder] = useState("");
     const [formLoading, setFormLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [displayProgress, setDisplayProgress] = useState(0); // Smoothed progress
     const [isProcessing, setIsProcessing] = useState(false);
-    const fileInputRef = useRef(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
       if (!formLoading || uploadProgress === 0) return;
@@ -528,7 +554,7 @@ export function TutorCourses() {
       return () => clearInterval(interval);
     }, [formLoading, uploadProgress]);
 
-    const handleFileChange = (event) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFile = event.target.files?.[0];
       if (selectedFile) {
         if (selectedFile.size > 50 * 1024 * 1024) {
@@ -578,8 +604,10 @@ export function TutorCourses() {
           headers: { "Content-Type": "multipart/form-data" },
           onUploadProgress: (progressEvent) => {
             const { loaded, total } = progressEvent;
-            const percent = Math.floor((loaded * 100) / total);
-            setUploadProgress(percent);
+            if (total) {
+              const percent = Math.floor((loaded * 100) / total);
+              setUploadProgress(percent);
+            }
           },
         });
         toast.success("Lesson added successfully!");
@@ -1027,6 +1055,7 @@ export function TutorCourses() {
             <CourseFormModal
               open={addModalOpen}
               onOpenChange={setAddModalOpen}
+              course={null}
               onCourseSaved={() => fetchCourses(currentPage)}
             />
             <CourseFormModal

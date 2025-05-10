@@ -1,55 +1,55 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from '@/components/ui/input-otp';
-import { Label } from '@/components/ui/label';
-import type { UserRole } from '../../pages/AuthForm';
-import { cn } from '@/lib/utils';
-import { RegisterFormData } from '@/validation';
-import { sendOtp } from '@/services/otpService/axiosOTPSend';
-import { toast } from 'sonner';
+} from "@/components/ui/input-otp";
+import { Label } from "@/components/ui/label";
+import type { UserRole } from "../../pages/AuthForm";
+import { cn } from "@/lib/utils";
+import { RegisterFormData } from "@/validation";
+import { sendOtp } from "@/services/otpService/axiosOTPSend";
+import { toast } from "sonner";
 
 interface OTPModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVerify: (otp: string) => void;
   role?: UserRole;
-  data: RegisterFormData;
+  data?: RegisterFormData;
 }
 
 export function OTPModal({
   isOpen,
   onClose,
   onVerify,
-  role = 'user',
+  role = "user",
   data,
 }: OTPModalProps) {
-  const [otp, setOtp] = useState<string>('');
+  const [otp, setOtp] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(60);
   const [canResend, setCanResend] = useState<boolean>(false);
 
   // Get role-specific styling
   const getRoleColor = (role: UserRole) => {
     switch (role) {
-      case 'admin':
-        return 'bg-red-500';
-      case 'tutor':
-        return 'bg-purple-500';
-      case 'user':
+      case "admin":
+        return "bg-red-500";
+      case "tutor":
+        return "bg-purple-500";
+      case "user":
       default:
-        return 'bg-primary';
+        return "bg-primary";
     }
   };
 
@@ -58,7 +58,7 @@ export function OTPModal({
     if (!isOpen) return;
 
     // Reset states when modal opens
-    setOtp('');
+    setOtp("");
     setTimeLeft(60);
     setCanResend(false);
 
@@ -82,11 +82,16 @@ export function OTPModal({
     if (otp.length === 6) {
       onVerify(otp);
     } else {
-      alert('Please enter a valid 6-digit OTP');
+      alert("Please enter a valid 6-digit OTP");
     }
   };
 
   const handleResendOTP = async () => {
+    if (!data) {
+      toast.error("Registration data is missing");
+      return;
+    }
+
     try {
       // Reset timer and resend OTP
       setTimeLeft(60);
@@ -106,8 +111,8 @@ export function OTPModal({
         });
       }, 1000);
     } catch (error) {
-      console.error('Failed to resend OTP:', error);
-      toast.error('Failed to resend OTP');
+      console.error("Failed to resend OTP:", error);
+      toast.error("Failed to resend OTP");
     }
   };
 
@@ -115,9 +120,9 @@ export function OTPModal({
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs
+    return `${mins.toString().padStart(2, "0")}:${secs
       .toString()
-      .padStart(2, '0')}`;
+      .padStart(2, "0")}`;
   };
 
   return (
@@ -151,7 +156,7 @@ export function OTPModal({
 
           <div className="text-center space-y-4 w-full">
             <div className="text-sm">
-              Time remaining:{' '}
+              Time remaining:{" "}
               <span className="font-mono font-medium">
                 {formatTime(timeLeft)}
               </span>
@@ -177,7 +182,7 @@ export function OTPModal({
 
             <Button
               onClick={handleVerify}
-              className={cn('w-full', getRoleColor(role))}
+              className={cn("w-full", getRoleColor(role))}
               disabled={otp.length !== 6}
             >
               Verify

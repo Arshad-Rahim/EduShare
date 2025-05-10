@@ -8,8 +8,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react'; // Import an icon from lucide-react
-import { cn } from '@/lib/utils'; // Assuming you have this utility for className merging
+import { AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ClipLoader } from 'react-spinners';
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface ConfirmationModalProps {
   description?: string;
   confirmText?: string;
   cancelText?: string;
+  isLoading: boolean;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -29,6 +31,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   description = 'This action cannot be undone.',
   confirmText = 'Confirm',
   cancelText = 'Cancel',
+  isLoading,
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -39,8 +42,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         )}
       >
         <DialogHeader className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-yellow-500" />{' '}
-          {/* Warning icon */}
+          <AlertTriangle className="h-6 w-6 text-yellow-500" />
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {title}
           </DialogTitle>
@@ -52,6 +54,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <Button
             variant="outline"
             onClick={onClose}
+            disabled={isLoading}
             className={cn(
               'px-4 py-2 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400',
               'transition-colors duration-200'
@@ -62,12 +65,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <Button
             variant="destructive"
             onClick={onConfirm}
+            disabled={isLoading}
             className={cn(
               'px-4 py-2 bg-red-600 hover:bg-red-700 text-white',
               'transition-colors duration-200'
             )}
           >
-            {confirmText}
+            {isLoading ? <ClipLoader size={20} color="#ffffff" /> : confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

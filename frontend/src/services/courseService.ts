@@ -1,12 +1,43 @@
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 
+type URLSearchParams = {
+  search: string;
+  category: string;
+  difficulty: string;
+  minPrice: number;
+  maxPrice: number;
+  sort: string;
+  page: string;
+  limit: string;
+};
+
+export type Lesson = {
+  _id: string;
+  title: string;
+  description: string;
+  duration?: number;
+  order?: number;
+  file?: string;
+};
+
+export type Course = {
+  _id: string;
+  title: string;
+  tagline: string;
+  category: string;
+  difficulty: string;
+  price: number;
+  about: string;
+  thumbnail?: string;
+};
+
 export const courseService = {
   async getCourseDetails(courseId: string) {
     try {
       const response = await authAxiosInstance.get(`/courses/all-courses`);
       const foundCourse = response.data.courses.courses.find(
-        (c) => c._id === courseId
+        (c: Course) => c._id === courseId
       );
       if (!foundCourse) {
         throw new Error("Course not found");
@@ -18,12 +49,11 @@ export const courseService = {
     }
   },
 
-  async getLessons(courseId) {
+  async getLessons(courseId: string) {
     try {
       const response = await authAxiosInstance.get(
         `/lessons/course/${courseId}`
       );
-
       return response;
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
@@ -31,7 +61,7 @@ export const courseService = {
     }
   },
 
-  async getSpecificTutorCourse(page, limit) {
+  async getSpecificTutorCourse(page: number, limit: number) {
     try {
       const response = await authAxiosInstance.get("/courses/my-courses", {
         params: {
@@ -46,12 +76,11 @@ export const courseService = {
     }
   },
 
-  async deleteCourse(courseToDelete) {
+  async deleteCourse(courseToDelete: string) {
     try {
       const response = await authAxiosInstance.delete(
         `/courses/delete/${courseToDelete}`
       );
-
       return response;
     } catch (error) {
       console.error("Failed to delete course:", error);
@@ -59,12 +88,11 @@ export const courseService = {
     }
   },
 
-  async deleteLesson(lessonToDelete) {
+  async deleteLesson(lessonToDelete: string) {
     try {
       const response = await authAxiosInstance.delete(
         `/lessons/delete/${lessonToDelete}`
       );
-
       return response;
     } catch (error) {
       console.error("Failed to delete lesson:", error);
@@ -73,12 +101,17 @@ export const courseService = {
     }
   },
 
-  async getAllCourse(params) {
+  async getAllCourse(params?: URLSearchParams) {
     try {
-      const response = await authAxiosInstance.get(
-        `/courses/all-courses?${params.toString()}`
-      );
-      return response;
+      if (params) {
+        const response = await authAxiosInstance.get(
+          `/courses/all-courses?${params.toString()}`
+        );
+        return response;
+      } else {
+        const response = await authAxiosInstance.get(`/courses/all-courses`);
+        return response;
+      }
     } catch (error) {
       console.error("Failed to fetch courses:", error);
       toast.error("Failed to load courses");
@@ -99,8 +132,8 @@ export const courseService = {
 
   async getEnrolledCourses() {
     try {
-      const resposne = await authAxiosInstance.get("/courses/enrolled-courses");
-      return resposne.data.courses;
+      const response = await authAxiosInstance.get("/courses/enrolled-courses");
+      return response.data.courses;
     } catch (error) {
       throw new Error("Failed to get purchased courses");
     }
@@ -125,27 +158,25 @@ export const courseService = {
       );
       return response;
     } catch (error) {
-      throw new Error("Failed to marks lesson as completed");
+      throw new Error("Failed to mark lesson as completed");
     }
   },
 
-  async getAllCourses(page,limit){
+  async getAllCourses(page: number, limit: number) {
     try {
       const response = await authAxiosInstance.get("/courses/all-courses", {
-        params: { page, limit }, 
+        params: { page, limit },
       });
       return response;
-      
     } catch (error) {
-       throw new Error("Failed to get all courses");
+      throw new Error("Failed to get all courses");
     }
   },
 
-
-  async editLesson(selectedLesson,formData){
+  async editLesson(lessonId: string, formData: FormData) {
     try {
-      const resposne = await authAxiosInstance.put(
-        `/lessons/${selectedLesson._id}`,
+      const response = await authAxiosInstance.put(
+        `/lessons/${lessonId}`,
         formData,
         {
           headers: {
@@ -153,51 +184,44 @@ export const courseService = {
           },
         }
       );
-      return resposne;
-
+      return response;
     } catch (error) {
-      throw new Error("Failed to Edit Lesson")
+      throw new Error("Failed to Edit Lesson");
     }
-    
   },
 
-
-  async editCourse(course,formData){
+  async editCourse(courseId: string, formData: FormData) {
     try {
-       const response = await authAxiosInstance.put(
-         `/courses/update/${course._id}`,
-         formData,
-         {
-           headers: { "Content-Type": "multipart/form-data" },
-         }
-       );
-       return response;
+      const response = await authAxiosInstance.put(
+        `/courses/update/${courseId}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      return response;
     } catch (error) {
-      throw new Error("Failed to edit Courses")
+      throw new Error("Failed to edit Courses");
     }
-    
   },
 
-  async addCourse(formData){
+  async addCourse(formData: FormData) {
     try {
-       const resposne = await authAxiosInstance.post("/courses/add", formData, {
-         headers: { "Content-Type": "multipart/form-data" },
-       });
-       return resposne;
+      const response = await authAxiosInstance.post("/courses/add", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response;
     } catch (error) {
-      throw new Error("Failed to add new course")
+      throw new Error("Failed to add new course");
     }
- 
   },
 
-
-  async courseCount(){
+  async courseCount() {
     try {
-      const resposne = await  authAxiosInstance.get("/courses/course-count");
-      return resposne;
+      const response = await authAxiosInstance.get("/courses/course-count");
+      return response;
     } catch (error) {
-      throw new Error("Failed to get course count")
+      throw new Error("Failed to get course count");
     }
-  }
-
+  },
 };

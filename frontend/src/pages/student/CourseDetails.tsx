@@ -52,25 +52,33 @@ export function CourseDetailsPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const courseData = await courseService.getCourseDetails(courseId);
-        setCourse(courseData);
+        if (courseId) {
+          const courseData = await courseService.getCourseDetails(courseId);
+          setCourse(courseData);
 
-        const response = await courseService.getLessons(courseId);
-        setLessons(response.data.lessons || []);
+          const response = await courseService.getLessons(courseId);
+          if (response) {
+            setLessons(response.data.lessons || []);
+          }
+        }
 
         try {
-          const purchaseStatus = await courseService.checkCoursePurchase(
-            courseId
-          );
-          setIsPurchased(purchaseStatus || false);
+          if (courseId) {
+            const purchaseStatus = await courseService.checkCoursePurchase(
+              courseId
+            );
+            setIsPurchased(purchaseStatus || false);
+          }
         } catch (error) {
           console.error("Error checking purchase status:", error);
           setIsPurchased(false);
         }
 
         try {
-          const completed = await courseService.getCompletedLessons(courseId);
-          setCompletedLessons(completed || []);
+          if (courseId) {
+            const completed = await courseService.getCompletedLessons(courseId);
+            setCompletedLessons(completed || []);
+          }
         } catch (error) {
           console.error("Error fetching completed lessons:", error);
           setCompletedLessons([]);
@@ -124,12 +132,14 @@ export function CourseDetailsPage() {
       !completedLessons.includes(currentLessonIdRef.current)
     ) {
       try {
-        await courseService.markLessonCompleted(
-          currentLessonIdRef.current,
-          courseId
-        );
-        setCompletedLessons((prev) => [...prev, currentLessonIdRef.current!]);
-        toast.success("Lesson marked as completed!");
+        if (courseId) {
+          await courseService.markLessonCompleted(
+            currentLessonIdRef.current,
+            courseId
+          );
+          setCompletedLessons((prev) => [...prev, currentLessonIdRef.current!]);
+          toast.success("Lesson marked as completed!");
+        }
       } catch (error) {
         console.error("Error marking lesson as completed:", error);
         toast.error("Failed to mark lesson as completed");
@@ -168,7 +178,7 @@ export function CourseDetailsPage() {
       });
       return;
     }
-    const roomId = `videocall_${course._id}_${studentId}_${course.tutorId}`;
+    // const roomId = `videocall_${course._id}_${studentId}_${course.tutorId}`;
     setIsInCall(true);
   }, [isPurchased, courseId, navigate, course, studentId]);
 

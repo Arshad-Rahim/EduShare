@@ -1,4 +1,4 @@
-"use client";
+
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,27 +29,40 @@ import { toast } from "sonner";
 import { Header } from "./components/Header";
 import { wishlistService } from "@/services/wishlistService";
 
+// Define Course interface
+interface Course {
+  _id: string;
+  title: string;
+  thumbnail?: string;
+  tagline: string;
+  difficulty: string;
+  students?: number;
+  price: string | number;
+  about: string;
+  duration?: string;
+}
+
 export default function WishlistPage() {
-  const [wishlistCourses, setWishlistCourses] = useState([]);
+  const [wishlistCourses, setWishlistCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const coursesPerPage = 12; // Consistent with CourseListingPage
+  const coursesPerPage = 12;
   const navigate = useNavigate();
 
   // Fetch wishlist courses from API
   const fetchWishlistCourses = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: coursesPerPage.toString(),
-      });
+      const params = {
+        page: currentPage,
+        limit: coursesPerPage,
+      };
 
       const response = await wishlistService.getWishlist(params);
-      const wishlistData = response?.data.courses || []; // Adjust based on your API response structure
-      const totalCourses = response?.data.total || 1; // Assuming API returns total count
+      const wishlistData = response?.data.courses || [];
+      const totalCourses = response?.data.total || 1;
 
       setWishlistCourses(wishlistData);
       setTotalPages(Math.ceil(totalCourses / coursesPerPage));
@@ -61,9 +74,9 @@ export default function WishlistPage() {
   };
 
   // Remove course from wishlist
-  const handleRemoveFromWishlist = async (courseId) => {
+  const handleRemoveFromWishlist = async (courseId: string) => {
     try {
-      await wishlistService.removeFromWishlist(courseId)
+      await wishlistService.removeFromWishlist(courseId);
       setWishlistCourses((prev) =>
         prev.filter((course) => course._id !== courseId)
       );
@@ -78,16 +91,16 @@ export default function WishlistPage() {
     fetchWishlistCourses();
   }, [currentPage]);
 
-  const handleEnroll = (courseId) => {
+  const handleEnroll = (courseId: string) => {
     navigate(`/courses/${courseId}`);
   };
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const getDifficultyColor = (difficulty) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -308,7 +321,7 @@ export default function WishlistPage() {
                             </div>
                             <div className="flex items-center gap-1.5 text-slate-600">
                               <span className="font-medium">
-                                ₹{parseFloat(course.price) || 0}
+                                ₹{parseFloat(String(course.price)) || 0}
                               </span>
                             </div>
                           </div>
@@ -399,7 +412,7 @@ export default function WishlistPage() {
                             </div>
                             <div className="flex items-center justify-between mt-4">
                               <div className="text-xl font-bold">
-                                ₹{parseFloat(course.price) || 0}
+                                ₹{parseFloat(String(course.price)) || 0}
                               </div>
                               <div className="flex gap-2">
                                 <Button

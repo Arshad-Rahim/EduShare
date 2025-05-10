@@ -1,5 +1,5 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import React from "react";
+import { cn } from "@/lib/utils";
 
 interface TableProps<T> {
   headers: {
@@ -11,20 +11,27 @@ interface TableProps<T> {
   className?: string;
   rowKey?: keyof T | ((item: T) => string);
   onRowClick?: (item: T) => void;
+  noDataMessage?: string;
 }
 
 function Table<T>({
   headers,
   data,
   className,
-  rowKey = '_id',
+  rowKey,
   onRowClick,
 }: TableProps<T>) {
-  const getRowKey = (item: T, index: number): string =>
-    (typeof rowKey === 'function' ? rowKey(item) : String(item[rowKey] ?? index));
+  const getRowKey = (item: T, index: number): string => {
+    if (!rowKey) {
+      return String(index);
+    }
+    return typeof rowKey === "function"
+      ? rowKey(item)
+      : String(item[rowKey] ?? index);
+  };
 
   return (
-    <div className={cn('overflow-x-auto', className)}>
+    <div className={cn("overflow-x-auto", className)}>
       <table className="min-w-full border-collapse border border-gray-200">
         <thead className="bg-gray-100">
           <tr>
@@ -53,9 +60,9 @@ function Table<T>({
               <tr
                 key={getRowKey(item, index)}
                 className={cn(
-                  'hover:bg-gray-50',
-                  onRowClick && 'cursor-pointer',
-                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                  "hover:bg-gray-50",
+                  onRowClick && "cursor-pointer",
+                  index % 2 === 0 ? "bg-white" : "bg-gray-50"
                 )}
                 onClick={() => onRowClick?.(item)}
               >
@@ -64,7 +71,9 @@ function Table<T>({
                     key={String(header.key)}
                     className="px-4 py-2 text-sm text-gray-600 border-b border-gray-200"
                   >
-                    {header.render ? header.render(item) : String(item[header.key as keyof T] ?? '-')}
+                    {header.render
+                      ? header.render(item)
+                      : String(item[header.key as keyof T] ?? "-")}
                   </td>
                 ))}
               </tr>

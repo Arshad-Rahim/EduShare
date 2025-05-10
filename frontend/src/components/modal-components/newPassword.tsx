@@ -1,4 +1,3 @@
-// src/components/NewPasswordModal.tsx
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -88,7 +87,7 @@ export const NewPasswordModal = ({
       onPasswordUpdated();
       toast.success("Password updated successfully!");
       form.reset();
-    } catch (err: unknown) {
+    } catch (err: any) {
       const errorMessage =
         err.response?.data?.message ||
         "An error occurred while updating your password.";

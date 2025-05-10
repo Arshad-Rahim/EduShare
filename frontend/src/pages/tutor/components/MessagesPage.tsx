@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect, useRef } from "react";
 import {
@@ -855,10 +854,4 @@ export function MessagesPage() {
   );
 }
 
-const formatTimestamp = (timestamp: string) => {
-  return new Date(timestamp).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-  });
-};
+

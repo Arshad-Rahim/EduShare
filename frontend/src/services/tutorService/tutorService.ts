@@ -60,7 +60,7 @@ export const tutorService = {
     }
   },
 
-  async profileUpdate(formData) {
+  async profileUpdate(formData: FormData) {
     try {
       const response = await authAxiosInstance.post(
         "/tutors/profileUpdate",
@@ -75,7 +75,7 @@ export const tutorService = {
     }
   },
 
-  async getStudentDetails(userId) {
+  async getStudentDetails(userId: string) {
     try {
       const response = await authAxiosInstance.get(`/users/${userId}`);
       return response;
@@ -84,6 +84,4 @@ export const tutorService = {
       toast.error("Failed to fetch userDetails");
     }
   },
-
-
 };
