@@ -125,7 +125,7 @@ export function Header() {
   useEffect(() => {
     const fetchUserMe = async () => {
       try {
-        const response = await profileService.userDetails();
+        const response = await profileService.getUserById(userId);
         setUser({
           name: response.data.users.name,
           email: response.data.users.email,
