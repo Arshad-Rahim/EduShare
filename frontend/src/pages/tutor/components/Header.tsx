@@ -1,4 +1,4 @@
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Bell, MessageSquare, ChevronDown, BookOpen } from "lucide-react";
@@ -17,6 +17,7 @@ import { removeUser } from "@/redux/slice/userSlice";
 import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { io, Socket } from "socket.io-client";
+import { profileService } from "@/services/userService/profileService";
 
 // Define notification type for profile updates
 interface ProfileNotification {
@@ -59,11 +60,13 @@ export function Header() {
   );
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const currentUser = useSelector((state: any) => state.user.userDatas);
+  const userId = currentUser?.id || currentUser?._id;
 
   useEffect(() => {
     async function fetchUser() {
       try {
-        const response = await tutorService.tutorDetails();
+        const response = await profileService.getUserById(userId);
         setUser({
           name: response?.data.tutor.name,
           email: response?.data.tutor.email,
