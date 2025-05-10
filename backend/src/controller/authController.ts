@@ -128,6 +128,9 @@ export class AuthController {
     res.clearCookie("userRefreshToken");
     res.clearCookie("tutorRefreshToken");
     res.clearCookie("adminRefreshToken");
+
+    (req as CustomRequest).user = undefined;
+
         res.status(200)
         .json({ message: "Logout successful" });
     } catch (error) {
