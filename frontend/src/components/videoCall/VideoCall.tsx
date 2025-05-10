@@ -28,7 +28,7 @@ import {
   X,
 } from "lucide-react";
 
-const socket = io("http://localhost:3000", {
+const socket = io("https://edushare.arshadrahim.tech", {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,

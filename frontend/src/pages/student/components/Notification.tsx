@@ -35,7 +35,10 @@ export function Notifications() {
     }
     console.log("Notifications user ID:", userId, { user });
 
-    socketRef.current = io("http://localhost:3000", { reconnection: true });
+    socketRef.current = io("https://edushare.arshadrahim.tech", {
+      reconnection: true,
+    });
+    // http://localhost:3000
 
     socketRef.current.on("connect", () => {
       console.log("Socket.IO connected:", socketRef.current?.id);

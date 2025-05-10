@@ -16,7 +16,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const AppProvider = ({ children }: { children: ReactNode }) => {
   const [socket] = useState(() =>
-    io("http://localhost:3000", {
+    io("https://edushare.arshadrahim.tech", {
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 5,

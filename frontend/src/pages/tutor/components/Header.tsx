@@ -118,7 +118,7 @@ export function Header() {
   useEffect(() => {
     if (!user) return;
 
-    socketRef.current = io("http://localhost:3000", {
+    socketRef.current = io("https://edushare.arshadrahim.tech", {
       reconnection: true,
     });
 

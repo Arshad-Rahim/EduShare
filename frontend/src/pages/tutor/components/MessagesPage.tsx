@@ -103,7 +103,7 @@ export function MessagesPage() {
   useEffect(() => {
     if (!tutorId) return;
 
-    socketRef.current = io("http://localhost:3000", {
+    socketRef.current = io("https://edushare.arshadrahim.tech", {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
