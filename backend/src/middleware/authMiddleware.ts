@@ -117,6 +117,8 @@ export const authorizeRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as CustomRequest).user;
 
+    console.log("USER IN ROLE:",user);
+
     if (!user || !allowedRoles.includes(user.role)) {
       console.log("role not allowed");
       res.status(HTTP_STATUS.FORBIDDEN).json({
