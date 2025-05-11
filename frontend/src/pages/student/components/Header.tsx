@@ -1,4 +1,3 @@
-import { Input } from "@/components/ui/input";
 import { removeUser } from "@/redux/slice/userSlice";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,7 +9,6 @@ import {
   Heart,
   LogOut,
   Menu,
-  Search,
   User,
   X,
   Bell,
@@ -206,17 +204,6 @@ export function Header() {
 
         {/* Right Section */}
         <div className="flex items-center gap-4">
-          <form className="hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search courses..."
-                className="w-[200px] pl-8 md:w-[250px] lg:w-[300px]"
-              />
-            </div>
-          </form>
-
           {user ? (
             <>
               {/* Notification Bell */}
@@ -413,17 +400,7 @@ export function Header() {
               <span className="sr-only">Close menu</span>
             </Button>
           </div>
-          <div className="px-6 py-6 flex flex-col gap-6">
-            <form className="w-full">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search courses..."
-                  className="w-full pl-8"
-                />
-              </div>
-            </form>
+          <div className="px-6 py-6 flex flex-col gap-6 bg-background">
             <nav className="flex flex-col gap-4">
               <RouterLink
                 to="/"
