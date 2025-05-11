@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Header } from "./Header";
 import { SideBar } from "./SideBar";
 import { tutorService } from "@/services/tutorService/tutorService";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardTitle } from "@/components/ui/card";
 
 interface Chat {
   privateChatId: string;
@@ -49,7 +49,7 @@ export function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChatListOpen, setIsChatListOpen] = useState(false); // Renamed from isSidebarOpen to avoid confusion
   const [tutorId, setTutorId] = useState<string | null>(null);
   const [tutorName, setTutorName] = useState<string>("");
   const [isSocketConnected, setIsSocketConnected] = useState(false);
@@ -59,7 +59,7 @@ export function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to toggleable, default to false for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false); // For the main SideBar component
 
   // Fetch tutor details to get tutorId and name
   useEffect(() => {
@@ -450,7 +450,7 @@ export function MessagesPage() {
 
   const handleSelectChat = (chat: Chat) => {
     setSelectedChat(chat);
-    setIsSidebarOpen(false);
+    setIsChatListOpen(false);
     // Reset unread count for the selected chat
     setChats((prev) =>
       prev.map((c) =>
@@ -585,16 +585,8 @@ export function MessagesPage() {
     });
   };
 
-  if (!tutorId) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-slate-600">Please log in to view messages</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gray-100 flex flex-col w-full">
       <style>
         {`
           @keyframes fade-in {
@@ -615,238 +607,253 @@ export function MessagesPage() {
         `}
       </style>
       <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex flex-1">
-        <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <div className={`flex-1 flex ${sidebarOpen ? "md:ml-64" : ""}`}>
-          <aside
-            className={cn(
-              "w-80 bg-white shadow-lg border-r",
-              "transform transition-transform duration-300 ease-in-out z-40",
-              isSidebarOpen ? "translate-x-0" : "-translate-x-full",
-              "md:translate-x-0"
-            )}
-          >
-            <div className="p-6 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                Student Chats
-              </h2>
-              <p className="text-indigo-100 text-sm mt-1">
-                Connect with Your Students
-              </p>
-            </div>
-            <div className="overflow-y-auto h-[calc(100vh-16rem)]">
-              {chats.length === 0 ? (
-                <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 font-medium">No chats yet</p>
+      <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
+        <div className="w-full md:w-64 flex-shrink-0">
+          <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        </div>
+        <div className={`flex-1 w-full ${sidebarOpen ? "md:ml-64" : ""}`}>
+          {tutorId ? (
+            <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-8rem)] w-full">
+              {/* Chat List */}
+              <aside
+                className={cn(
+                  "w-full md:w-80 bg-white shadow-lg border-r",
+                  "md:block",
+                  isChatListOpen ? "block" : "hidden"
+                )}
+              >
+                <div className="p-6 border-b bg-gradient-to-r from-indigo-600 to-purple-600">
+                  <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                    Student Chats
+                  </h2>
+                  <p className="text-indigo-100 text-sm mt-1">
+                    Connect with Your Students
+                  </p>
                 </div>
-              ) : (
-                chats.map((chat) => (
-                  <div
-                    key={chat.privateChatId}
-                    className={cn(
-                      "p-4 cursor-pointer transition-colors duration-200",
-                      "hover:bg-indigo-50 border-b border-gray-100",
-                      selectedChat?.privateChatId === chat.privateChatId &&
-                        "bg-indigo-50"
-                    )}
-                    onClick={() => handleSelectChat(chat)}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-semibold text-gray-800 truncate">
-                        {chat.studentName}
-                      </h3>
-                      {chat.unreadCount > 0 && (
-                        <span
-                          className={cn(
-                            "bg-gradient-to-r from-indigo-500 to-purple-600",
-                            "text-white text-sm font-medium rounded-full px-2.5 py-0.5",
-                            "shadow-sm opacity-90",
-                            "hover:scale-110 hover:brightness-110",
-                            "transition-all duration-200",
-                            "animate-pulse-on-update"
+                <div className="overflow-y-auto h-[calc(100vh-12rem)]">
+                  {chats.length === 0 ? (
+                    <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
+                      <MessageSquare className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                      <p className="text-slate-500 font-medium">No chats yet</p>
+                    </div>
+                  ) : (
+                    chats.map((chat) => (
+                      <div
+                        key={chat.privateChatId}
+                        className={cn(
+                          "p-4 cursor-pointer transition-colors duration-200",
+                          "hover:bg-indigo-50 border-b border-gray-100",
+                          selectedChat?.privateChatId === chat.privateChatId &&
+                            "bg-indigo-50"
+                        )}
+                        onClick={() => handleSelectChat(chat)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="font-semibold text-slate-800 truncate">
+                            {chat.studentName}
+                          </h3>
+                          {chat.unreadCount > 0 && (
+                            <span
+                              className={cn(
+                                "bg-gradient-to-r from-indigo-500 to-purple-600",
+                                "text-white text-sm font-medium rounded-full px-2.5 py-0.5",
+                                "shadow-sm opacity-90",
+                                "hover:scale-110 hover:brightness-110",
+                                "transition-all duration-200",
+                                "animate-pulse-on-update"
+                              )}
+                            >
+                              {chat.unreadCount}
+                            </span>
                           )}
-                        >
-                          {chat.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {chat.courseTitle}
-                    </p>
-                    <div className="flex items-center mt-2 text-xs text-gray-400">
-                      <span>Private Chat</span>
-                      <span className="mx-2">•</span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </aside>
-          <div className="flex-1 flex flex-col min-w-0">
-            {chats.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center p-6">
-                <Card className="max-w-md w-full shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-                  <CardHeader className="text-center">
-                    <MessageSquare className="h-16 w-16 text-indigo-500 mx-auto mb-4" />
-                    <CardTitle className="text-2xl font-bold text-gray-800">
-                      No Messages Yet
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center">
-                    <p className="text-gray-600 text-lg">
-                      Start a conversation with your students to get started!
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <>
-                <header className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
-                  <div className="flex items-center space-x-4">
-                    <button
-                      className="md:hidden text-gray-600 hover:text-gray-900"
-                      onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    >
-                      <Menu className="h-6 w-6" />
-                    </button>
-                    <div>
-                      <h1 className="text-xl font-bold text-gray-800">
-                        {selectedChat?.studentName || "Select a Student"}
-                      </h1>
-                      <p className="text-sm text-gray-500">
-                        {selectedChat?.courseTitle || ""}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-sm font-medium text-emerald-600 flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
-                    {selectedChat?.activeNow || 0} active now
-                  </div>
-                </header>
+                        </div>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {chat.courseTitle}
+                        </p>
+                        <div className="flex items-center mt-2 text-xs text-slate-400">
+                          <span>Private Chat</span>
+                          <span className="mx-2">•</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </aside>
 
-                <main className="flex-1 overflow-hidden relative bg-gradient-to-b from-gray-50 to-gray-100">
-                  <div className="absolute inset-0 overflow-y-auto px-6 py-4">
-                    <div className="max-w-4xl mx-auto space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message._id || message.timestamp}
-                          className={cn(
-                            "flex w-full gap-2 items-end animate-fade-in",
-                            message.sender === tutorName
-                              ? "justify-end"
-                              : "justify-start"
-                          )}
+              {/* Chat Area */}
+              <div className="flex-1 flex flex-col w-full">
+                {chats.length === 0 ? (
+                  <div className="flex items-center justify-center h-full w-full">
+                    <Card className="border-0 shadow-md w-full max-w-md">
+                      <CardContent className="pt-6 text-center">
+                        <MessageSquare className="h-12 w-12 text-indigo-500 mx-auto mb-4" />
+                        <CardTitle className="text-xl font-bold text-slate-800">
+                          No Messages Yet
+                        </CardTitle>
+                        <p className="text-slate-600 mt-2">
+                          Start a conversation with your students to get
+                          started!
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                  <>
+                    <header className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          className="md:hidden text-slate-600 hover:text-slate-900"
+                          onClick={() => setIsChatListOpen(!isChatListOpen)}
                         >
+                          <Menu className="h-6 w-6" />
+                        </button>
+                        <div>
+                          <h1 className="text-xl font-bold text-slate-800">
+                            {selectedChat?.studentName || "Select a Student"}
+                          </h1>
+                          <p className="text-sm text-slate-600">
+                            {selectedChat?.courseTitle || ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-sm font-medium text-emerald-600 flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                        {selectedChat?.activeNow || 0} active now
+                      </div>
+                    </header>
+
+                    <main className="flex-1 overflow-y-auto p-6 bg-gray-100">
+                      <div className="max-w-4xl mx-auto space-y-4">
+                        {messages.map((message) => (
                           <div
+                            key={message._id || message.timestamp}
                             className={cn(
-                              "max-w-md rounded-2xl p-4 shadow-md",
-                              "transform transition-all duration-200 hover:scale-[1.01]",
+                              "flex w-full gap-2 items-end animate-fade-in",
                               message.sender === tutorName
-                                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
-                                : "bg-white text-gray-800 rounded-bl-sm"
+                                ? "justify-end"
+                                : "justify-start"
                             )}
                           >
-                            <div className="flex items-baseline justify-between mb-1">
-                              <span className="font-medium text-sm">
-                                {message.sender}
-                              </span>
-                              <span
-                                className={cn(
-                                  "text-xs ml-2 flex items-center gap-1",
-                                  message.sender === tutorName
-                                    ? "text-indigo-100"
-                                    : "text-gray-400"
-                                )}
-                              >
-                                {formatTimestamp(message.timestamp)}
-                                {message.sender === tutorName &&
-                                  message.status && (
-                                    <span className="ml-1">
-                                      {message.status === "delivered" ? (
-                                        <Check className="h-3 w-3" />
-                                      ) : message.status === "read" ? (
-                                        <CheckCheck className="h-3 w-3" />
-                                      ) : null}
-                                    </span>
+                            <div
+                              className={cn(
+                                "max-w-md rounded-2xl p-4 shadow-md",
+                                "transform transition-all duration-200 hover:scale-[1.01]",
+                                message.sender === tutorName
+                                  ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
+                                  : "bg-white text-gray-800 rounded-bl-sm"
+                              )}
+                            >
+                              <div className="flex items-baseline justify-between mb-1">
+                                <span className="font-medium text-sm">
+                                  {message.sender}
+                                </span>
+                                <span
+                                  className={cn(
+                                    "text-xs ml-2 flex items-center gap-1",
+                                    message.sender === tutorName
+                                      ? "text-indigo-100"
+                                      : "text-gray-400"
                                   )}
-                              </span>
+                                >
+                                  {formatTimestamp(message.timestamp)}
+                                  {message.sender === tutorName &&
+                                    message.status && (
+                                      <span className="ml-1">
+                                        {message.status === "delivered" ? (
+                                          <Check className="h-3 w-3" />
+                                        ) : message.status === "read" ? (
+                                          <CheckCheck className="h-3 w-3" />
+                                        ) : null}
+                                      </span>
+                                    )}
+                                </span>
+                              </div>
+                              {message.imageUrl ? (
+                                <img
+                                  src={message.imageUrl}
+                                  alt="Uploaded image"
+                                  className="max-w-full h-auto rounded-lg mt-2"
+                                />
+                              ) : (
+                                <p className="text-[15px] leading-relaxed">
+                                  {message.content}
+                                </p>
+                              )}
                             </div>
-                            {message.imageUrl ? (
-                              <img
-                                src={message.imageUrl}
-                                alt="Uploaded image"
-                                className="max-w-full h-auto rounded-lg mt-2"
-                              />
-                            ) : (
-                              <p className="text-[15px] leading-relaxed">
-                                {message.content}
-                              </p>
-                            )}
                           </div>
-                        </div>
-                      ))}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  </div>
-                </main>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </main>
 
-                <div className="bg-white border-t p-4 shadow-sm">
-                  <div className="max-w-4xl mx-auto">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className={cn(
-                          "p-3 rounded-full",
-                          "bg-gray-200 text-gray-600",
-                          "hover:bg-gray-300",
-                          "transition-all duration-200"
-                        )}
-                      >
-                        <Image className="h-5 w-5" />
-                      </button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleSendMessage()
-                        }
-                        placeholder="Type your message..."
-                        className={cn(
-                          "flex-1 px-4 py-3 rounded-full",
-                          "bg-gray-100 border border-gray-200",
-                          "focus:ring-2 focus:ring-indigo-500 focus:outline-none",
-                          "placeholder-gray-400 text-gray-800 transition-all duration-200"
-                        )}
-                      />
-                      <button
-                        onClick={handleSendMessage}
-                        className={cn(
-                          "p-3 rounded-full",
-                          "bg-gradient-to-r from-indigo-500 to-purple-600",
-                          "text-white shadow-md",
-                          "hover:from-indigo-600 hover:to-purple-700",
-                          "transition-all duration-200",
-                          "focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        )}
-                      >
-                        <Send className="h-5 w-5" />
-                      </button>
+                    <div className="bg-white border-t p-6 shadow-sm">
+                      <div className="max-w-4xl mx-auto">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className={cn(
+                              "p-3 rounded-full",
+                              "bg-gray-200 text-gray-600",
+                              "hover:bg-gray-300",
+                              "transition-all duration-200"
+                            )}
+                          >
+                            <Image className="h-5 w-5" />
+                          </button>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyPress={(e) =>
+                              e.key === "Enter" && handleSendMessage()
+                            }
+                            placeholder="Type your message..."
+                            className={cn(
+                              "flex-1 px-4 py-3 rounded-full",
+                              "bg-gray-100 border border-gray-200",
+                              "focus:ring-2 focus:ring-indigo-500 focus:outline-none",
+                              "placeholder-gray-400 text-gray-800 transition-all duration-200"
+                            )}
+                          />
+                          <button
+                            onClick={handleSendMessage}
+                            className={cn(
+                              "p-3 rounded-full",
+                              "bg-gradient-to-r from-indigo-500 to-purple-600",
+                              "text-white shadow-md",
+                              "hover:from-indigo-600 hover:to-purple-700",
+                              "transition-all duration-200",
+                              "focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            )}
+                          >
+                            <Send className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full w-full">
+              <Card className="border-0 shadow-md w-full max-w-md">
+                <CardContent className="pt-6 text-center">
+                  <p className="text-slate-600 mb-4 font-medium">
+                    Please log in to view messages
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </div>
     </div>
