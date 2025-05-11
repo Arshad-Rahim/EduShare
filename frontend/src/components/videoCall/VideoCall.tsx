@@ -856,128 +856,96 @@ export function VideoCall({
 
           {/* Controls */}
           <div className="p-4 bg-zinc-800 border-t border-zinc-700">
-            <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={toggleMute}
-                      variant="outline"
-                      size="icon"
-                      className={`w-12 h-12 rounded-full ${
-                        isMuted
-                          ? "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50"
-                          : "bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
-                      }`}
-                    >
-                      {isMuted ? (
-                        <MicOff className="w-5 h-5" />
-                      ) : (
-                        <Mic className="w-5 h-5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{isMuted ? "Unmute" : "Mute"}</TooltipContent>
-                </Tooltip>
+            <div className="flex items-center justify-center overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-zinc-800">
+              <div className="flex items-center gap-2 md:gap-3 min-w-max">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={toggleMute}
+                        variant="outline"
+                        size="icon"
+                        className={`w-10 h-10 rounded-full ${
+                          isMuted
+                            ? "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50"
+                            : "bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
+                        } md:w-12 md:h-12`}
+                      >
+                        {isMuted ? (
+                          <MicOff className="w-4 h-4 md:w-5 md:h-5" />
+                        ) : (
+                          <Mic className="w-4 h-4 md:w-5 md:h-5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{isMuted ? "Unmute" : "Mute"}</TooltipContent>
+                  </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={toggleVideo}
-                      variant="outline"
-                      size="icon"
-                      className={`w-12 h-12 rounded-full ${
-                        isVideoOff
-                          ? "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50"
-                          : "bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
-                      }`}
-                    >
-                      {isVideoOff ? (
-                        <VideoOff className="w-5 h-5" />
-                      ) : (
-                        <Video className="w-5 h-5" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isVideoOff ? "Turn on camera" : "Turn off camera"}
-                  </TooltipContent>
-                </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={toggleVideo}
+                        variant="outline"
+                        size="icon"
+                        className={`w-10 h-10 rounded-full ${
+                          isVideoOff
+                            ? "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50"
+                            : "bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
+                        } md:w-12 md:h-12`}
+                      >
+                        {isVideoOff ? (
+                          <VideoOff className="w-4 h-4 md:w-5 md:h-5" />
+                        ) : (
+                          <Video className="w-4 h-4 md:w-5 md:h-5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isVideoOff ? "Turn on camera" : "Turn off camera"}
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Separator orientation="vertical" className="h-8 bg-zinc-700" />
+                  <Separator
+                    orientation="vertical"
+                    className="h-6 bg-zinc-700 md:h-8"
+                  />
 
-                {/* <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="w-12 h-12 rounded-full bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
-                    >
-                      <MessageSquare className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Chat</TooltipContent>
-                </Tooltip> */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={toggleFullscreen}
+                        variant="outline"
+                        size="icon"
+                        className="w-10 h-10 rounded-full bg-zinc-700 hover:bg-zinc-600 border-zinc-600 md:w-12 md:h-12"
+                      >
+                        <Maximize2 className="w-4 h-4 md:w-5 md:h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={toggleFullscreen}
-                      variant="outline"
-                      size="icon"
-                      className="w-12 h-12 rounded-full bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
-                    >
-                      <Maximize2 className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                  </TooltipContent>
-                </Tooltip>
+                  <Separator
+                    orientation="vertical"
+                    className="h-6 bg-zinc-700 md:h-8"
+                  />
 
-                {/* <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={debugStream}
-                      variant="outline"
-                      size="icon"
-                      className="w-12 h-12 rounded-full bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
-                    >
-                      <Bug className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Debug Streams</TooltipContent>
-                </Tooltip> */}
-
-                {/* <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="w-12 h-12 rounded-full bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
-                    >
-                      <Settings className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Settings</TooltipContent>
-                </Tooltip> */}
-
-                <Separator orientation="vertical" className="h-8 bg-zinc-700" />
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={endCall}
-                      variant="destructive"
-                      size="icon"
-                      className="w-12 h-12 rounded-full bg-red-600 hover:bg-red-700 border-red-700"
-                    >
-                      <PhoneOff className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>End Call</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={endCall}
+                        variant="destructive"
+                        size="icon"
+                        className="w-10 h-10 rounded-full bg-red-600 hover:bg-red-700 border-red-700 md:w-12 md:h-12"
+                      >
+                        <PhoneOff className="w-4 h-4 md:w-5 md:h-5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>End Call</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
         </div>
