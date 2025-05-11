@@ -74,6 +74,7 @@ export class CourseRepository implements ICourseRepository {
     options: TCourseFilterOptions
   ): Promise<{ courses: TCourseAdd[]; total: number }> {
     try {
+      console.log("OPTIONS THAT GET",options)
       const {
         page,
         limit,
@@ -84,6 +85,8 @@ export class CourseRepository implements ICourseRepository {
         maxPrice,
         sort,
       } = options;
+
+      console.log("SEARCH",search)
 
       // Calculate skip for pagination
       const skip = (page - 1) * limit;
@@ -144,6 +147,7 @@ export class CourseRepository implements ICourseRepository {
 
       // Get total count of matching documents
       const total = await courseModel.countDocuments(filters);
+      console.log("COURSES THAT AFTER FILTER",courses)
       return { courses, total };
     } catch (error) {
       console.error("Error fetching courses:", error);
