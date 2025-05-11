@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { BookOpen, X, User, Edit, Save, Eye, EyeOff } from "lucide-react";
+import { BookOpen, X, User, Edit, Save, Eye, EyeOff, Heart } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -96,6 +96,12 @@ function Sidebar() {
             <Link to="/courses">
               <BookOpen className="mr-2 h-4 w-4" />
               All Courses
+            </Link>
+          </Button>
+          <Button variant="ghost" className="w-full justify-start">
+            <Link to="/wishlist">
+              <Heart className="h-4 w-4 text-muted-foreground" />
+              Wishlist
             </Link>
           </Button>
         </div>
