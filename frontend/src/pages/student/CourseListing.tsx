@@ -1,5 +1,3 @@
-// CourseListingPage.tsx
-"use client";
 
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -68,7 +66,6 @@ interface Course {
   students?: string;
 }
 
-// Updated CourseParams interface to make fields optional
 interface CourseParams {
   search?: string;
   category?: string;
@@ -95,23 +92,21 @@ export function CourseListingPage() {
   const [searchParams] = useSearchParams();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
-    []
-  );
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
   const coursesPerPage = 12;
   const [debouncedValue] = useDebounce(searchQuery, 500);
 
   const categories = [
-    { id: "web-dev", name: "Web Development", count: 120 },
-    { id: "mobile-dev", name: "Mobile Development", count: 72 },
-    { id: "data-science", name: "Data Science", count: 85 },
-    { id: "programming", name: "Programming", count: 90 },
-    { id: "cloud", name: "Cloud Computing", count: 64 },
-    { id: "design", name: "UI/UX Design", count: 48 },
-    { id: "devops", name: "DevOps", count: 36 },
-    { id: "ai-ml", name: "AI & Machine Learning", count: 54 },
-    { id: "cybersecurity", name: "Cybersecurity", count: 42 },
-    { id: "other", name: "Other", count: 30 },
+    { id: "web-dev", name: "Web Development" },
+    { id: "mobile-dev", name: "Mobile Development" },
+    { id: "data-science", name: "Data Science" },
+    { id: "programming", name: "Programming" },
+    { id: "cloud", name: "Cloud Computing" },
+    { id: "design", name: "UI/UX Design" },
+    { id: "devops", name: "DevOps" },
+    { id: "ai-ml", name: "AI & Machine Learning" },
+    { id: "cybersecurity", name: "Cybersecurity" },
+    { id: "other", name: "Other" },
   ];
 
   const difficulties = [
@@ -124,7 +119,6 @@ export function CourseListingPage() {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      // Updated params construction to include only non-empty values
       const params: CourseParams = {
         ...(searchQuery && { search: searchQuery }),
         ...(selectedCategories.length > 0 && {
@@ -370,12 +364,9 @@ export function CourseListingPage() {
                   />
                   <Label
                     htmlFor={`category-${category.id}-mobile`}
-                    className="text-sm flex items-center justify-between w-full cursor-pointer"
+                    className="text-sm cursor-pointer"
                   >
-                    <span>{category.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ({category.count})
-                    </span>
+                    {category.name}
                   </Label>
                 </div>
               ))}
@@ -533,12 +524,9 @@ export function CourseListingPage() {
                             />
                             <Label
                               htmlFor={`category-${category.id}`}
-                              className="text-sm flex items-center justify-between w-full cursor-pointer"
+                              className="text-sm cursor-pointer"
                             >
-                              <span>{category.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                ({category.count})
-                              </span>
+                              {category.name}
                             </Label>
                           </div>
                         ))}
