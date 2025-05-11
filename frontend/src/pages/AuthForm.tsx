@@ -78,8 +78,8 @@ export default function AuthForm({
   const navigate = useNavigate();
 
   // Map UserRole to GoogleAuth's role type
-  const mapToGoogleAuthRole = (role: UserRole): "student" | "tutor" => {
-    return role === "user" ? "student" : "tutor";
+  const mapToGoogleAuthRole = (role: UserRole): "user" | "tutor" => {
+    return role === "user" ? "user" : "tutor";
   };
 
   // Login form setup

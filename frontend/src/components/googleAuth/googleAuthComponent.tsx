@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface GoogleAuthProps {
-  role: "student" | "tutor";
+  role: "user" | "tutor";
 }
 export const GoogleAuth = ({ role }: GoogleAuthProps) => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
