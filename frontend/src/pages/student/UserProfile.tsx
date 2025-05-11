@@ -93,12 +93,10 @@ function Sidebar() {
         </h2>
         <div className="space-y-1">
           <Button variant="ghost" className="w-full justify-start">
-            <BookOpen className="mr-2 h-4 w-4" />
-            All Courses
-          </Button>
-          <Button variant="ghost" className="w-full justify-start">
-            <BookOpen className="mr-2 h-4 w-4" />
-            Learning Paths
+            <Link to="/courses">
+              <BookOpen className="mr-2 h-4 w-4" />
+              All Courses
+            </Link>
           </Button>
         </div>
       </div>
