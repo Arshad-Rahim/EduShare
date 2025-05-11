@@ -1,7 +1,14 @@
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Bell, MessageSquare, ChevronDown, BookOpen, Menu } from "lucide-react";
+import {
+  Bell,
+  MessageSquare,
+  ChevronDown,
+  BookOpen,
+  Menu,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -255,13 +262,17 @@ export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
             variant="ghost"
             size="icon"
             className="md:hidden"
-            onClick={() =>
-              setSidebarOpen &&
-              sidebarOpen !== undefined &&
-              setSidebarOpen(!sidebarOpen)
-            }
+            onClick={() => {
+              if (setSidebarOpen) {
+                setSidebarOpen(!sidebarOpen!);
+              }
+            }}
           >
-            <Menu className="h-5 w-5" />
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
             <span className="sr-only">Toggle sidebar</span>
           </Button>
 
