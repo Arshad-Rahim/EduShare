@@ -17,7 +17,6 @@ import { removeUser } from "@/redux/slice/userSlice";
 import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { io, Socket } from "socket.io-client";
-import { profileService } from "@/services/userService/profileService";
 
 // Define notification type for profile updates
 interface ProfileNotification {
