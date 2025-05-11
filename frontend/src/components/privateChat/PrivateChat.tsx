@@ -50,7 +50,7 @@ export function PrivateChat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const user = useSelector((state: any) => state.user.userDatas);
   const [isTutor, setIsTutor] = useState(false);
-  const [sidebarOpen] = useState(true); // Adjust based on layout
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Updated to include setter, default to false for mobile
 
   const courseId = stateCourseId || paramCourseId;
   const studentId = stateStudentId || paramStudentId;
@@ -134,7 +134,6 @@ export function PrivateChat() {
       reconnection: true,
     });
 
-    // const chatRoomId = `private_${courseId}_${studentId}_${tutorId}`;
     socketRef.current.emit("join_private_chat", {
       courseId,
       studentId,
@@ -268,10 +267,28 @@ export function PrivateChat() {
           }
         `}
       </style>
-      {isTutor ? <TutorHeader /> : <Header />}
+      {isTutor ? (
+        <TutorHeader
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
+      ) : (
+        <Header />
+      )}
       <div className="flex flex-1">
-        {isTutor && <SideBar sidebarOpen={sidebarOpen} />}
-        <div className="flex-1 flex flex-col min-w-0">
+        {isTutor && (
+          <div className="w-full md:w-64 flex-shrink-0">
+            <SideBar
+              sidebarOpen={sidebarOpen}
+              setSidebarOpen={setSidebarOpen}
+            />
+          </div>
+        )}
+        <div
+          className={`flex-1 flex flex-col min-w-0 ${
+            isTutor && sidebarOpen ? "md:ml-64" : ""
+          }`}
+        >
           <header className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center space-x-4">
               <button

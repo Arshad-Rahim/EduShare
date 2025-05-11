@@ -107,7 +107,7 @@ interface Transaction {
 }
 
 export function TutorHome() {
-  const [sidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to toggleable, default to false for mobile
   const [students, setStudents] = useState<TStudent[] | null>(null);
   const [stats, setStats] = useState<Stat[] | null>(null);
   const [courseStats, setCourseStats] = useState<CourseStat[] | null>(null);
@@ -367,9 +367,9 @@ export function TutorHome() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header setSidebarOpen={setSidebarOpen} />
       <div className="flex">
-        <SideBar sidebarOpen={sidebarOpen} />
+        <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : ""}`}>
           <div className="container py-8 px-4 md:px-8 max-w-7xl mx-auto">
             <div className="mb-6">

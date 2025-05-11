@@ -41,16 +41,15 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
         {data.map((item, rowIndex) => (
           <TableRow key={rowIndex}>
             {columns.map((column, colIndex) => {
-              const displayValue = typeof column.accessor === "function"
-                ? column.accessor(item)
-                : item[column.accessor as keyof T] instanceof Date
-                ? (item[column.accessor as keyof T] as Date).toLocaleDateString()
-                : String(item[column.accessor as keyof T] ?? '-');
-              return (
-                <TableCell key={colIndex}>
-                  {displayValue}
-                </TableCell>
-              );
+              const displayValue =
+                typeof column.accessor === "function"
+                  ? column.accessor(item)
+                  : item[column.accessor as keyof T] instanceof Date
+                  ? (
+                      item[column.accessor as keyof T] as Date
+                    ).toLocaleDateString()
+                  : String(item[column.accessor as keyof T] ?? "-");
+              return <TableCell key={colIndex}>{displayValue}</TableCell>;
             })}
           </TableRow>
         ))}
@@ -74,6 +73,7 @@ export function StudentsPage() {
   const [students, setStudents] = useState<TStudent[] | null>(null);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
 
   // Fetch students data
   const fetchStudents = async () => {
@@ -116,12 +116,12 @@ export function StudentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
-      <Header />
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
-          <SideBar sidebarOpen={true} />
+          <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         </div>
-        <div className="container mx-auto">
+        <div className={`container mx-auto ${sidebarOpen ? "md:ml-64" : ""}`}>
           {/* Back Button */}
           <Button
             variant="outline"

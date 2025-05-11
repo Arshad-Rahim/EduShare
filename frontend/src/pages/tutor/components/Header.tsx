@@ -1,7 +1,7 @@
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { Bell, MessageSquare, ChevronDown, BookOpen } from "lucide-react";
+import { Bell, MessageSquare, ChevronDown, BookOpen, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,7 +41,12 @@ interface ChatNotification {
   read?: boolean;
 }
 
-export function Header() {
+interface HeaderProps {
+  sidebarOpen?: boolean; // Add sidebarOpen prop to know current state
+  setSidebarOpen?: (open: boolean) => void; // Prop to toggle sidebar
+}
+
+export function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [profileNotifications, setProfileNotifications] = useState<
@@ -59,7 +64,6 @@ export function Header() {
   );
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
   const socketRef = useRef<Socket | null>(null);
- 
 
   useEffect(() => {
     async function fetchUser() {
@@ -246,6 +250,21 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container mx-auto flex h-16 items-center justify-between space-x-4 sm:space-x-0">
         <div className="flex items-center gap-4">
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() =>
+              setSidebarOpen &&
+              sidebarOpen !== undefined &&
+              setSidebarOpen(!sidebarOpen)
+            }
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle sidebar</span>
+          </Button>
+
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">TechLearn</span>
@@ -432,8 +451,6 @@ export function Header() {
                 Profile
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleWallet}>Wallet</DropdownMenuItem>
-              {/* <DropdownMenuItem>Earnings</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 Sign out

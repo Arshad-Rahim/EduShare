@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -57,6 +55,7 @@ export function CourseDetails() {
   );
   const [currentVideoName, setCurrentVideoName] = useState("");
   const [isInCall, setIsInCall] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
   const fileInputRef = useRef<HTMLInputElement>(null);
   const currentUser = useSelector((state: any) => state.user.userDatas);
   const tutorId = currentUser?.id ? currentUser?.id : currentUser?._id;
@@ -256,12 +255,12 @@ export function CourseDetails() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
-      <Header />
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
-          <SideBar sidebarOpen={true} />
+          <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         </div>
-        <div className="flex-1 w-full">
+        <div className={`flex-1 w-full ${sidebarOpen ? "md:ml-64" : ""}`}>
           <Card className="border-0 shadow-md w-full">
             <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-xl">
               <div className="flex justify-between items-center flex-col sm:flex-row gap-4 sm:gap-0">

@@ -57,6 +57,7 @@ export function WalletPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
   const rowsPerPage = 6;
 
   // State for filters
@@ -206,10 +207,12 @@ export function WalletPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      <div className="flex">
-        <SideBar sidebarOpen={true} />
-        <main className="flex-1 md:ml-64 p-6">
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      <div className="flex flex-col md:flex-row">
+        <div className="w-full md:w-64 flex-shrink-0">
+          <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        </div>
+        <main className={`flex-1 p-6 ${sidebarOpen ? "md:ml-64" : ""}`}>
           <Card className="w-full max-w-4xl mx-auto">
             <CardHeader>
               <CardTitle>Wallet Details</CardTitle>

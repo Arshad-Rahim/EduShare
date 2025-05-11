@@ -38,6 +38,7 @@ export function TutorProfileDetails() {
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,12 +162,14 @@ export function TutorProfileDetails() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header />
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6">
         <div className="w-full md:w-64 flex-shrink-0">
-          <SideBar sidebarOpen={true} />
+          <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         </div>
-        <div className="flex-1 max-w-4xl w-full">
+        <div
+          className={`flex-1 max-w-4xl w-full ${sidebarOpen ? "md:ml-64" : ""}`}
+        >
           <div className="space-y-6">
             <Card>
               <CardHeader>

@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import {
-
   FileText,
   HelpCircle,
   LayoutDashboard,
   MessageSquare,
   Settings,
   Users,
+  X,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -15,9 +15,10 @@ import { tutorService } from "@/services/tutorService/tutorService";
 
 interface SideBarProps {
   sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
 }
 
-export function SideBar({ sidebarOpen }:SideBarProps) {
+export function SideBar({ sidebarOpen, setSidebarOpen }: SideBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAccepted, setIsAccepted] = useState(null);
@@ -52,12 +53,6 @@ export function SideBar({ sidebarOpen }:SideBarProps) {
       path: "/tutor/courses",
       disabled: isAccepted === false,
     },
-    // {
-    //   icon: <Video className="h-4 w-4" />,
-    //   name: "Content Creation",
-    //   path: "/content-creation",
-    //   disabled: isAccepted === false,
-    // },
     {
       icon: <Users className="h-4 w-4" />,
       name: "Students",
@@ -70,18 +65,6 @@ export function SideBar({ sidebarOpen }:SideBarProps) {
       path: "/tutor/messages",
       disabled: isAccepted === false,
     },
-    // {
-    //   icon: <BarChart3 className="h-4 w-4" />,
-    //   name: "Analytics",
-    //   path: "/tutor/analytics",
-    //   disabled: isAccepted === false,
-    // },
-    // {
-    //   icon: <Calendar className="h-4 w-4" />,
-    //   name: "Schedule",
-    //   path: "/tutor/schedule",
-    //   disabled: isAccepted === false,
-    // },
   ];
 
   const bottomItems = [
@@ -99,8 +82,9 @@ export function SideBar({ sidebarOpen }:SideBarProps) {
     },
   ];
 
-  const handleNavigation = (path:string) => {
+  const handleNavigation = (path: string) => {
     navigate(path);
+    setSidebarOpen(false); // Close sidebar on navigation in mobile view
   };
 
   if (loading) {
@@ -124,6 +108,21 @@ export function SideBar({ sidebarOpen }:SideBarProps) {
       } fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block`}
     >
       <div className="flex h-full flex-col">
+        {/* Close button for mobile view */}
+        <div className="flex justify-between items-center px-4 py-2 md:hidden">
+          <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+            EduShare
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close sidebar</span>
+          </Button>
+        </div>
+
         <nav className="mt-6 grid gap-1 px-2">
           {navItems.map((item) => (
             <Button

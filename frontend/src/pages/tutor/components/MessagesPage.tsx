@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import {
   Send,
@@ -60,7 +59,7 @@ export function MessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [sidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Changed to toggleable, default to false for mobile
 
   // Fetch tutor details to get tutorId and name
   useEffect(() => {
@@ -615,9 +614,9 @@ export function MessagesPage() {
           }
         `}
       </style>
-      <Header />
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-1">
-        <SideBar sidebarOpen={sidebarOpen} />
+        <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className={`flex-1 flex ${sidebarOpen ? "md:ml-64" : ""}`}>
           <aside
             className={cn(
@@ -853,5 +852,3 @@ export function MessagesPage() {
     </div>
   );
 }
-
-

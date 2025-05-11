@@ -60,6 +60,7 @@ export function TutorCourses() {
   const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
   const [lessonToDelete, setLessonToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage] = useState(3); // Number of courses per page
@@ -785,12 +786,14 @@ export function TutorCourses() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
-      <Header />
+      <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
-          <SideBar sidebarOpen={true} />
+          <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         </div>
-        <div className="flex-1 w-full relative">
+        <div
+          className={`flex-1 w-full relative ${sidebarOpen ? "md:ml-64" : ""}`}
+        >
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-50 w-full">
               <ClipLoader size={50} color="#3b82f6" />
