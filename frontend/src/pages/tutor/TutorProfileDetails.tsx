@@ -38,7 +38,7 @@ export function TutorProfileDetails() {
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,6 +93,13 @@ export function TutorProfileDetails() {
       !trimmedBio
     ) {
       toast.error("Please fill out all required fields with valid data");
+      return;
+    }
+
+    // Validate phone number: strip non-digits and check for exactly 10 digits
+    const phoneDigits = trimmedPhone.replace(/\D/g, ""); // Remove all non-digit characters
+    if (phoneDigits.length !== 10) {
+      toast.error("Phone number must be exactly 10 digits");
       return;
     }
 
