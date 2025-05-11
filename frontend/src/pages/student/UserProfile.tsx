@@ -43,11 +43,27 @@ import { profileService } from "@/services/userService/profileService";
 
 // Validation schema for profile form
 const profileSchema = z.object({
-  name: z.string().min(1, "Full name is required"),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Full name is required")
+    .regex(/\S/, "Full name cannot be only whitespace"),
   email: z.string().email("Invalid email address").min(1, "Email is required"),
-  bio: z.string().min(1, "Bio is required"),
-  interests: z.string().min(1, "Interests are required"),
-  education: z.string().min(1, "Education is required"),
+  bio: z
+    .string()
+    .trim()
+    .min(1, "Bio is required")
+    .regex(/\S/, "Bio cannot be only whitespace"),
+  interests: z
+    .string()
+    .trim()
+    .min(1, "Interests are required")
+    .regex(/\S/, "Interests cannot be only whitespace"),
+  education: z
+    .string()
+    .trim()
+    .min(1, "Education is required")
+    .regex(/\S/, "Education cannot be only whitespace"),
 });
 
 // Sidebar Component
@@ -89,7 +105,6 @@ function Sidebar() {
     </div>
   );
 }
-
 
 // CurrentPasswordModal Component
 const CurrentPasswordModal = ({
@@ -221,7 +236,7 @@ export default function StudentProfile() {
     bio: "I'm a student passionate about learning new technologies and skills.",
     interests: "Web Development, Mobile Apps, Data Science",
     education: "Computer Science",
-    password: null as string | null, // Add password field to user state
+    password: null as string | null,
   });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [newPasswordModalOpen, setNewPasswordModalOpen] = useState(false);
@@ -251,7 +266,7 @@ export default function StudentProfile() {
           interests:
             userData.interests || "Web Development, Mobile Apps, Data Science",
           education: userData.education || "Computer Science",
-          password: userData.password, // Include password field
+          password: userData.password,
         };
         setUser(updatedUser);
         form.reset({
@@ -272,7 +287,7 @@ export default function StudentProfile() {
   const handleSave = form.handleSubmit(async (data) => {
     try {
       const response = await profileService.profileUpdate(data);
-      setUser({ ...data, password: user.password }); // Preserve password field
+      setUser({ ...data, password: user.password });
       setIsEditing(false);
       toast.success(response.data.message || "Profile updated successfully!");
     } catch (error) {
@@ -311,7 +326,7 @@ export default function StudentProfile() {
               size="icon"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <X className="h-5 w-5" />
+              <X className="hbs-5 w-5" />
               <span className="sr-only">Close menu</span>
             </Button>
           </div>
@@ -356,7 +371,7 @@ export default function StudentProfile() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex flex-col items-center gap-4">
                       <Avatar className="h-24 w-24">
                         <AvatarImage
@@ -367,12 +382,7 @@ export default function StudentProfile() {
                           {user.name.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      {isEditing && (
-                        <Button variant="outline" size="sm">
-                          Change Photo
-                        </Button>
-                      )}
-                    </div> */}
+                    </div>
 
                     <div className="flex-1 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -502,14 +512,6 @@ export default function StudentProfile() {
                     )}
                   />
                 </CardContent>
-                {isEditing && (
-                  <CardFooter className="justify-end">
-                    <Button type="submit">
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </Button>
-                  </CardFooter>
-                )}
               </Card>
 
               {/* Account Settings Card */}
