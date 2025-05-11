@@ -38,7 +38,7 @@ export class TutorRoutes {
     this.router.get(
       "/me",
       authMiddleware,
-      authorizeRole(["tutor","admin"]),
+      authorizeRole(["tutor","admin","user"]),
       checkUserBlocked,
       (req: Request, res: Response) =>
         injectedTutorController.getTutorDetails(req, res)
@@ -58,7 +58,7 @@ export class TutorRoutes {
      this.router.get(
        "/students",
        authMiddleware,
-       authorizeRole(["tutor"]),
+       authorizeRole(["tutor","user"]),
        checkUserBlocked,
 
        (req: Request, res: Response) =>
