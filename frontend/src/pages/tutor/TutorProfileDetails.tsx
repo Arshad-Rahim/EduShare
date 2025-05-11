@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -25,7 +24,7 @@ import { Header } from "./components/Header";
 import { SideBar } from "./components/SideBar";
 import { FileIcon, UploadIcon, XIcon } from "lucide-react";
 import { tutorService } from "@/services/tutorService/tutorService";
-import { ClipLoader } from "react-spinners"; // Import ClipLoader
+import { ClipLoader } from "react-spinners";
 
 export function TutorProfileDetails() {
   const [email, setEmail] = useState();
@@ -38,7 +37,7 @@ export function TutorProfileDetails() {
     "I'm a dedicated MERN stack developer with a passion for building dynamic and scalable web applications."
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +52,7 @@ export function TutorProfileDetails() {
         return;
       }
       setSelectedFile(file);
-      setExistingDocUrl(null); // Clear existing doc when new file is selected
+      setExistingDocUrl(null);
       toast.success("File selected successfully");
     }
   };
@@ -66,7 +65,6 @@ export function TutorProfileDetails() {
       setSpecialization(response.data.tutor.specialization);
       setBio(response.data.tutor.bio);
       setEmail(response.data.tutor.email);
-      // Assuming the backend returns verificationDocUrl
       if (response.data.tutor.verificationDocUrl) {
         setExistingDocUrl(response.data.tutor.verificationDocUrl);
       }
@@ -80,27 +78,36 @@ export function TutorProfileDetails() {
   }, []);
 
   const handleSave = async () => {
-    if (!name || !phone || !specialization || !bio) {
-      toast.error("Please fill out all required fields");
+    // Trim the input values to remove leading/trailing spaces
+    const trimmedName = name?.trim() || "";
+    const trimmedPhone = phone?.trim() || "";
+    const trimmedBio = bio?.trim() || "";
+    const trimmedSpecialization = specialization?.trim() || "";
+
+    // Validate that fields are not empty after trimming
+    if (
+      !trimmedName ||
+      !trimmedPhone ||
+      !trimmedSpecialization ||
+      !trimmedBio
+    ) {
+      toast.error("Please fill out all required fields with valid data");
       return;
     }
 
     const formData = new FormData();
-    formData.append("name", name);
-    formData.append("phone", phone);
-    formData.append("specialization", specialization);
-    formData.append("bio", bio);
-    // Only append file if a new one is selected
+    formData.append("name", trimmedName);
+    formData.append("phone", trimmedPhone);
+    formData.append("specialization", trimmedSpecialization);
+    formData.append("bio", trimmedBio);
     if (selectedFile) {
       formData.append("file", selectedFile);
     }
 
-    setIsLoading(true); // Set loading to true
+    setIsLoading(true);
     try {
- 
       const response = await tutorService.profileUpdate(formData);
       console.log("Response:", response.data);
-      // Update existingDocUrl if a new document was uploaded
       if (response.data.tutor?.verificationDocUrl && selectedFile) {
         setExistingDocUrl(response.data.tutor.verificationDocUrl);
       }
@@ -112,7 +119,7 @@ export function TutorProfileDetails() {
       console.error("Upload failed:", error);
       toast.error("Failed to update profile!");
     } finally {
-      setIsLoading(false); // Reset loading state
+      setIsLoading(false);
     }
   };
 
@@ -173,7 +180,7 @@ export function TutorProfileDetails() {
                   <Button
                     variant="outline"
                     onClick={() => setIsEditing(!isEditing)}
-                    disabled={isLoading} // Disable Edit/Cancel button during loading
+                    disabled={isLoading}
                   >
                     {isEditing ? "Cancel" : "Edit"}
                   </Button>
@@ -189,7 +196,7 @@ export function TutorProfileDetails() {
                         placeholder="John"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        disabled={!isEditing || isLoading} // Disable input during loading
+                        disabled={!isEditing || isLoading}
                       />
                     </div>
                   </div>
@@ -216,22 +223,11 @@ export function TutorProfileDetails() {
                       placeholder="+91 (555) 000-0000"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      disabled={!isEditing || isLoading} // Disable input during loading
+                      disabled={!isEditing || isLoading}
                     />
                   </div>
                 </div>
               </CardContent>
-              {isEditing && (
-                <CardFooter className="justify-end">
-                  <Button onClick={handleSave} disabled={isLoading}>
-                    {isLoading ? (
-                      <ClipLoader size={20} color="#ffffff" />
-                    ) : (
-                      "Save Changes"
-                    )}
-                  </Button>
-                </CardFooter>
-              )}
             </Card>
 
             <Card>
@@ -250,7 +246,7 @@ export function TutorProfileDetails() {
                     <Select
                       value={specialization}
                       onValueChange={setSpecialization}
-                      disabled={!isEditing || isLoading} // Disable select during loading
+                      disabled={!isEditing || isLoading}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select your specialization" />
@@ -278,7 +274,7 @@ export function TutorProfileDetails() {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       className="min-h-32"
-                      disabled={!isEditing || isLoading} // Disable textarea during loading
+                      disabled={!isEditing || isLoading}
                     />
                   </div>
 
@@ -305,7 +301,7 @@ export function TutorProfileDetails() {
                           type="file"
                           accept=".pdf,.jpg,.png"
                           onChange={handleFileChange}
-                          disabled={!isEditing || isLoading} // Disable file input during loading
+                          disabled={!isEditing || isLoading}
                           className="hidden"
                         />
 
@@ -374,7 +370,7 @@ export function TutorProfileDetails() {
                             e.stopPropagation();
                             removeFile();
                           }}
-                          disabled={isLoading} // Disable remove button during loading
+                          disabled={isLoading}
                         >
                           <XIcon className="h-3 w-3 mr-1" />
                           Remove file
@@ -384,18 +380,19 @@ export function TutorProfileDetails() {
                   </div>
                 </div>
               </CardContent>
-              {isEditing && (
-                <CardFooter className="justify-end">
-                  <Button onClick={handleSave} disabled={isLoading}>
-                    {isLoading ? (
-                      <ClipLoader size={20} color="#ffffff" />
-                    ) : (
-                      "Save Changes"
-                    )}
-                  </Button>
-                </CardFooter>
-              )}
             </Card>
+
+            {isEditing && (
+              <div className="flex justify-end mt-6">
+                <Button onClick={handleSave} disabled={isLoading}>
+                  {isLoading ? (
+                    <ClipLoader size={20} color="#ffffff" />
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
