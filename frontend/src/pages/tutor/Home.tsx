@@ -328,7 +328,7 @@ export function TutorHome() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center max-w-md mx-auto p-6 bg-card rounded-lg shadow-lg">
           <p className="text-red-500 mb-4 font-medium">{error}</p>
           <Button
@@ -337,7 +337,7 @@ export function TutorHome() {
               setError(null);
               fetchDashboardData();
             }}
-            className="hover:scale-105 transition-transform"
+            className="hover:scale-105 transition-transform text-sm px-4 py-2"
           >
             Retry
           </Button>
@@ -354,7 +354,7 @@ export function TutorHome() {
     !transactions
   ) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="text-center">
           <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground font-medium">
@@ -371,35 +371,35 @@ export function TutorHome() {
       <div className="flex">
         <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : ""}`}>
-          <div className="container py-8 px-4 md:px-8 max-w-7xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-4xl font-bold tracking-tight">
+          <div className="container py-6 px-4 sm:px-6 md:px-8 max-w-full mx-auto overflow-x-hidden">
+            <div className="mb-4">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
                 Welcome back, {user?.name || "Tutor"}
               </h1>
-              <p className="text-muted-foreground mt-2">
+              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
                 Here's what's happening with your students today.
               </p>
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-4 sm:my-6" />
 
             {/* Stats Overview with improved cards */}
-            <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {stats.map((stat, index) => (
                 <Card
                   key={index}
                   className="overflow-hidden transition-all hover:shadow-lg"
                 >
-                  <CardContent className="flex items-center justify-between p-6">
+                  <CardContent className="flex items-center justify-between p-4 sm:p-6">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">
                         {stat.title}
                       </p>
-                      <p className="text-3xl font-bold tracking-tight">
+                      <p className="text-xl sm:text-3xl font-bold tracking-tight">
                         {stat.value}
                       </p>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-4">
+                    <div className="rounded-full bg-primary/10 p-3 sm:p-4">
                       {stat.icon}
                     </div>
                   </CardContent>
@@ -408,31 +408,38 @@ export function TutorHome() {
             </div>
 
             {/* Course Stats with improved styling */}
-            <Card className="mb-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+            <Card className="mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-2xl">Course Enrollment</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">
+                  Course Enrollment
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   Overview of student enrollments by course
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {courseStats.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">
+                  <div className="text-center py-8 sm:py-12">
+                    <Users className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium text-sm sm:text-base">
                       No courses have enrolled students yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-lg overflow-hidden border">
-                    <ReusableTable columns={courseColumns} data={courseStats} />
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      <ReusableTable
+                        columns={courseColumns}
+                        data={courseStats}
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+              <CardFooter className="border-t bg-muted/50 px-4 py-3 sm:px-6 sm:py-4">
                 <Button
                   variant="outline"
-                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full text-sm sm:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => navigate("/tutor/courses")}
                 >
                   View All Courses
@@ -441,36 +448,38 @@ export function TutorHome() {
             </Card>
 
             {/* Wallet Transaction History */}
-            <Card className="mb-8 overflow-hidden shadow-sm hover:shadow-md transition-all">
+            <Card className="mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-2xl">
+                <CardTitle className="text-xl sm:text-2xl">
                   Wallet Transaction History
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm sm:text-base">
                   History of your wallet transactions
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {transactions.length === 0 ? (
-                  <div className="text-center py-12">
-                    <History className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">
+                  <div className="text-center py-8 sm:py-12">
+                    <History className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium text-sm sm:text-base">
                       No transactions yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-lg overflow-hidden border">
-                    <ReusableTable
-                      columns={transactionColumns}
-                      data={transactions}
-                    />
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      <ReusableTable
+                        columns={transactionColumns}
+                        data={transactions}
+                      />
+                    </div>
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+              <CardFooter className="border-t bg-muted/50 px-4 py-3 sm:px-6 sm:py-4">
                 <Button
                   variant="outline"
-                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full text-sm sm:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => navigate("/tutor/wallet")}
                 >
                   View All Transactions
@@ -481,29 +490,33 @@ export function TutorHome() {
             {/* Student List with improved styling */}
             <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-2xl">Your Students</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-xl sm:text-2xl">
+                  Your Students
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base">
                   List of students enrolled in your courses
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {students.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium">
+                  <div className="text-center py-8 sm:py-12">
+                    <Users className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium text-sm sm:text-base">
                       No students have enrolled yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-lg overflow-hidden border">
-                    <ReusableTable columns={studentColumns} data={students} />
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      <ReusableTable columns={studentColumns} data={students} />
+                    </div>
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-6 py-4">
+              <CardFooter className="border-t bg-muted/50 px-4 py-3 sm:px-6 sm:py-4">
                 <Button
                   variant="outline"
-                  className="w-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full text-sm sm:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => navigate("/tutor/students")}
                 >
                   View All Students
