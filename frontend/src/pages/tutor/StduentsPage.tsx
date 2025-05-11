@@ -22,7 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { ClipLoader } from "react-spinners";
 
