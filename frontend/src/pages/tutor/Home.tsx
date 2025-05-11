@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Users, BarChart3, Wallet, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,16 +50,15 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
         {data.map((item, rowIndex) => (
           <TableRow key={rowIndex}>
             {columns.map((column, colIndex) => {
-              const displayValue = typeof column.accessor === "function"
-                ? column.accessor(item)
-                : item[column.accessor as keyof T] instanceof Date
-                ? (item[column.accessor as keyof T] as Date).toLocaleDateString()
-                : String(item[column.accessor as keyof T] ?? '-');
-              return (
-                <TableCell key={colIndex}>
-                  {displayValue}
-                </TableCell>
-              );
+              const displayValue =
+                typeof column.accessor === "function"
+                  ? column.accessor(item)
+                  : item[column.accessor as keyof T] instanceof Date
+                  ? (
+                      item[column.accessor as keyof T] as Date
+                    ).toLocaleDateString()
+                  : String(item[column.accessor as keyof T] ?? "-");
+              return <TableCell key={colIndex}>{displayValue}</TableCell>;
             })}
           </TableRow>
         ))}
@@ -95,7 +93,16 @@ interface Transaction {
   transactionId: string;
   amount: number;
   transaction_type: string;
-  description: string;
+  purchase_id: {
+    userId: { name: string };
+    purchase: Array<{
+      courseId: { title: string };
+      orderId: string;
+      amount: number;
+      status: string;
+      createdAt: string;
+    }>;
+  };
   createdAt: string;
 }
 
@@ -280,22 +287,29 @@ export function TutorHome() {
     { header: "Your Earnings", accessor: "revenue" },
   ];
 
-  // Transaction history table columns
+  // Transaction history table columns (updated to match WalletPage)
   const transactionColumns: Column<Transaction>[] = [
-    { header: "Transaction ID", accessor: "transactionId" },
+    {
+      header: "Date",
+      accessor: (transaction) =>
+        new Date(transaction.createdAt).toLocaleDateString(),
+    },
+    {
+      header: "User Name",
+      accessor: (transaction) => transaction.purchase_id?.userId?.name || "N/A",
+    },
+    {
+      header: "Course Name",
+      accessor: (transaction) =>
+        transaction.purchase_id?.purchase?.[0]?.courseId?.title || "N/A",
+    },
+    { header: "Type", accessor: "transaction_type" },
     {
       header: "Amount",
       accessor: (transaction) =>
         transaction.transaction_type === "credit"
           ? `+₹${transaction.amount.toFixed(2)}`
           : `-₹${transaction.amount.toFixed(2)}`,
-    },
-    { header: "Type", accessor: "transaction_type" },
-    { header: "Description", accessor: "description" },
-    {
-      header: "Date",
-      accessor: (transaction) =>
-        new Date(transaction.createdAt).toLocaleDateString(),
     },
   ];
 
