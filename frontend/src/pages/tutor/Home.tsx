@@ -42,7 +42,12 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
       <TableHeader>
         <TableRow>
           {columns.map((column, index) => (
-            <TableHead key={index}>{column.header}</TableHead>
+            <TableHead
+              key={index}
+              className="text-xs sm:text-sm whitespace-nowrap"
+            >
+              {column.header}
+            </TableHead>
           ))}
         </TableRow>
       </TableHeader>
@@ -58,7 +63,14 @@ function ReusableTable<T>({ columns, data }: ReusableTableProps<T>) {
                       item[column.accessor as keyof T] as Date
                     ).toLocaleDateString()
                   : String(item[column.accessor as keyof T] ?? "-");
-              return <TableCell key={colIndex}>{displayValue}</TableCell>;
+              return (
+                <TableCell
+                  key={colIndex}
+                  className="text-xs sm:text-sm whitespace-nowrap"
+                >
+                  {displayValue}
+                </TableCell>
+              );
             })}
           </TableRow>
         ))}
@@ -196,17 +208,17 @@ export function TutorHome() {
         {
           title: "Active Students",
           value: studentsData.length.toString(),
-          icon: <Users className="h-5 w-5" />,
+          icon: <Users className="h-4 sm:h-5 w-4 sm:w-5" />,
         },
         {
           title: "Your Earnings",
           value: `₹${tutorShare.toFixed(2)}`,
-          icon: <BarChart3 className="h-5 w-5" />,
+          icon: <BarChart3 className="h-4 sm:h-5 w-4 sm:w-5" />,
         },
         {
           title: "Wallet Balance",
           value: `₹${balance.toFixed(2)}`,
-          icon: <Wallet className="h-5 w-5" />,
+          icon: <Wallet className="h-4 sm:h-5 w-4 sm:w-5" />,
         },
       ]);
 
@@ -318,7 +330,7 @@ export function TutorHome() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground font-medium">
+          <p className="text-muted-foreground font-medium text-sm">
             Loading dashboard...
           </p>
         </div>
@@ -328,16 +340,16 @@ export function TutorHome() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <div className="text-center max-w-md mx-auto p-6 bg-card rounded-lg shadow-lg">
-          <p className="text-red-500 mb-4 font-medium">{error}</p>
+      <div className="min-h-screen bg-background flex items-center justify-center px-3">
+        <div className="text-center max-w-md mx-auto p-4 bg-card rounded-lg shadow-lg">
+          <p className="text-red-500 mb-4 font-medium text-sm">{error}</p>
           <Button
             onClick={() => {
               setLoading(true);
               setError(null);
               fetchDashboardData();
             }}
-            className="hover:scale-105 transition-transform text-sm px-4 py-2"
+            className="hover:scale-105 transition-transform text-xs px-3 py-1"
           >
             Retry
           </Button>
@@ -354,10 +366,10 @@ export function TutorHome() {
     !transactions
   ) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+      <div className="min-h-screen bg-background flex items-center justify-center px-3">
         <div className="text-center">
-          <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground font-medium">
+          <Users className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground font-medium text-xs sm:text-sm">
             No data available.
           </p>
         </div>
@@ -371,35 +383,35 @@ export function TutorHome() {
       <div className="flex">
         <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : ""}`}>
-          <div className="container py-6 px-4 sm:px-6 md:px-8 max-w-full mx-auto overflow-x-hidden">
-            <div className="mb-4">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <div className="container py-4 px-3 sm:px-4 md:px-6 lg:px-8 max-w-full mx-auto overflow-x-hidden">
+            <div className="mb-3 sm:mb-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight">
                 Welcome back, {user?.name || "Tutor"}
               </h1>
-              <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+              <p className="text-muted-foreground mt-1 text-xs sm:text-sm md:text-base">
                 Here's what's happening with your students today.
               </p>
             </div>
 
-            <Separator className="my-4 sm:my-6" />
+            <Separator className="my-3 sm:my-4 md:my-6" />
 
             {/* Stats Overview with improved cards */}
-            <div className="mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-4 sm:mb-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {stats.map((stat, index) => (
                 <Card
                   key={index}
                   className="overflow-hidden transition-all hover:shadow-lg"
                 >
-                  <CardContent className="flex items-center justify-between p-4 sm:p-6">
+                  <CardContent className="flex items-center justify-between p-3 sm:p-4">
                     <div>
-                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1">
                         {stat.title}
                       </p>
-                      <p className="text-xl sm:text-3xl font-bold tracking-tight">
+                      <p className="text-lg sm:text-xl md:text-3xl font-bold tracking-tight">
                         {stat.value}
                       </p>
                     </div>
-                    <div className="rounded-full bg-primary/10 p-3 sm:p-4">
+                    <div className="rounded-full bg-primary/10 p-2 sm:p-3">
                       {stat.icon}
                     </div>
                   </CardContent>
@@ -408,26 +420,26 @@ export function TutorHome() {
             </div>
 
             {/* Course Stats with improved styling */}
-            <Card className="mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all">
+            <Card className="mb-4 sm:mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-xl sm:text-2xl">
+                <CardTitle className="text-lg sm:text-xl md:text-2xl">
                   Course Enrollment
                 </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardDescription className="text-xs sm:text-sm md:text-base">
                   Overview of student enrollments by course
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-3 sm:p-4 md:p-6">
                 {courseStats.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <Users className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium text-sm sm:text-base">
+                  <div className="text-center py-6 sm:py-8">
+                    <Users className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium text-xs sm:text-sm">
                       No courses have enrolled students yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <div className="min-w-[600px]">
+                  <div className="overflow-x-auto rounded-lg border shadow-sm">
+                    <div className="min-w-[500px]">
                       <ReusableTable
                         columns={courseColumns}
                         data={courseStats}
@@ -436,10 +448,10 @@ export function TutorHome() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-4 py-3 sm:px-6 sm:py-4">
+              <CardFooter className="border-t bg-muted/50 px-3 py-2 sm:px-4 sm:py-3">
                 <Button
                   variant="outline"
-                  className="w-full text-sm sm:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full text-xs sm:text-sm md:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => navigate("/tutor/courses")}
                 >
                   View All Courses
@@ -448,26 +460,26 @@ export function TutorHome() {
             </Card>
 
             {/* Wallet Transaction History */}
-            <Card className="mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all">
+            <Card className="mb-4 sm:mb-6 overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-xl sm:text-2xl">
+                <CardTitle className="text-lg sm:text-xl md:text-2xl">
                   Wallet Transaction History
                 </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardDescription className="text-xs sm:text-sm md:text-base">
                   History of your wallet transactions
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-3 sm:p-4 md:p-6">
                 {transactions.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <History className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium text-sm sm:text-base">
+                  <div className="text-center py-6 sm:py-8">
+                    <History className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium text-xs sm:text-sm">
                       No transactions yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <div className="min-w-[600px]">
+                  <div className="overflow-x-auto rounded-lg border shadow-sm">
+                    <div className="min-w-[500px]">
                       <ReusableTable
                         columns={transactionColumns}
                         data={transactions}
@@ -476,10 +488,10 @@ export function TutorHome() {
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-4 py-3 sm:px-6 sm:py-4">
+              <CardFooter className="border-t bg-muted/50 px-3 py-2 sm:px-4 sm:py-3">
                 <Button
                   variant="outline"
-                  className="w-full text-sm sm:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full text-xs sm:text-sm md:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => navigate("/tutor/wallet")}
                 >
                   View All Transactions
@@ -490,33 +502,33 @@ export function TutorHome() {
             {/* Student List with improved styling */}
             <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
               <CardHeader className="border-b bg-muted/50">
-                <CardTitle className="text-xl sm:text-2xl">
+                <CardTitle className="text-lg sm:text-xl md:text-2xl">
                   Your Students
                 </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardDescription className="text-xs sm:text-sm md:text-base">
                   List of students enrolled in your courses
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-3 sm:p-4 md:p-6">
                 {students.length === 0 ? (
-                  <div className="text-center py-8 sm:py-12">
-                    <Users className="h-12 sm:h-16 w-12 sm:w-16 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground font-medium text-sm sm:text-base">
+                  <div className="text-center py-6 sm:py-8">
+                    <Users className="h-10 sm:h-12 w-10 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground font-medium text-xs sm:text-sm">
                       No students have enrolled yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <div className="min-w-[600px]">
+                  <div className="overflow-x-auto rounded-lg border shadow-sm">
+                    <div className="min-w-[500px]">
                       <ReusableTable columns={studentColumns} data={students} />
                     </div>
                   </div>
                 )}
               </CardContent>
-              <CardFooter className="border-t bg-muted/50 px-4 py-3 sm:px-6 sm:py-4">
+              <CardFooter className="border-t bg-muted/50 px-3 py-2 sm:px-4 sm:py-3">
                 <Button
                   variant="outline"
-                  className="w-full text-sm sm:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="w-full text-xs sm:text-sm md:text-base hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => navigate("/tutor/students")}
                 >
                   View All Students
