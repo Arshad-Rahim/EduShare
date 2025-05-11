@@ -204,7 +204,7 @@ export function Header() {
 
         {/* Right Section */}
         <div className="flex items-center gap-4">
-          {user ? (
+          {user && (
             <>
               {/* Notification Bell */}
               <div className="relative">
@@ -352,20 +352,6 @@ export function Header() {
                 </div>
               </div>
             </>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                asChild
-                className="hidden md:inline-flex"
-              >
-                <RouterLink to="/auth">Log in</RouterLink>
-              </Button>
-              <Button size="sm" asChild className="hidden md:inline-flex">
-                <RouterLink to="/auth">Sign up</RouterLink>
-              </Button>
-            </>
           )}
 
           {/* Mobile Menu Button */}
@@ -427,18 +413,6 @@ export function Header() {
                 Courses
               </RouterLink>
               <RouterLink
-                to="/paths"
-                className={`text-lg font-medium hover:underline flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                  location.pathname === "/paths"
-                    ? "text-primary underline bg-primary/10"
-                    : "text-muted-foreground hover:bg-muted/50"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <BookOpen className="h-5 w-5" />
-                Paths
-              </RouterLink>
-              <RouterLink
                 to="/community"
                 className={`text-lg font-medium hover:underline flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
                   location.pathname === "/community"
@@ -450,31 +424,7 @@ export function Header() {
                 <Users className="h-5 w-5" />
                 Community
               </RouterLink>
-              <RouterLink
-                to="/about"
-                className={`text-lg font-medium hover:underline flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
-                  location.pathname === "/about"
-                    ? "text-primary underline bg-primary/10"
-                    : "text-muted-foreground hover:bg-muted/50"
-                }`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <BookOpen className="h-5 w-5" />
-                About
-              </RouterLink>
             </nav>
-            <div className="flex flex-col gap-4 mt-4">
-              <Button variant="outline" asChild className="w-full py-3 text-lg">
-                <RouterLink to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                  Log in
-                </RouterLink>
-              </Button>
-              <Button asChild className="w-full py-3 text-lg">
-                <RouterLink to="/auth" onClick={() => setMobileMenuOpen(false)}>
-                  Sign up
-                </RouterLink>
-              </Button>
-            </div>
           </div>
         </div>
       )}
