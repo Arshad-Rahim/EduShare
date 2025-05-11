@@ -356,7 +356,7 @@ export default function StudentProfile() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col md:flex-row gap-6">
+                  {/* <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex flex-col items-center gap-4">
                       <Avatar className="h-24 w-24">
                         <AvatarImage
@@ -372,7 +372,7 @@ export default function StudentProfile() {
                           Change Photo
                         </Button>
                       )}
-                    </div>
+                    </div> */}
 
                     <div className="flex-1 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
