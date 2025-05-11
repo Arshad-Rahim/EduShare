@@ -1,3 +1,4 @@
+// CourseListingPage.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -67,15 +68,16 @@ interface Course {
   students?: string;
 }
 
+// Updated CourseParams interface to make fields optional
 interface CourseParams {
-  search: string;
-  category: string;
-  difficulty: string;
-  minPrice: number;
-  maxPrice: number;
-  sort: string;
-  page: string;
-  limit: string;
+  search?: string;
+  category?: string;
+  difficulty?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+  page?: string;
+  limit?: string;
 }
 
 export function CourseListingPage() {
@@ -93,7 +95,9 @@ export function CourseListingPage() {
   const [searchParams] = useSearchParams();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
+    []
+  );
   const coursesPerPage = 12;
   const [debouncedValue] = useDebounce(searchQuery, 500);
 
@@ -120,13 +124,18 @@ export function CourseListingPage() {
   const fetchCourses = async () => {
     setLoading(true);
     try {
+      // Updated params construction to include only non-empty values
       const params: CourseParams = {
-        search: searchQuery,
-        category: selectedCategories.join(","),
-        difficulty: selectedDifficulties.join(","),
+        ...(searchQuery && { search: searchQuery }),
+        ...(selectedCategories.length > 0 && {
+          category: selectedCategories.join(","),
+        }),
+        ...(selectedDifficulties.length > 0 && {
+          difficulty: selectedDifficulties.join(","),
+        }),
         minPrice: priceRange[0],
         maxPrice: priceRange[1],
-        sort: sortOption,
+        ...(sortOption && { sort: sortOption }),
         page: currentPage.toString(),
         limit: coursesPerPage.toString(),
       };

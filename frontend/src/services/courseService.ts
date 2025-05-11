@@ -1,15 +1,16 @@
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 
-type URLSearchParams = {
-  search: string;
-  category: string;
-  difficulty: string;
-  minPrice: number;
-  maxPrice: number;
-  sort: string;
-  page: string;
-  limit: string;
+// Updated type to match CourseListingPage and make fields optional
+type CourseParams = {
+  search?: string;
+  category?: string;
+  difficulty?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string;
+  page?: string;
+  limit?: string;
 };
 
 export type Lesson = {
@@ -101,11 +102,18 @@ export const courseService = {
     }
   },
 
-  async getAllCourse(params?: URLSearchParams) {
+  async getAllCourse(params?: CourseParams) {
     try {
       if (params) {
+        // Create URLSearchParams to properly serialize query parameters
+        const queryParams = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            queryParams.append(key, value.toString());
+          }
+        });
         const response = await authAxiosInstance.get(
-          `/courses/all-courses?${params.toString()}`
+          `/courses/all-courses?${queryParams.toString()}`
         );
         return response;
       } else {
