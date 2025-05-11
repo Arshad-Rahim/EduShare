@@ -65,7 +65,7 @@ export function Header() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const response = await profileService.userDetails();
+        const response = await tutorService.tutorDetails();
         setUser({
           name: response?.data.tutor.name,
           email: response?.data.tutor.email,
