@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Bell, MessageSquare, ChevronDown, BookOpen } from "lucide-react";
@@ -60,8 +60,7 @@ export function Header() {
   );
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  // const currentUser = useSelector((state: any) => state.user.userDatas);
-  // const userId = currentUser?.id || currentUser?._id;
+ 
 
   useEffect(() => {
     async function fetchUser() {
