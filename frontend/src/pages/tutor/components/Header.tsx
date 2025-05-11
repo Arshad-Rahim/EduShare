@@ -60,8 +60,8 @@ export function Header() {
   );
   const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const currentUser = useSelector((state: any) => state.user.userDatas);
-  const userId = currentUser?.id || currentUser?._id;
+  // const currentUser = useSelector((state: any) => state.user.userDatas);
+  // const userId = currentUser?.id || currentUser?._id;
 
   useEffect(() => {
     async function fetchUser() {
