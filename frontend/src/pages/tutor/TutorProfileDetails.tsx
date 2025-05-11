@@ -96,9 +96,14 @@ export function TutorProfileDetails() {
       return;
     }
 
-    // Validate phone number: strip non-digits and check for exactly 10 digits
-    const phoneDigits = trimmedPhone.replace(/\D/g, ""); // Remove all non-digit characters
-    if (phoneDigits.length !== 10) {
+    // Validate phone number: strip formatting characters and ensure exactly 10 digits with no other characters
+    const cleanedPhone = trimmedPhone.replace(/[\s\-\(\)\+]/g, ""); // Remove spaces, dashes, parentheses, and +
+    const isDigitsOnly = /^\d+$/.test(cleanedPhone); // Check if the cleaned string contains only digits
+    if (!isDigitsOnly) {
+      toast.error("Phone number must contain only digits");
+      return;
+    }
+    if (cleanedPhone.length !== 10) {
       toast.error("Phone number must be exactly 10 digits");
       return;
     }
