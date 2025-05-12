@@ -792,10 +792,10 @@ export function VideoCall({
           </DialogHeader>
 
           {/* Video Area */}
-          <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
+          <div className="flex-1 p-4 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px] max-h-[70vh]">
             {/* Remote Video (Larger on desktop) */}
             <div
-              className={`relative rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shadow-lg ${
+              className={`relative rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shadow-lg aspect-video ${
                 isConnected ? "md:col-span-1" : "md:col-span-2"
               }`}
             >
@@ -827,7 +827,7 @@ export function VideoCall({
 
             {/* Local Video */}
             <div
-              className={`relative rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shadow-lg ${
+              className={`relative rounded-xl overflow-hidden bg-zinc-800 border border-zinc-700 shadow-lg aspect-video ${
                 isConnected ? "" : "hidden md:block"
               }`}
             >
