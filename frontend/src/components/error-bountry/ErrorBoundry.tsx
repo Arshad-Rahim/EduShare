@@ -51,12 +51,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               >
                 Retry
               </Button>
-              <Button
+              {/* <Button
                 onClick={() => (window.location.href = "/courses")}
                 className="bg-primary hover:bg-primary/90 text-white"
               >
                 Back to Courses
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
