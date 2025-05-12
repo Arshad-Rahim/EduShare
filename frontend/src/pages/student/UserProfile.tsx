@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -56,7 +55,11 @@ const profileSchema = z.object({
     .string()
     .trim()
     .min(1, "Full name is required")
-    .regex(/\S/, "Full name cannot be only whitespace"),
+    .regex(/\S/, "Full name cannot be only whitespace")
+    .regex(
+      /^[a-zA-Z\s'-]+$/,
+      "Full name can only contain letters, spaces, hyphens, and apostrophes"
+    ),
   email: z.string().email("Invalid email address").min(1, "Email is required"),
   bio: z
     .string()
@@ -72,7 +75,11 @@ const profileSchema = z.object({
     .string()
     .trim()
     .min(1, "Education is required")
-    .regex(/\S/, "Education cannot be only whitespace"),
+    .regex(/\S/, "Education cannot be only whitespace")
+    .regex(
+      /^(?=.*[a-zA-Z])[a-zA-Z0-9\s.,-]+$/,
+      "Education must contain at least one letter and can only include letters, numbers, spaces, commas, periods, and hyphens"
+    ),
 });
 
 // Sidebar Component
