@@ -857,7 +857,7 @@ export function VideoCall({
           {/* Controls */}
           <div className="p-4 bg-zinc-800 border-t border-zinc-700">
             <div className="flex items-center justify-center overflow-x-auto">
-              <div className="flex flex-nowrap items-center gap-1 md:gap-4">
+              <div className="flex flex-nowrap items-center gap-1 md:gap-4 lg:gap-6 min-w-fit">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -865,16 +865,16 @@ export function VideoCall({
                         onClick={toggleMute}
                         variant="outline"
                         size="icon"
-                        className={`w-10 h-10 rounded-full md:w-12 md:h-12 ${
+                        className={`w-10 h-10 rounded-full md:w-12 md:h-12 lg:w-14 lg:h-14 ${
                           isMuted
                             ? "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50"
                             : "bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
                         }`}
                       >
                         {isMuted ? (
-                          <MicOff className="w-4 h-4 md:w-5 md:h-5" />
+                          <MicOff className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                         ) : (
-                          <Mic className="w-4 h-4 md:w-5 md:h-5" />
+                          <Mic className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -887,16 +887,16 @@ export function VideoCall({
                         onClick={toggleVideo}
                         variant="outline"
                         size="icon"
-                        className={`w-10 h-10 rounded-full md:w-12 md:h-12 ${
+                        className={`w-10 h-10 rounded-full md:w-12 md:h-12 lg:w-14 lg:h-14 ${
                           isVideoOff
                             ? "bg-red-500/20 text-red-500 hover:bg-red-500/30 border-red-500/50"
                             : "bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
                         }`}
                       >
                         {isVideoOff ? (
-                          <VideoOff className="w-4 h-4 md:w-5 md:h-5" />
+                          <VideoOff className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                         ) : (
-                          <Video className="w-4 h-4 md:w-5 md:h-5" />
+                          <Video className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -907,7 +907,7 @@ export function VideoCall({
 
                   <Separator
                     orientation="vertical"
-                    className="h-6 bg-zinc-700 md:h-8"
+                    className="h-6 bg-zinc-700 md:h-8 lg:h-10"
                   />
 
                   <Tooltip>
@@ -916,9 +916,9 @@ export function VideoCall({
                         onClick={toggleFullscreen}
                         variant="outline"
                         size="icon"
-                        className="w-10 h-10 rounded-full md:w-12 md:h-12 bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
+                        className="w-10 h-10 rounded-full md:w-12 md:h-12 lg:w-14 lg:h-14 bg-zinc-700 hover:bg-zinc-600 border-zinc-600"
                       >
-                        <Maximize2 className="w-4 h-4 md:w-5 md:h-5" />
+                        <Maximize2 className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -928,7 +928,7 @@ export function VideoCall({
 
                   <Separator
                     orientation="vertical"
-                    className="h-6 bg-zinc-700 md:h-8"
+                    className="h-6 bg-zinc-700 md:h-8 lg:h-10"
                   />
 
                   <Tooltip>
@@ -937,9 +937,9 @@ export function VideoCall({
                         onClick={endCall}
                         variant="destructive"
                         size="icon"
-                        className="w-10 h-10 rounded-full md:w-12 md:h-12 bg-red-600 hover:bg-red-700 border-red-700"
+                        className="w-10 h-10 rounded-full md:w-12 md:h-12 lg:w-14 lg:h-14 bg-red-600 hover:bg-red-700 border-red-700"
                       >
-                        <PhoneOff className="w-4 h-4 md:w-5 md:h-5" />
+                        <PhoneOff className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>End Call</TooltipContent>
