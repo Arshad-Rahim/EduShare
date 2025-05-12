@@ -34,9 +34,9 @@ export const userAuthService =  {
 
   async verifyPassword(password:string){
     try {
-       const response = await authAxiosInstance.post("/verify-password", {
-              password,
-            });
+       const response = await authAxiosInstance.post("/users/verify-password", {
+         password,
+       });
             return response;
     } catch (error) {
       throw error;
