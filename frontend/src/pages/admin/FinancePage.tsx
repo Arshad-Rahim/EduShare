@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -9,8 +9,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Header } from "./components/admin/Header";
-import { SideBar } from "./components/admin/SideBar";
+import Header from "./components/admin/Header";
+import SideBar from "./components/admin/SideBar";
 import Table from "@/components/tableStructure/TableReusableStructure";
 import {
   Pagination,
@@ -50,17 +50,15 @@ interface WalletResponse {
   updatedAt: string;
 }
 
-export function FinancePage() {
+const FinancePage: React.FC = () => {
   const [walletData, setWalletData] = useState<WalletResponse | null>(null);
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
-  const [loading, setLoading] = useState(true); // For initial wallet data fetch
-  const [tableLoading, setTableLoading] = useState(false); // For transactions table fetch
+  const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const rowsPerPage = 6; // Match WalletPage
-
-  // State for filters
+  const rowsPerPage = 6;
   const [courseNameFilter, setCourseNameFilter] = useState<string>("");
   const [startDateFilter, setStartDateFilter] = useState<string>("");
   const [endDateFilter, setEndDateFilter] = useState<string>("");
@@ -68,89 +66,14 @@ export function FinancePage() {
 
   const navigate = useNavigate();
 
-  // Fetch wallet data only on component mount
-  useEffect(() => {
-    const fetchWalletData = async () => {
-      try {
-        setLoading(true);
-        const walletResponse = await walletService.getWalletData();
-        console.log("ADMIN WALLET DATA", walletResponse.data.wallet);
-        setWalletData(walletResponse.data.wallet);
-      } catch (error: any) {
-        console.error("Failed to fetch finance data:", error);
-        setError(
-          error.response?.data?.message || "Failed to load finance data"
-        );
-        toast.error(
-          error.response?.data?.message || "Failed to load finance data"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Memoized container class
+  const containerClass = useMemo(() => 
+    "min-h-screen bg-background",
+    []
+  );
 
-    fetchWalletData();
-  }, []); // Empty dependency array to run only on mount
-
-  // Fetch transactions when filters or page changes
-  useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!walletData?._id) return; // Skip if wallet data isn't loaded
-
-      try {
-        setTableLoading(true);
-        const transactionsResponse = await transactionService.getTransactions(
-          { data: { wallet: walletData } },
-          currentPage,
-          rowsPerPage,
-          {
-            courseName: courseNameFilter,
-            startDate: startDateFilter,
-            endDate: endDateFilter,
-          }
-        );
-
-        console.log(
-          "ADMIN TRANSACTIONS DATA",
-          transactionsResponse.data.transactions
-        );
-        setTransactions(transactionsResponse.data.transactions || []);
-        setTotalPages(
-          Math.ceil(transactionsResponse.data.totalTransaction / rowsPerPage)
-        );
-      } catch (error: any) {
-        console.error("Failed to fetch transactions:", error);
-        toast.error(
-          error.response?.data?.message || "Failed to load transactions"
-        );
-      } finally {
-        setTableLoading(false);
-      }
-    };
-
-    fetchTransactions();
-  }, [walletData, currentPage, debouncedValue, startDateFilter, endDateFilter]); // Run when walletData or filters change
-
-  // Add a separate useEffect to log walletData and transactions after they update
-  useEffect(() => {
-    if (walletData) {
-      console.log("ADMIN WALLET DATA (AFTER STATE UPDATE)", walletData);
-    }
-    if (transactions) {
-      console.log("ADMIN TRANSACTIONS (AFTER STATE UPDATE)", transactions);
-    }
-  }, [walletData, transactions]);
-
-  // Reset filters
-  const handleClearFilters = () => {
-    setCourseNameFilter("");
-    setStartDateFilter("");
-    setEndDateFilter("");
-    setCurrentPage(1); // Reset to first page
-  };
-
-  // Define headers for the reusable Table component in a standard order (matching WalletPage)
-  const headers = [
+  // Memoized table headers
+  const headers = useMemo(() => [
     {
       key: "createdAt",
       label: "Date",
@@ -178,11 +101,134 @@ export function FinancePage() {
           ? `+₹${transaction.amount.toFixed(2)}`
           : `-₹${transaction.amount.toFixed(2)}`,
     },
-  ];
+  ], []);
+
+  // Fetch wallet data
+  const fetchWalletData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const walletResponse = await walletService.getWalletData();
+      console.log("ADMIN WALLET DATA", walletResponse.data.wallet);
+      setWalletData(walletResponse.data.wallet);
+    } catch (error: any) {
+      console.error("Failed to fetch finance data:", error);
+      const errorMessage = error.response?.data?.message || "Failed to load finance data";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch transactions
+  const fetchTransactions = useCallback(async () => {
+    if (!walletData?._id) return;
+
+    try {
+      setTableLoading(true);
+      const transactionsResponse = await transactionService.getTransactions(
+        { data: { wallet: walletData } },
+        currentPage,
+        rowsPerPage,
+        {
+          courseName: courseNameFilter,
+          startDate: startDateFilter,
+          endDate: endDateFilter,
+        }
+      );
+
+      console.log("ADMIN TRANSACTIONS DATA", transactionsResponse.data.transactions);
+      setTransactions(transactionsResponse.data.transactions || []);
+      setTotalPages(Math.ceil(transactionsResponse.data.totalTransaction / rowsPerPage));
+    } catch (error: any) {
+      console.error("Failed to fetch transactions:", error);
+      toast.error(error.response?.data?.message || "Failed to load transactions");
+    } finally {
+      setTableLoading(false);
+    }
+  }, [walletData, currentPage, courseNameFilter, startDateFilter, endDateFilter, rowsPerPage]);
+
+  // Clear filters
+  const handleClearFilters = useCallback(() => {
+    setCourseNameFilter("");
+    setStartDateFilter("");
+    setEndDateFilter("");
+    setCurrentPage(1);
+  }, []);
+
+  // Log walletData and transactions after state updates
+  useEffect(() => {
+    if (walletData) {
+      console.log("ADMIN WALLET DATA (AFTER STATE UPDATE)", walletData);
+    }
+    if (transactions) {
+      console.log("ADMIN TRANSACTIONS (AFTER STATE UPDATE)", transactions);
+    }
+  }, [walletData, transactions]);
+
+  // Fetch wallet data on mount
+  useEffect(() => {
+    fetchWalletData();
+  }, [fetchWalletData]);
+
+  // Fetch transactions when filters or page changes
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions, debouncedValue]);
+
+  // Memoized table and pagination content
+  const tableContent = useMemo(() => (
+    tableLoading ? (
+      <div className="text-center py-4">
+        <p className="text-muted-foreground">Loading transactions...</p>
+      </div>
+    ) : (
+      <>
+        <Table
+          headers={headers}
+          data={transactions || []}
+          rowKey="transactionId"
+          className="shadow-md rounded-lg"
+          noDataMessage="No transactions available."
+        />
+        {totalPages > 1 && (
+          <Pagination className="mt-4">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    href="#"
+                    isActive={page === currentPage}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+      </>
+    )
+  ), [tableLoading, headers, transactions, totalPages, currentPage]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className={containerClass + " flex items-center justify-center"}>
         <p className="text-muted-foreground">Loading finance data...</p>
       </div>
     );
@@ -190,7 +236,7 @@ export function FinancePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className={containerClass + " flex items-center justify-center"}>
         <div className="text-center">
           <p className="text-red-500 mb-4">{error}</p>
           <Button onClick={() => navigate(0)}>Retry</Button>
@@ -201,14 +247,14 @@ export function FinancePage() {
 
   if (!walletData) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className={containerClass + " flex items-center justify-center"}>
         <p className="text-muted-foreground">No finance data available.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={containerClass}>
       <Header setSidebarOpen={() => {}} sidebarOpen={true} />
       <div className="flex">
         <aside className="fixed inset-y-0 left-0 top-16 z-30 w-64 shrink-0 border-r bg-background pt-4 md:block">
@@ -230,7 +276,6 @@ export function FinancePage() {
                 </p>
               </div>
 
-              {/* Filter Section with Improved UI */}
               <div className="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm">
                 <h4 className="text-lg font-medium text-gray-800 mb-4">
                   Filter Transactions
@@ -245,7 +290,7 @@ export function FinancePage() {
                       value={courseNameFilter}
                       onChange={(e) => {
                         setCourseNameFilter(e.target.value);
-                        setCurrentPage(1); // Reset to first page on filter change
+                        setCurrentPage(1);
                       }}
                       placeholder="Enter course name..."
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
@@ -261,13 +306,13 @@ export function FinancePage() {
                       onChange={(e) => {
                         const newStartDate = e.target.value;
                         const today = new Date();
-                        today.setHours(0, 0, 0, 0); // Normalize to start of day
+                        today.setHours(0, 0, 0, 0);
                         if (newStartDate && new Date(newStartDate) > today) {
                           toast.error("Start date cannot be a future date");
                           return;
                         }
                         setStartDateFilter(newStartDate);
-                        setCurrentPage(1); // Reset to first page on filter change
+                        setCurrentPage(1);
                       }}
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     />
@@ -286,13 +331,11 @@ export function FinancePage() {
                           newEndDate &&
                           new Date(newEndDate) < new Date(startDateFilter)
                         ) {
-                          toast.error(
-                            "End date cannot be earlier than start date"
-                          );
+                          toast.error("End date cannot be earlier than start date");
                           return;
                         }
                         setEndDateFilter(newEndDate);
-                        setCurrentPage(1); // Reset to first page on filter change
+                        setCurrentPage(1);
                       }}
                       className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     />
@@ -310,71 +353,7 @@ export function FinancePage() {
               </div>
 
               <div className="overflow-x-auto">
-                {tableLoading ? (
-                  <div className="text-center py-4">
-                    <p className="text-muted-foreground">
-                      Loading transactions...
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <Table
-                      headers={headers}
-                      data={transactions || []}
-                      rowKey="transactionId"
-                      className="shadow-md rounded-lg"
-                      noDataMessage="No transactions available."
-                    />
-                    {totalPages > 1 && (
-                      <Pagination className="mt-4">
-                        <PaginationContent>
-                          <PaginationItem>
-                            <PaginationPrevious
-                              href="#"
-                              onClick={() =>
-                                setCurrentPage((prev) => Math.max(prev - 1, 1))
-                              }
-                              className={
-                                currentPage === 1
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }
-                            />
-                          </PaginationItem>
-                          {Array.from(
-                            { length: totalPages },
-                            (_, i) => i + 1
-                          ).map((page) => (
-                            <PaginationItem key={page}>
-                              <PaginationLink
-                                href="#"
-                                isActive={page === currentPage}
-                                onClick={() => setCurrentPage(page)}
-                              >
-                                {page}
-                              </PaginationLink>
-                            </PaginationItem>
-                          ))}
-                          <PaginationItem>
-                            <PaginationNext
-                              href="#"
-                              onClick={() =>
-                                setCurrentPage((prev) =>
-                                  Math.min(prev + 1, totalPages)
-                                )
-                              }
-                              className={
-                                currentPage === totalPages
-                                  ? "pointer-events-none opacity-50"
-                                  : ""
-                              }
-                            />
-                          </PaginationItem>
-                        </PaginationContent>
-                      </Pagination>
-                    )}
-                  </>
-                )}
+                {tableContent}
               </div>
             </CardContent>
           </Card>
@@ -382,4 +361,6 @@ export function FinancePage() {
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(FinancePage);

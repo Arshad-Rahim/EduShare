@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -40,8 +42,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Header } from "./components/admin/Header";
-import { SideBar } from "./components/admin/SideBar";
+import  Header  from "./components/admin/Header";
+import  SideBar  from "./components/admin/SideBar";
 import { Link } from "react-router-dom";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { ClipLoader } from "react-spinners";
@@ -84,136 +86,8 @@ interface LessonFormModalProps {
   onLessonSaved: () => void;
 }
 
-export function AdminCourses() {
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [lessonModalOpen, setLessonModalOpen] = useState(false);
-  const [addLessonModalOpen, setAddLessonModalOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [confirmDeleteCourseOpen, setConfirmDeleteCourseOpen] = useState(false);
-  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
-  const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
-  const [lessonToDelete, setLessonToDelete] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  // Sidebar state
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [coursesPerPage] = useState(6);
-  const [totalCourses, setTotalCourses] = useState(0);
-
-  useEffect(() => {
-    fetchCourses(currentPage);
-  }, [currentPage]);
-
-  const fetchCourses = async (page: number) => {
-    setIsLoading(true);
-    try {
-      const response = await courseService.getAllCourses(page, coursesPerPage);
-      console.log("RESPONSE IN T HE FRONT", response.data.courses.courses);
-      setCourses(response.data.courses.courses || []);
-      setTotalCourses(response.data.courses.total || 0);
-    } catch (error) {
-      console.error("Failed to fetch courses:", error);
-      toast.error("Failed to load courses");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchLessons = async (courseId: string) => {
-    setIsLoading(true);
-    try {
-      const response = await courseService.getLessons(courseId);
-      setLessons(response?.data?.lessons || []);
-    } catch (error) {
-      console.error("Failed to fetch lessons:", error);
-      setLessons([]);
-      toast.error("Failed to load lessons");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteCourse = (courseId: string) => {
-    setCourseToDelete(courseId);
-    setConfirmDeleteCourseOpen(true);
-  };
-
-  const confirmDeleteCourse = async () => {
-    if (!courseToDelete) return;
-
-    setIsLoading(true);
-    try {
-      const response = await courseService.deleteCourse(courseToDelete);
-      toast.success(response?.data.message || "Course deleted successfully");
-      fetchCourses(currentPage);
-      if (courses.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    } catch (error) {
-      console.error("Failed to delete course:", error);
-      toast.error("Failed to delete course");
-    } finally {
-      setIsLoading(false);
-      setConfirmDeleteCourseOpen(false);
-      setCourseToDelete(null);
-    }
-  };
-
-  const handleDeleteLesson = (lessonId: string) => {
-    setLessonToDelete(lessonId);
-    setConfirmDeleteLessonOpen(true);
-  };
-
-  const confirmDeleteLesson = async () => {
-    if (!lessonToDelete) return;
-
-    setIsLoading(true);
-    try {
-      const response = await courseService.deleteLesson(lessonToDelete);
-      setLessons(lessons.filter((lesson) => lesson._id !== lessonToDelete));
-      toast.success(response.data.message || "Lesson deleted successfully");
-    } catch (error) {
-      console.error("Failed to delete lesson:", error);
-      toast.error("Failed to delete lesson");
-    } finally {
-      setIsLoading(false);
-      setConfirmDeleteLessonOpen(false);
-      setLessonToDelete(null);
-    }
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner":
-        return "bg-emerald-100 text-emerald-800";
-      case "Intermediate":
-        return "bg-amber-100 text-amber-800";
-      case "Advanced":
-        return "bg-rose-100 text-rose-800";
-      default:
-        return "bg-slate-100 text-slate-800";
-    }
-  };
-
-  const totalPages = Math.ceil(totalCourses / coursesPerPage);
-
-  const paginate = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
-
-  const CourseFormModal = ({
-    open,
-    onOpenChange,
-    course,
-    onCourseSaved,
-    isEditMode = false,
-  }: CourseFormModalProps) => {
+const CourseFormModal: React.FC<CourseFormModalProps> = React.memo(
+  ({ open, onOpenChange, course, onCourseSaved, isEditMode = false }) => {
     const [title, setTitle] = useState(course?.title || "");
     const [tagline, setTagline] = useState(course?.tagline || "");
     const [category, setCategory] = useState(course?.category || "");
@@ -227,36 +101,39 @@ export function AdminCourses() {
     const [formLoading, setFormLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (file) {
-        if (file.size > 2 * 1024 * 1024) {
-          toast.error("Thumbnail size should not exceed 2MB");
-          return;
+    const handleFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          if (file.size > 2 * 1024 * 1024) {
+            toast.error("Thumbnail size should not exceed 2MB");
+            return;
+          }
+          if (!["image/jpeg", "image/png"].includes(file.type)) {
+            toast.error("Only JPG and PNG files are allowed");
+            return;
+          }
+          setSelectedFile(file);
+          setExistingThumbnailUrl(null);
+          toast.success("Thumbnail selected successfully");
         }
-        if (!["image/jpeg", "image/png"].includes(file.type)) {
-          toast.error("Only JPG and PNG files are allowed");
-          return;
-        }
-        setSelectedFile(file);
-        setExistingThumbnailUrl(null);
-        toast.success("Thumbnail selected successfully");
-      }
-    };
+      },
+      []
+    );
 
-    const triggerFileInput = () => {
+    const triggerFileInput = useCallback(() => {
       if (fileInputRef.current) {
         fileInputRef.current.click();
       }
-    };
+    }, []);
 
-    const removeFile = () => {
+    const removeFile = useCallback(() => {
       setSelectedFile(null);
       setExistingThumbnailUrl(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    };
+    }, []);
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
       if (!title || !tagline || !category || !difficulty || !price || !about) {
         toast.error("Please fill out all required fields");
         return;
@@ -304,7 +181,19 @@ export function AdminCourses() {
       } finally {
         setFormLoading(false);
       }
-    };
+    }, [
+      title,
+      tagline,
+      category,
+      difficulty,
+      price,
+      about,
+      selectedFile,
+      isEditMode,
+      course?._id,
+      onOpenChange,
+      onCourseSaved,
+    ]);
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -503,14 +392,11 @@ export function AdminCourses() {
         </DialogContent>
       </Dialog>
     );
-  };
+  }
+);
 
-  const LessonFormModal = ({
-    open,
-    onOpenChange,
-    courseId,
-    onLessonSaved,
-  }: LessonFormModalProps) => {
+const LessonFormModal: React.FC<LessonFormModalProps> = React.memo(
+  ({ open, onOpenChange, courseId, onLessonSaved }) => {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [file, setFile] = useState<File | null>(null);
@@ -541,35 +427,38 @@ export function AdminCourses() {
       return () => clearInterval(interval);
     }, [formLoading, uploadProgress]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = event.target.files?.[0];
-      if (selectedFile) {
-        if (selectedFile.size > 50 * 1024 * 1024) {
-          toast.error("Lesson file size should not exceed 50MB");
-          return;
+    const handleFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0];
+        if (selectedFile) {
+          if (selectedFile.size > 50 * 1024 * 1024) {
+            toast.error("Lesson file size should not exceed 50MB");
+            return;
+          }
+          if (!["video/mp4", "video/webm"].includes(selectedFile.type)) {
+            toast.error("Only MP4 and WebM files are allowed");
+            return;
+          }
+          setFile(selectedFile);
+          toast.success("Lesson file selected successfully");
         }
-        if (!["video/mp4", "video/webm"].includes(selectedFile.type)) {
-          toast.error("Only MP4 and WebM files are allowed");
-          return;
-        }
-        setFile(selectedFile);
-        toast.success("Lesson file selected successfully");
-      }
-    };
+      },
+      []
+    );
 
-    const triggerFileInput = () => {
+    const triggerFileInput = useCallback(() => {
       if (fileInputRef.current) fileInputRef.current.click();
-    };
+    }, []);
 
-    const removeFile = () => {
+    const removeFile = useCallback(() => {
       setFile(null);
       setUploadProgress(0);
       setDisplayProgress(0);
       setIsProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    };
+    }, []);
 
-    const handleSaveLesson = async () => {
+    const handleSaveLesson = useCallback(async () => {
       if (!title || !description || !file) {
         toast.error(
           "Please fill out all required fields (title, description, file)"
@@ -614,7 +503,16 @@ export function AdminCourses() {
         setFormLoading(false);
         setIsProcessing(false);
       }
-    };
+    }, [
+      title,
+      description,
+      file,
+      duration,
+      order,
+      courseId,
+      onOpenChange,
+      onLessonSaved,
+    ]);
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -766,10 +664,376 @@ export function AdminCourses() {
         </DialogContent>
       </Dialog>
     );
-  };
+  }
+);
+
+const AdminCourses: React.FC = () => {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [lessonModalOpen, setLessonModalOpen] = useState(false);
+  const [addLessonModalOpen, setAddLessonModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [confirmDeleteCourseOpen, setConfirmDeleteCourseOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<string | null>(null);
+  const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
+  const [lessonToDelete, setLessonToDelete] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [coursesPerPage] = useState(6);
+  const [totalCourses, setTotalCourses] = useState(0);
+
+  // Memoized container class
+  const containerClass = useMemo(
+    () => "min-h-screen bg-gray-100 flex flex-col w-full",
+    []
+  );
+
+  // Memoized difficulty color mapping with index signature
+  const difficultyColors = useMemo<{ [key: string]: string }>(
+    () => ({
+      Beginner: "bg-emerald-100 text-emerald-800",
+      Intermediate: "bg-amber-100 text-amber-800",
+      Advanced: "bg-rose-100 text-rose-800",
+    }),
+    []
+  );
+
+  const getDifficultyColor = useCallback(
+    (difficulty: string) => {
+      return difficultyColors[difficulty] || "bg-slate-100 text-slate-800";
+    },
+    [difficultyColors]
+  );
+
+  const fetchCourses = useCallback(
+    async (page: number) => {
+      setIsLoading(true);
+      try {
+        const response = await courseService.getAllCourses(
+          page,
+          coursesPerPage
+        );
+        setCourses(response.data.courses.courses || []);
+        setTotalCourses(response.data.courses.total || 0);
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+        toast.error("Failed to load courses");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [coursesPerPage]
+  );
+
+  const fetchLessons = useCallback(async (courseId: string) => {
+    setIsLoading(true);
+    try {
+      const response = await courseService.getLessons(courseId);
+      setLessons(response?.data?.lessons || []);
+    } catch (error) {
+      console.error("Failed to fetch lessons:", error);
+      setLessons([]);
+      toast.error("Failed to load lessons");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleDeleteCourse = useCallback((courseId: string) => {
+    setCourseToDelete(courseId);
+    setConfirmDeleteCourseOpen(true);
+  }, []);
+
+  const confirmDeleteCourse = useCallback(async () => {
+    if (!courseToDelete) return;
+
+    setIsLoading(true);
+    try {
+      const response = await courseService.deleteCourse(courseToDelete);
+      toast.success(response?.data.message || "Course deleted successfully");
+      fetchCourses(currentPage);
+      if (courses.length === 1 && currentPage > 1) {
+        setCurrentPage(currentPage - 1);
+      }
+    } catch (error) {
+      console.error("Failed to delete course:", error);
+      toast.error("Failed to delete course");
+    } finally {
+      setIsLoading(false);
+      setConfirmDeleteCourseOpen(false);
+      setCourseToDelete(null);
+    }
+  }, [courseToDelete, fetchCourses, currentPage, courses.length]);
+
+  const handleDeleteLesson = useCallback((lessonId: string) => {
+    setLessonToDelete(lessonId);
+    setConfirmDeleteLessonOpen(true);
+  }, []);
+
+  const confirmDeleteLesson = useCallback(async () => {
+    if (!lessonToDelete) return;
+
+    setIsLoading(true);
+    try {
+      const response = await courseService.deleteLesson(lessonToDelete);
+      setLessons(lessons.filter((lesson) => lesson._id !== lessonToDelete));
+      toast.success(response.data.message || "Lesson deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete lesson:", error);
+      toast.error("Failed to delete lesson");
+    } finally {
+      setIsLoading(false);
+      setConfirmDeleteLessonOpen(false);
+      setLessonToDelete(null);
+    }
+  }, [lessonToDelete, lessons]);
+
+  const paginate = useCallback(
+    (pageNumber: number) => {
+      const totalPages = Math.ceil(totalCourses / coursesPerPage);
+      if (pageNumber >= 1 && pageNumber <= totalPages) {
+        setCurrentPage(pageNumber);
+      }
+    },
+    [totalCourses, coursesPerPage]
+  );
+
+  useEffect(() => {
+    fetchCourses(currentPage);
+  }, [fetchCourses, currentPage]);
+
+  // Memoized total pages calculation
+  const totalPages = useMemo(
+    () => Math.ceil(totalCourses / coursesPerPage),
+    [totalCourses, coursesPerPage]
+  );
+
+  // Memoized courses rendering
+  const coursesList = useMemo(
+    () =>
+      courses.length === 0 && currentPage === 1 ? (
+        <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
+          <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-700 mb-2">
+            No courses available
+          </h3>
+          <p className="text-slate-500 max-w-md mx-auto mb-6">
+            No courses have been created yet. Add a new course to start building
+            the catalog.
+          </p>
+          <Button
+            onClick={() => setAddModalOpen(true)}
+            variant="outline"
+            className="border-primary text-primary hover:bg-primary/5"
+            disabled={isLoading}
+          >
+            Create a Course
+          </Button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+            {courses.map((course) => (
+              <Card
+                key={course._id}
+                className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col w-full"
+              >
+                <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail || "/placeholder.svg"}
+                      alt={course.title}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                      <BookOpen className="h-12 w-12 text-slate-400" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <Badge className={getDifficultyColor(course.difficulty)}>
+                      {course.difficulty}
+                    </Badge>
+                  </div>
+                </div>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl font-bold line-clamp-1">
+                    {course.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {course.tagline}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2 flex-grow">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <Tag className="h-4 w-4" />
+                        <span>{course.category}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <span className="font-medium">₹{course.price}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <User className="h-4 w-4" />
+                        <span>{course.tutorName}</span>
+                      </div>
+                    </div>
+                    <Separator />
+                    <p className="text-sm text-slate-600 line-clamp-3">
+                      {course.about}
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-2 flex flex-col gap-2 w-full">
+                  <div className="flex justify-between w-full gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-slate-300 hover:bg-slate-50"
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        setEditModalOpen(true);
+                      }}
+                      disabled={isLoading}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                      onClick={() => handleDeleteCourse(course._id)}
+                      disabled={isLoading}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                  <div className="flex justify-between w-full gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                      onClick={() => {
+                        setSelectedCourse(course);
+                        fetchLessons(course._id);
+                        setLessonModalOpen(true);
+                      }}
+                      disabled={isLoading}
+                    >
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Manage Lessons
+                    </Button>
+                    <Link
+                      to={`/admin/courses/${course._id}`}
+                      className="flex-1"
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
+                        disabled={isLoading}
+                      >
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6">
+              <Button
+                variant="outline"
+                onClick={() => paginate(currentPage - 1)}
+                disabled={currentPage === 1 || isLoading}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      onClick={() => paginate(page)}
+                      disabled={isLoading}
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => paginate(currentPage + 1)}
+                disabled={currentPage === totalPages || isLoading}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
+      ),
+    [
+      courses,
+      currentPage,
+      isLoading,
+      totalPages,
+      paginate,
+      getDifficultyColor,
+      fetchLessons,
+    ]
+  );
+
+  // Memoized lessons rendering for lesson modal
+  const lessonsList = useMemo(
+    () =>
+      lessons.length === 0 ? (
+        <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
+          <Video className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500">No lessons added yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-4 max-h-[300px] overflow-y-auto w-full">
+          {lessons.map((lesson) => (
+            <div
+              key={lesson._id}
+              className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+            >
+              <div className="flex items-start gap-3">
+                <Video className="h-5 w-5 text-primary mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">{lesson.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lesson.duration ? `${lesson.duration} min` : "No duration"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => handleDeleteLesson(lesson._id)}
+                variant="ghost"
+                size="sm"
+                disabled={isLoading}
+              >
+                <Trash2 className="h-4 w-4 text-rose-600" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ),
+    [lessons, handleDeleteLesson, isLoading]
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col w-full">
+    <div className={containerClass}>
       <Header setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
@@ -802,185 +1066,7 @@ export function AdminCourses() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="pt-6 w-full">
-                {courses.length === 0 && currentPage === 1 ? (
-                  <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
-                    <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-700 mb-2">
-                      No courses available
-                    </h3>
-                    <p className="text-slate-500 max-w-md mx-auto mb-6">
-                      No courses have been created yet. Add a new course to
-                      start building the catalog.
-                    </p>
-                    <Button
-                      onClick={() => setAddModalOpen(true)}
-                      variant="outline"
-                      className="border-primary text-primary hover:bg-primary/5"
-                      disabled={isLoading}
-                    >
-                      Create a Course
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                      {courses.map((course) => (
-                        <Card
-                          key={course._id}
-                          className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col w-full"
-                        >
-                          <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                            {course.thumbnail ? (
-                              <img
-                                src={course.thumbnail || "/placeholder.svg"}
-                                alt={course.title}
-                                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                                <BookOpen className="h-12 w-12 text-slate-400" />
-                              </div>
-                            )}
-                            <div className="absolute top-3 right-3 flex gap-2">
-                              <Badge
-                                className={getDifficultyColor(
-                                  course.difficulty
-                                )}
-                              >
-                                {course.difficulty}
-                              </Badge>
-                            </div>
-                          </div>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-xl font-bold line-clamp-1">
-                              {course.title}
-                            </CardTitle>
-                            <CardDescription className="line-clamp-2">
-                              {course.tagline}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2 flex-grow">
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <Tag className="h-4 w-4" />
-                                  <span>{course.category}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <span className="font-medium">
-                                    ₹{course.price}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <User className="h-4 w-4" />
-                                  <span>{course.tutorName}</span>
-                                </div>
-                              </div>
-                              <Separator />
-                              <p className="text-sm text-slate-600 line-clamp-3">
-                                {course.about}
-                              </p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2 flex flex-col gap-2 w-full">
-                            <div className="flex justify-between w-full gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-slate-300 hover:bg-slate-50"
-                                onClick={() => {
-                                  setSelectedCourse(course);
-                                  setEditModalOpen(true);
-                                }}
-                                disabled={isLoading}
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                                onClick={() => handleDeleteCourse(course._id)}
-                                disabled={isLoading}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </Button>
-                            </div>
-                            <div className="flex justify-between w-full gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                onClick={() => {
-                                  setSelectedCourse(course);
-                                  fetchLessons(course._id);
-                                  setLessonModalOpen(true);
-                                }}
-                                disabled={isLoading}
-                              >
-                                <PlusCircle className="h-4 w-4 mr-2" />
-                                Manage Lessons
-                              </Button>
-                              <Link
-                                to={`/admin/courses/${course._id}`}
-                                className="flex-1"
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                  disabled={isLoading}
-                                >
-                                  <BookOpen className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Button>
-                              </Link>
-                            </div>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                    {totalPages > 1 && (
-                      <div className="flex justify-between items-center mt-6">
-                        <Button
-                          variant="outline"
-                          onClick={() => paginate(currentPage - 1)}
-                          disabled={currentPage === 1 || isLoading}
-                        >
-                          Previous
-                        </Button>
-                        <div className="flex items-center gap-2">
-                          {Array.from(
-                            { length: totalPages },
-                            (_, i) => i + 1
-                          ).map((page) => (
-                            <Button
-                              key={page}
-                              variant={
-                                currentPage === page ? "default" : "outline"
-                              }
-                              onClick={() => paginate(page)}
-                              disabled={isLoading}
-                            >
-                              {page}
-                            </Button>
-                          ))}
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => paginate(currentPage + 1)}
-                          disabled={currentPage === totalPages || isLoading}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
+              <CardContent className="pt-6 w-full">{coursesList}</CardContent>
             </Card>
             {lessonModalOpen && selectedCourse && (
               <Dialog open={lessonModalOpen} onOpenChange={setLessonModalOpen}>
@@ -999,43 +1085,7 @@ export function AdminCourses() {
                       <PlusCircle className="h-4 w-4 mr-2" />
                       Add New Lesson
                     </Button>
-                    {lessons.length === 0 ? (
-                      <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
-                        <Video className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No lessons added yet.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 max-h-[300px] overflow-y-auto w-full">
-                        {lessons.map((lesson) => (
-                          <div
-                            key={lesson._id}
-                            className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                          >
-                            <div className="flex items-start gap-3">
-                              <Video className="h-5 w-5 text-primary mt-0.5" />
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {lesson.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {lesson.duration
-                                    ? `${lesson.duration} min`
-                                    : "No duration"}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              onClick={() => handleDeleteLesson(lesson._id)}
-                              variant="ghost"
-                              size="sm"
-                              disabled={isLoading}
-                            >
-                              <Trash2 className="h-4 w-4 text-rose-600" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {lessonsList}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -1085,4 +1135,6 @@ export function AdminCourses() {
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(AdminCourses);

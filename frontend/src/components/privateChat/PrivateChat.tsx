@@ -8,8 +8,8 @@ import { profileService } from "@/services/userService/profileService";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { toast } from "sonner";
 import { Header } from "@/pages/student/components/Header"; // Student header
-import { Header as TutorHeader } from "@/pages/tutor/components/Header"; // Tutor header
-import { SideBar } from "@/pages/tutor/components/SideBar"; // Tutor sidebar
+import  TutorHeader  from "@/pages/tutor/components/Header"; // Tutor header
+import  SideBar  from "@/pages/tutor/components/SideBar"; // Tutor sidebar
 
 interface Message {
   _id?: string;

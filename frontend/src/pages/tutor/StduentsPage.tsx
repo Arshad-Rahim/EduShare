@@ -13,8 +13,8 @@ import {
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { toast } from "sonner";
 import { ArrowLeft, Users } from "lucide-react";
-import { Header } from "./components/Header";
-import { SideBar } from "./components/SideBar";
+import  Header  from "./components/Header";
+import  SideBar  from "./components/SideBar";
 
 // Reusable Table Component
 type Column<T> = {

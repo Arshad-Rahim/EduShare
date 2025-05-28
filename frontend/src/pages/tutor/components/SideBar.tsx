@@ -9,7 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
 
@@ -18,13 +18,14 @@ interface SideBarProps {
   setSidebarOpen: (open: boolean) => void;
 }
 
-export function SideBar({ sidebarOpen, setSidebarOpen }: SideBarProps) {
+function SideBar({ sidebarOpen, setSidebarOpen }: SideBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAccepted, setIsAccepted] = useState(null);
+  const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchTutorProfile = async () => {
+  // Fetch tutor profile
+  const fetchTutorProfile = useCallback(async () => {
     try {
       const response = await tutorService.tutorDetails();
       setIsAccepted(response.data.tutor.isAccepted);
@@ -34,61 +35,74 @@ export function SideBar({ sidebarOpen, setSidebarOpen }: SideBarProps) {
       toast.error("Failed to load profile data");
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTutorProfile();
-  }, []);
+  }, [fetchTutorProfile]);
 
-  const navItems = [
-    {
-      icon: <LayoutDashboard className="h-4 w-4" />,
-      name: "Dashboard",
-      path: "/tutor/home",
-      disabled: isAccepted === false,
+  // Handle navigation
+  const handleNavigation = useCallback(
+    (path: string) => {
+      navigate(path);
+      setSidebarOpen(false);
     },
-    {
-      icon: <FileText className="h-4 w-4" />,
-      name: "My Courses",
-      path: "/tutor/courses",
-      disabled: isAccepted === false,
-    },
-    {
-      icon: <Users className="h-4 w-4" />,
-      name: "Students",
-      path: "/tutor/students",
-      disabled: isAccepted === false,
-    },
-    {
-      icon: <MessageSquare className="h-4 w-4" />,
-      name: "Messages",
-      path: "/tutor/messages",
-      disabled: isAccepted === false,
-    },
-  ];
+    [navigate, setSidebarOpen]
+  );
 
-  const bottomItems = [
-    {
-      icon: <Settings className="h-4 w-4" />,
-      name: "Settings",
-      path: "/tutor/settings",
-      disabled: isAccepted === false,
-    },
-    {
-      icon: <HelpCircle className="h-4 w-4" />,
-      name: "Help & Support",
-      path: "/tutor/help",
-      disabled: isAccepted === false,
-    },
-  ];
+  // Memoized nav items
+  const navItems = useMemo(
+    () => [
+      {
+        icon: <LayoutDashboard className="h-4 w-4" />,
+        name: "Dashboard",
+        path: "/tutor/home",
+        disabled: isAccepted === false,
+      },
+      {
+        icon: <FileText className="h-4 w-4" />,
+        name: "My Courses",
+        path: "/tutor/courses",
+        disabled: isAccepted === false,
+      },
+      {
+        icon: <Users className="h-4 w-4" />,
+        name: "Students",
+        path: "/tutor/students",
+        disabled: isAccepted === false,
+      },
+      {
+        icon: <MessageSquare className="h-4 w-4" />,
+        name: "Messages",
+        path: "/tutor/messages",
+        disabled: isAccepted === false,
+      },
+    ],
+    [isAccepted]
+  );
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    setSidebarOpen(false); // Close sidebar on navigation in mobile view
-  };
+  // Memoized bottom items
+  const bottomItems = useMemo(
+    () => [
+      {
+        icon: <Settings className="h-4 w-4" />,
+        name: "Settings",
+        path: "/tutor/settings",
+        disabled: isAccepted === false,
+      },
+      {
+        icon: <HelpCircle className="h-4 w-4" />,
+        name: "Help & Support",
+        path: "/tutor/help",
+        disabled: isAccepted === false,
+      },
+    ],
+    [isAccepted]
+  );
 
-  if (loading) {
-    return (
+  // Memoized loading UI
+  const loadingUI = useMemo(
+    () => (
       <aside
         className={`${
           sidebarOpen ? "block" : "hidden"
@@ -98,7 +112,53 @@ export function SideBar({ sidebarOpen, setSidebarOpen }: SideBarProps) {
           <p className="text-gray-500">Loading...</p>
         </div>
       </aside>
-    );
+    ),
+    [sidebarOpen]
+  );
+
+  // Memoized navigation items UI
+  const navItemsUI = useMemo(
+    () =>
+      navItems.map((item) => (
+        <Button
+          key={item.name}
+          variant={location.pathname === item.path ? "secondary" : "ghost"}
+          className="justify-start"
+          onClick={() => !item.disabled && handleNavigation(item.path)}
+          disabled={item.disabled}
+          title={
+            item.disabled
+              ? "This feature is available only after acceptance"
+              : undefined
+          }
+        >
+          {item.icon}
+          <span className="ml-2">{item.name}</span>
+        </Button>
+      )),
+    [navItems, location.pathname, handleNavigation]
+  );
+
+  // Memoized bottom items UI
+  const bottomItemsUI = useMemo(
+    () =>
+      bottomItems.map((item) => (
+        <Button
+          key={item.name}
+          variant={location.pathname === item.path ? "secondary" : "ghost"}
+          className="w-full justify-start"
+          onClick={() => handleNavigation(item.path)}
+          disabled={item.disabled}
+        >
+          {item.icon}
+          <span className="ml-2">{item.name}</span>
+        </Button>
+      )),
+    [bottomItems, location.pathname, handleNavigation]
+  );
+
+  if (loading) {
+    return loadingUI;
   }
 
   return (
@@ -123,40 +183,11 @@ export function SideBar({ sidebarOpen, setSidebarOpen }: SideBarProps) {
           </Button>
         </div>
 
-        <nav className="mt-6 grid gap-1 px-2">
-          {navItems.map((item) => (
-            <Button
-              key={item.name}
-              variant={location.pathname === item.path ? "secondary" : "ghost"}
-              className="justify-start"
-              onClick={() => !item.disabled && handleNavigation(item.path)}
-              disabled={item.disabled}
-              title={
-                item.disabled
-                  ? "This feature is available only after acceptance"
-                  : undefined
-              }
-            >
-              {item.icon}
-              <span className="ml-2">{item.name}</span>
-            </Button>
-          ))}
-        </nav>
-        <div className="mt-auto border-t px-4 py-4">
-          {bottomItems.map((item) => (
-            <Button
-              key={item.name}
-              variant={location.pathname === item.path ? "secondary" : "ghost"}
-              className="w-full justify-start"
-              onClick={() => handleNavigation(item.path)}
-              disabled={item.disabled}
-            >
-              {item.icon}
-              <span className="ml-2">{item.name}</span>
-            </Button>
-          ))}
-        </div>
+        <nav className="mt-6 grid gap-1 px-2">{navItemsUI}</nav>
+        <div className="mt-auto border-t px-4 py-4">{bottomItemsUI}</div>
       </div>
     </aside>
   );
 }
+
+export default memo(SideBar);

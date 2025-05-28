@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import {
   Card,
   CardContent,
@@ -83,172 +82,183 @@ const profileSchema = z.object({
 });
 
 // Sidebar Component
-function Sidebar() {
-  return (
-    <div className="w-full space-y-4 py-4">
-      <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-          Dashboard
-        </h2>
-        <div className="space-y-1">
-          <Button variant="secondary" className="w-full justify-start">
-            <User className="mr-2 h-4 w-4" />
-            Profile
-          </Button>
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/my-courses">
-              <BookOpen className="mr-2 h-4 w-4" />
-              My Courses
-            </Link>
-          </Button>
+const Sidebar = memo(() => {
+  const sidebarUI = useMemo(
+    () => (
+      <div className="w-full space-y-4 py-4">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+            Dashboard
+          </h2>
+          <div className="space-y-1">
+            <Button variant="secondary" className="w-full justify-start">
+              <User className="mr-2 h-4 w-4" />
+              Profile
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/my-courses">
+                <BookOpen className="mr-2 h-4 w-4" />
+                My Courses
+              </Link>
+            </Button>
+          </div>
+        </div>
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+            Learning
+          </h2>
+          <div className="space-y-1">
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/courses">
+                <BookOpen className="mr-2 h-4 w-4" />
+                All Courses
+              </Link>
+            </Button>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/wishlist">
+                <Heart className="mr-2 h-4 w-4" />
+                Wishlist
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
-      <div className="px-3 py-2">
-        <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
-          Learning
-        </h2>
-        <div className="space-y-1">
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/courses">
-              <BookOpen className="mr-2 h-4 w-4" />
-              All Courses
-            </Link>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start" asChild>
-            <Link to="/wishlist">
-              <Heart className="mr-2 h-4 w-4" />
-              Wishlist
-            </Link>
-          </Button>
-        </div>
-      </div>
-    </div>
+    ),
+    []
   );
-}
+
+  return sidebarUI;
+});
+Sidebar.displayName = "Sidebar";
 
 // CurrentPasswordModal Component
-const CurrentPasswordModal = ({
-  onPasswordVerified,
-}: {
-  onPasswordVerified: () => void;
-}) => {
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+const CurrentPasswordModal = memo(
+  ({ onPasswordVerified }: { onPasswordVerified: () => void }) => {
+    const [open, setOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
-  const formSchema = z.object({
-    currentPassword: z
-      .string()
-      .min(1, { message: "Current password is required" }),
-  });
+    const formSchema = z.object({
+      currentPassword: z
+        .string()
+        .min(1, { message: "Current password is required" }),
+    });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      currentPassword: "",
-    },
-  });
+    const form = useForm<z.infer<typeof formSchema>>({
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+        currentPassword: "",
+      },
+    });
 
-  const verifyCurrentPassword = async (password: string): Promise<boolean> => {
-    try {
-      const response = await userAuthService.verifyPassword(password);
-      return response.data.valid || false;
-    } catch (error) {
-      console.error("Password verification failed:", error);
-      return false;
-    }
-  };
+    const verifyCurrentPassword = useCallback(
+      async (password: string): Promise<boolean> => {
+        try {
+          const response = await userAuthService.verifyPassword(password);
+          return response.data.valid || false;
+        } catch (error) {
+          console.error("Password verification failed:", error);
+          return false;
+        }
+      },
+      []
+    );
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const isValid = await verifyCurrentPassword(values.currentPassword);
-      if (isValid) {
-        setError(null);
-        setOpen(false);
-        onPasswordVerified();
-      } else {
-        setError("Incorrect password. Please try again.");
-      }
-    } catch (err) {
-      console.log(err);
-      setError("An error occurred. Please try again later.");
-    }
-  };
+    const onSubmit = useCallback(
+      async (values: z.infer<typeof formSchema>) => {
+        try {
+          const isValid = await verifyCurrentPassword(values.currentPassword);
+          if (isValid) {
+            setError(null);
+            setOpen(false);
+            onPasswordVerified();
+          } else {
+            setError("Incorrect password. Please try again.");
+          }
+        } catch (err) {
+          console.log(err);
+          setError("An error occurred. Please try again later.");
+        }
+      },
+      [onPasswordVerified, verifyCurrentPassword]
+    );
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">Change Password</Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Verify Current Password</DialogTitle>
-          <DialogDescription>
-            Please enter your current password to proceed with changing it.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="currentPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Password</FormLabel>
-                  <div className="relative">
-                    <FormControl>
-                      <Input
-                        type={showCurrentPassword ? "text" : "password"}
-                        placeholder="Enter your current password"
-                        className="pr-10"
-                        {...field}
-                      />
-                    </FormControl>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-500 hover:text-gray-900"
-                      onClick={() =>
-                        setShowCurrentPassword(!showCurrentPassword)
-                      }
-                    >
-                      {showCurrentPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                      <span className="sr-only">
-                        {showCurrentPassword
-                          ? "Hide password"
-                          : "Show password"}
-                      </span>
-                    </Button>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">Verify</Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-};
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Change Password</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Verify Current Password</DialogTitle>
+            <DialogDescription>
+              Please enter your current password to proceed with changing it.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          type={showCurrentPassword ? "text" : "password"}
+                          placeholder="Enter your current password"
+                          className="pr-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-gray-500 hover:text-gray-900"
+                        onClick={() =>
+                          setShowCurrentPassword(!showCurrentPassword)
+                        }
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {showCurrentPassword
+                            ? "Hide password"
+                            : "Show password"}
+                        </span>
+                      </Button>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Verify</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+);
+CurrentPasswordModal.displayName = "CurrentPasswordModal";
 
 // Main StudentProfile Component
-export default function StudentProfile() {
+function StudentProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState({
     name: "",
@@ -272,69 +282,70 @@ export default function StudentProfile() {
     },
   });
 
-  useEffect(() => {
-    const userData = async () => {
-      try {
-        const response = await profileService.userDetails();
-        const userData = response.data.users;
-        const updatedUser = {
-          name: userData.name,
-          email: userData.email,
-          bio:
-            userData.aboutMe ||
-            "I'm a student passionate about learning new technologies and skills.",
-          interests:
-            userData.interests || "Web Development, Mobile Apps, Data Science",
-          education: userData.education || "Computer Science",
-          password: userData.password,
-        };
-        setUser(updatedUser);
-        form.reset({
-          name: updatedUser.name,
-          email: updatedUser.email,
-          bio: updatedUser.bio,
-          interests: updatedUser.interests,
-          education: updatedUser.education,
-        });
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        toast.error("Failed to load profile data");
-      }
-    };
-    userData();
+  const userData = useCallback(async () => {
+    try {
+      const response = await profileService.userDetails();
+      const userData = response.data.users;
+      const updatedUser = {
+        name: userData.name,
+        email: userData.email,
+        bio:
+          userData.aboutMe ||
+          "I'm a student passionate about learning new technologies and skills.",
+        interests:
+          userData.interests || "Web Development, Mobile Apps, Data Science",
+        education: userData.education || "Computer Science",
+        password: userData.password,
+      };
+      setUser(updatedUser);
+      form.reset({
+        name: updatedUser.name,
+        email: updatedUser.email,
+        bio: updatedUser.bio,
+        interests: updatedUser.interests,
+        education: updatedUser.education,
+      });
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+      toast.error("Failed to load profile data");
+    }
   }, [form]);
 
-  const handleSave = form.handleSubmit(async (data) => {
-    try {
-      const response = await profileService.profileUpdate(data);
-      setUser({ ...data, password: user.password });
-      setIsEditing(false);
-      toast.success(response.data.message || "Profile updated successfully!");
-    } catch (error) {
-      console.error("Update failed:", error);
-      toast.error("Failed to update profile!");
-    }
-  });
+  useEffect(() => {
+    userData();
+  }, [userData]);
 
-  const handleCancel = () => {
+  const handleSave = useCallback(
+    form.handleSubmit(async (data) => {
+      try {
+        const response = await profileService.profileUpdate(data);
+        setUser({ ...data, password: user.password });
+        setIsEditing(false);
+        toast.success(response.data.message || "Profile updated successfully!");
+      } catch (error) {
+        console.error("Update failed:", error);
+        toast.error("Failed to update profile!");
+      }
+    }),
+    [form, user.password]
+  );
+
+  const handleCancel = useCallback(() => {
     form.reset(user);
     setIsEditing(false);
-  };
+  }, [form, user]);
 
-  const handlePasswordVerified = () => {
+  const handlePasswordVerified = useCallback(() => {
     setNewPasswordModalOpen(true);
-  };
+  }, []);
 
-  const handlePasswordUpdated = () => {
+  const handlePasswordUpdated = useCallback(() => {
     console.log("Password updated successfully!");
-  };
+  }, []);
 
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
+  const mobileMenuUI = useMemo(
+    () =>
+      mobileMenuOpen ? (
         <div className="fixed inset-0 z-50 bg-background md:hidden">
           <div className="container flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
@@ -352,13 +363,31 @@ export default function StudentProfile() {
           </div>
           <Sidebar />
         </div>
-      )}
+      ) : null,
+    [mobileMenuOpen]
+  );
 
+  const interestsTags = useMemo(
+    () =>
+      user.interests.split(",").map((interest, index) => (
+        <span
+          key={index}
+          className="inline-block bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2"
+        >
+          {interest.trim()}
+        </span>
+      )),
+    [user.interests]
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Header />
+      {mobileMenuUI}
       <div className="flex flex-col md:flex-row gap-6 p-6">
         <div className="w-full md:w-64 flex-shrink-0">
           <Sidebar />
         </div>
-
         <div className="flex-1 max-w-4xl w-full">
           <Form {...form}>
             <form onSubmit={handleSave} className="space-y-6">
@@ -403,7 +432,6 @@ export default function StudentProfile() {
                         </AvatarFallback>
                       </Avatar>
                     </div>
-
                     <div className="flex-1 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
@@ -425,7 +453,6 @@ export default function StudentProfile() {
                             </FormItem>
                           )}
                         />
-
                         <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
                           <div className="p-2 border rounded-md bg-muted/50">
@@ -438,7 +465,6 @@ export default function StudentProfile() {
                           )}
                         </div>
                       </div>
-
                       <FormField
                         control={form.control}
                         name="education"
@@ -470,7 +496,6 @@ export default function StudentProfile() {
                   </CardFooter>
                 )}
               </Card>
-
               {/* Learning Profile Card */}
               <Card>
                 <CardHeader>
@@ -499,7 +524,6 @@ export default function StudentProfile() {
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="interests"
@@ -515,16 +539,7 @@ export default function StudentProfile() {
                           </FormControl>
                         ) : (
                           <div className="p-3 border rounded-md bg-muted/50">
-                            {user.interests
-                              .split(",")
-                              .map((interest, index) => (
-                                <span
-                                  key={index}
-                                  className="inline-block bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2"
-                                >
-                                  {interest.trim()}
-                                </span>
-                              ))}
+                            {interestsTags}
                           </div>
                         )}
                         {isEditing && <FormMessage />}
@@ -533,7 +548,6 @@ export default function StudentProfile() {
                   />
                 </CardContent>
               </Card>
-
               {/* Account Settings Card */}
               <Card>
                 <CardHeader>
@@ -566,7 +580,6 @@ export default function StudentProfile() {
           </Form>
         </div>
       </div>
-
       {/* New Password Modal */}
       <NewPasswordModal
         open={newPasswordModalOpen}
@@ -576,3 +589,5 @@ export default function StudentProfile() {
     </div>
   );
 }
+
+export default memo(StudentProfile);

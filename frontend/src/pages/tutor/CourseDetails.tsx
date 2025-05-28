@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Header } from "./components/Header";
-import { SideBar } from "./components/SideBar";
+import  Header  from "./components/Header";
+import  SideBar  from "./components/SideBar";
 import { toast } from "sonner";
 import {
   BookOpen,

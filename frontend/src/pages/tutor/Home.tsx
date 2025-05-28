@@ -12,8 +12,8 @@ import {
 import { toast } from "sonner";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { useSelector } from "react-redux";
-import { Header } from "./components/Header";
-import { SideBar } from "./components/SideBar";
+import  Header  from "./components/Header";
+import  SideBar  from "./components/SideBar";
 import {
   Table,
   TableBody,

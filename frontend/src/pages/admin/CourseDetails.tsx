@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -34,8 +34,8 @@ import {
   FileIcon,
 } from "lucide-react";
 import { courseService } from "@/services/courseService";
-import { Header } from "./components/admin/Header";
-import { SideBar } from "./components/admin/SideBar";
+import Header from "./components/admin/Header";
+import SideBar from "./components/admin/SideBar";
 
 // Define interfaces
 interface Course {
@@ -58,7 +58,7 @@ interface Lesson {
   videoUrl?: string;
 }
 
-export function AdminCourseDetails() {
+const AdminCourseDetails: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
@@ -77,18 +77,35 @@ export function AdminCourseDetails() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  useEffect(() => {
+  // Memoized container class
+  const containerClass = useMemo(
+    () => "min-h-screen bg-gray-100 flex flex-col w-full",
+    []
+  );
+
+  // Memoized difficulty color mapping with index signature
+  const difficultyColors = useMemo<{ [key: string]: string }>(
+    () => ({
+      Beginner: "bg-emerald-100 text-emerald-800",
+      Intermediate: "bg-amber-100 text-amber-800",
+      Advanced: "bg-rose-100 text-rose-800",
+    }),
+    []
+  );
+
+  const getDifficultyColor = useCallback(
+    (difficulty: string) => {
+      return difficultyColors[difficulty] || "bg-slate-100 text-slate-800";
+    },
+    [difficultyColors]
+  );
+
+  const fetchCourseDetails = useCallback(async () => {
     if (!courseId) {
       toast.error("Invalid course ID");
       navigate("/admin/courses");
       return;
     }
-    fetchCourseDetails();
-    fetchLessons();
-  }, [courseId, navigate]);
-
-  const fetchCourseDetails = async () => {
-    if (!courseId) return;
 
     try {
       const foundCourse = await courseService.getCourseDetails(courseId);
@@ -105,9 +122,9 @@ export function AdminCourseDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [courseId, navigate]);
 
-  const fetchLessons = async () => {
+  const fetchLessons = useCallback(async () => {
     if (!courseId) return;
 
     try {
@@ -117,22 +134,14 @@ export function AdminCourseDetails() {
       console.error("Failed to fetch lessons:", error);
       toast.error("Failed to load lessons");
     }
-  };
+  }, [courseId]);
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner":
-        return "bg-emerald-100 text-emerald-800";
-      case "Intermediate":
-        return "bg-amber-100 text-amber-800";
-      case "Advanced":
-        return "bg-rose-100 text-rose-800";
-      default:
-        return "bg-slate-100 text-slate-800";
-    }
-  };
+  useEffect(() => {
+    fetchCourseDetails();
+    fetchLessons();
+  }, [fetchCourseDetails, fetchLessons]);
 
-  const handlePlayVideo = (lesson: Lesson) => {
+  const handlePlayVideo = useCallback((lesson: Lesson) => {
     const videoUrl = lesson.file || lesson.videoUrl;
     if (videoUrl) {
       setSelectedVideo(videoUrl);
@@ -140,9 +149,9 @@ export function AdminCourseDetails() {
     } else {
       toast.error("No video available for this lesson");
     }
-  };
+  }, []);
 
-  const handleEditLesson = (lesson: Lesson) => {
+  const handleEditLesson = useCallback((lesson: Lesson) => {
     setSelectedLesson(lesson);
     setEditLessonTitle(lesson.title);
     setEditLessonDuration(lesson.duration?.toString() || "");
@@ -154,30 +163,33 @@ export function AdminCourseDetails() {
     );
     setEditLessonVideoFile(null);
     setEditLessonModalOpen(true);
-  };
+  }, []);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error("Video file size should not exceed 50MB");
-        return;
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error("Video file size should not exceed 50MB");
+          return;
+        }
+        if (!["video/mp4", "video/webm"].includes(file.type)) {
+          toast.error("Only MP4 and WebM files are allowed");
+          return;
+        }
+        setEditLessonVideoFile(file);
+        setCurrentVideoName(file.name);
+        toast.success("Video file selected successfully");
       }
-      if (!["video/mp4", "video/webm"].includes(file.type)) {
-        toast.error("Only MP4 and WebM files are allowed");
-        return;
-      }
-      setEditLessonVideoFile(file);
-      setCurrentVideoName(file.name);
-      toast.success("Video file selected successfully");
-    }
-  };
+    },
+    []
+  );
 
-  const triggerFileInput = () => {
+  const triggerFileInput = useCallback(() => {
     if (fileInputRef.current) fileInputRef.current.click();
-  };
+  }, []);
 
-  const handleSaveLesson = async () => {
+  const handleSaveLesson = useCallback(async () => {
     if (!selectedLesson || !editLessonTitle) {
       toast.error("Please fill out the title field");
       return;
@@ -224,7 +236,68 @@ export function AdminCourseDetails() {
       console.error("Failed to update lesson:", error);
       toast.error("Failed to update lesson");
     }
-  };
+  }, [
+    selectedLesson,
+    editLessonTitle,
+    editLessonDuration,
+    editLessonVideoFile,
+  ]);
+
+  // Memoized lessons rendering
+  const lessonsList = useMemo(
+    () =>
+      lessons.length === 0 ? (
+        <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 mt-4">
+          <Video className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+          <p className="text-slate-500">No lessons added yet.</p>
+        </div>
+      ) : (
+        <div className="space-y-4 mt-4 max-h-[400px] overflow-y-auto">
+          {lessons.map((lesson, index) => (
+            <div
+              key={lesson._id}
+              className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
+                  <span className="text-sm font-medium text-primary">
+                    {index + 1}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{lesson.title}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span>
+                      {lesson.duration
+                        ? `${lesson.duration} min`
+                        : "No duration"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handlePlayVideo(lesson)}
+                >
+                  <Video className="h-4 w-4 text-primary" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEditLesson(lesson)}
+                >
+                  <Pencil className="h-4 w-4 text-primary" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ),
+    [lessons, handlePlayVideo, handleEditLesson]
+  );
 
   if (loading) {
     return (
@@ -239,7 +312,7 @@ export function AdminCourseDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col w-full">
+    <div className={containerClass}>
       <Header setSidebarOpen={setSidebarOpen} sidebarOpen={sidebarOpen} />
       <div className="flex flex-col md:flex-row gap-6 p-6 w-full">
         <div className="w-full md:w-64 flex-shrink-0">
@@ -311,58 +384,7 @@ export function AdminCourseDetails() {
                     <h3 className="text-lg font-semibold text-slate-800">
                       Lessons
                     </h3>
-                    {lessons.length === 0 ? (
-                      <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 mt-4">
-                        <Video className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No lessons added yet.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 mt-4 max-h-[400px] overflow-y-auto">
-                        {lessons.map((lesson, index) => (
-                          <div
-                            key={lesson._id}
-                            className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10">
-                                <span className="text-sm font-medium text-primary">
-                                  {index + 1}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {lesson.title}
-                                </p>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                  <Clock className="h-3 w-3" />
-                                  <span>
-                                    {lesson.duration
-                                      ? `${lesson.duration} min`
-                                      : "No duration"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handlePlayVideo(lesson)}
-                              >
-                                <Video className="h-4 w-4 text-primary" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditLesson(lesson)}
-                              >
-                                <Pencil className="h-4 w-4 text-primary" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {lessonsList}
                   </div>
                 </div>
               </div>
@@ -504,4 +526,6 @@ export function AdminCourseDetails() {
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(AdminCourseDetails);

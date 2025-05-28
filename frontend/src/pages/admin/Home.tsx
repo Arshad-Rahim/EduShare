@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Header } from "./components/admin/Header";
+import  Header  from "./components/admin/Header";
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SideBar } from "./components/admin/SideBar";
+import  SideBar  from "./components/admin/SideBar";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useSelector } from "react-redux";

@@ -1,7 +1,7 @@
 import { removeUser } from "@/redux/slice/userSlice";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import {
   BookOpen,
@@ -42,8 +42,11 @@ export function Header() {
   const location = useLocation();
   const currentUser = useSelector((state: any) => state.user.userDatas);
 
-  // Determine user ID, checking both currentUser.id and currentUser._id
-  const userId = currentUser?.id || currentUser?._id;
+  // Memoized userId
+  const userId = useMemo(
+    () => currentUser?.id || currentUser?._id,
+    [currentUser]
+  );
 
   // Log userId and currentUser for debugging
   useEffect(() => {
@@ -59,20 +62,33 @@ export function Header() {
   const markNotificationRead = (window as any).markNotificationRead;
   const clearNotifications = (window as any).clearNotifications;
 
-  // Determine if the user is on a chat page, extract the courseId, or check if on /community
-  const chatPageRegex = /^\/courses\/([a-f0-9]+)\/chat$/;
-  const match = location.pathname.match(chatPageRegex);
-  const isOnChatPage = !!match;
-  const chatCourseId = match ? match[1] : null;
-  const isOnCommunityPage = location.pathname === "/community";
-
-  // Filter notifications for display (exclude those for the current course if on chat page, or all if on /community)
-  const displayNotifications = notifications.filter(
-    (notification) =>
-      !isOnCommunityPage &&
-      (!isOnChatPage || chatCourseId !== notification.courseId)
+  // Memoized path-related computations
+  const chatPageRegex = useMemo(() => /^\/courses\/([a-f0-9]+)\/chat$/, []);
+  const match = useMemo(
+    () => location.pathname.match(chatPageRegex),
+    [location.pathname]
   );
-  const unreadCount = displayNotifications.filter((n) => !n.read).length;
+  const isOnChatPage = useMemo(() => !!match, [match]);
+  const chatCourseId = useMemo(() => (match ? match[1] : null), [match]);
+  const isOnCommunityPage = useMemo(
+    () => location.pathname === "/community",
+    [location.pathname]
+  );
+
+  // Memoized notification filtering
+  const displayNotifications = useMemo(
+    () =>
+      notifications.filter(
+        (notification) =>
+          !isOnCommunityPage &&
+          (!isOnChatPage || chatCourseId !== notification.courseId)
+      ),
+    [notifications, isOnChatPage, chatCourseId, isOnCommunityPage]
+  );
+  const unreadCount = useMemo(
+    () => displayNotifications.filter((n) => !n.read).length,
+    [displayNotifications]
+  );
 
   // Log the filtering for debugging
   useEffect(() => {
@@ -121,6 +137,7 @@ export function Header() {
     };
   }, [userId]);
 
+  // Fetch user data
   useEffect(() => {
     const fetchUserMe = async () => {
       try {
@@ -133,10 +150,12 @@ export function Header() {
         console.error("Failed to fetch user:", error);
       }
     };
-    fetchUserMe();
-  }, []);
+    if (userId) {
+      fetchUserMe();
+    }
+  }, [userId]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       const response = await userAuthService.logoutUser();
       toast.success(response.data.message);
@@ -148,15 +167,53 @@ export function Header() {
       console.error("Logout failed:", error);
       toast.error("Failed to sign out");
     }
-  };
+  }, [dispatch, navigate, clearNotifications]);
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.read) {
-      markNotificationRead(notification.id);
-    }
-    navigate(`/community`);
-    setIsNotificationOpen(false);
-  };
+  const handleNotificationClick = useCallback(
+    (notification: Notification) => {
+      if (!notification.read) {
+        markNotificationRead(notification.id);
+      }
+      navigate(`/community`);
+      setIsNotificationOpen(false);
+    },
+    [markNotificationRead, navigate]
+  );
+
+  const handleToggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen((prev) => !prev);
+  }, []);
+
+  const handleToggleNotification = useCallback(() => {
+    setIsNotificationOpen((prev) => !prev);
+  }, []);
+
+  // Memoized notification list rendering
+  const notificationList = useMemo(
+    () =>
+      displayNotifications.length === 0 ? (
+        <p className="p-4 text-sm text-muted-foreground">No notifications</p>
+      ) : (
+        displayNotifications.map((notification) => (
+          <div
+            key={notification.id}
+            onClick={() => handleNotificationClick(notification)}
+            className={`p-4 border-b hover:bg-muted/50 cursor-pointer transition-colors duration-150 ${
+              notification.read ? "bg-muted/20" : "bg-background"
+            }`}
+          >
+            <p className="text-sm text-foreground">{notification.message}</p>
+            <p className="text-xs text-muted-foreground">
+              {new Date(notification.timestamp).toLocaleString()}
+            </p>
+            {!notification.read && (
+              <Check className="h-4 w-4 text-green-500 mt-1" />
+            )}
+          </div>
+        ))
+      ),
+    [displayNotifications, handleNotificationClick]
+  );
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -211,7 +268,7 @@ export function Header() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  onClick={handleToggleNotification}
                   className="relative hover:bg-muted/50 rounded-full"
                   aria-label={`Notifications, ${unreadCount} unread`}
                 >
@@ -231,44 +288,14 @@ export function Header() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => setIsNotificationOpen(false)}
+                        onClick={handleToggleNotification}
                         className="text-muted-foreground hover:bg-muted/50"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {displayNotifications.length === 0 ? (
-                        <p className="p-4 text-sm text-muted-foreground">
-                          No notifications
-                        </p>
-                      ) : (
-                        displayNotifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            onClick={() =>
-                              handleNotificationClick(notification)
-                            }
-                            className={`p-4 border-b hover:bg-muted/50 cursor-pointer transition-colors duration-150 ${
-                              notification.read
-                                ? "bg-muted/20"
-                                : "bg-background"
-                            }`}
-                          >
-                            <p className="text-sm text-foreground">
-                              {notification.message}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(
-                                notification.timestamp
-                              ).toLocaleString()}
-                            </p>
-                            {!notification.read && (
-                              <Check className="h-4 w-4 text-green-500 mt-1" />
-                            )}
-                          </div>
-                        ))
-                      )}
+                      {notificationList}
                     </div>
                     {displayNotifications.length > 0 && (
                       <div className="p-4 border-t border-muted/20">
@@ -359,7 +386,7 @@ export function Header() {
             variant="ghost"
             size="icon"
             className="md:hidden"
-            onClick={() => setMobileMenuOpen(true)}
+            onClick={handleToggleMobileMenu}
           >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
@@ -380,7 +407,7 @@ export function Header() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={handleToggleMobileMenu}
             >
               <X className="h-5 w-5" />
               <span className="sr-only">Close menu</span>
@@ -395,7 +422,7 @@ export function Header() {
                     ? "text-primary underline bg-primary/10"
                     : "text-muted-foreground hover:bg-muted/50"
                 }`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleToggleMobileMenu}
               >
                 <BookOpen className="h-5 w-5" />
                 Home
@@ -407,7 +434,7 @@ export function Header() {
                     ? "text-primary underline bg-primary/10"
                     : "text-muted-foreground hover:bg-muted/50"
                 }`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleToggleMobileMenu}
               >
                 <BookOpen className="h-5 w-5" />
                 Courses
@@ -419,7 +446,7 @@ export function Header() {
                     ? "text-primary underline bg-primary/10"
                     : "text-muted-foreground hover:bg-muted/50"
                 }`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={handleToggleMobileMenu}
               >
                 <Users className="h-5 w-5" />
                 Community
@@ -431,3 +458,5 @@ export function Header() {
     </header>
   );
 }
+
+export default React.memo(Header);

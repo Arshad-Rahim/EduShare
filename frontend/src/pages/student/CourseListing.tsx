@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import {
@@ -92,31 +91,41 @@ export function CourseListingPage() {
   const [searchParams] = useSearchParams();
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
-  const coursesPerPage = 12;
+  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
+    []
+  );
   const [debouncedValue] = useDebounce(searchQuery, 500);
 
-  const categories = [
-    { id: "web-dev", name: "Web Development" },
-    { id: "mobile-dev", name: "Mobile Development" },
-    { id: "data-science", name: "Data Science" },
-    { id: "programming", name: "Programming" },
-    { id: "cloud", name: "Cloud Computing" },
-    { id: "design", name: "UI/UX Design" },
-    { id: "devops", name: "DevOps" },
-    { id: "ai-ml", name: "AI & Machine Learning" },
-    { id: "cybersecurity", name: "Cybersecurity" },
-    { id: "other", name: "Other" },
-  ];
+  // Memoized static data
+  const categories = useMemo(
+    () => [
+      { id: "web-dev", name: "Web Development" },
+      { id: "mobile-dev", name: "Mobile Development" },
+      { id: "data-science", name: "Data Science" },
+      { id: "programming", name: "Programming" },
+      { id: "cloud", name: "Cloud Computing" },
+      { id: "design", name: "UI/UX Design" },
+      { id: "devops", name: "DevOps" },
+      { id: "ai-ml", name: "AI & Machine Learning" },
+      { id: "cybersecurity", name: "Cybersecurity" },
+      { id: "other", name: "Other" },
+    ],
+    []
+  );
 
-  const difficulties = [
-    { id: "beginner", name: "Beginner" },
-    { id: "intermediate", name: "Intermediate" },
-    { id: "advanced", name: "Advanced" },
-  ];
+  const difficulties = useMemo(
+    () => [
+      { id: "beginner", name: "Beginner" },
+      { id: "intermediate", name: "Intermediate" },
+      { id: "advanced", name: "Advanced" },
+    ],
+    []
+  );
+
+  const coursesPerPage = useMemo(() => 12, []);
 
   // Fetch courses from backend with filters
-  const fetchCourses = async () => {
+  const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
       const params: CourseParams = {
@@ -140,16 +149,24 @@ export function CourseListingPage() {
 
       setCourses(coursesData);
       setTotalPages(Math.ceil(totalCourses / coursesPerPage));
-      setLoading(false);
     } catch (error) {
       console.error("Failed to fetch courses:", error);
       toast.error("Failed to load courses");
+    } finally {
       setLoading(false);
     }
-  };
+  }, [
+    searchQuery,
+    selectedCategories,
+    selectedDifficulties,
+    priceRange,
+    sortOption,
+    currentPage,
+    coursesPerPage,
+  ]);
 
   // Fetch wishlist courses from backend
-  const fetchWishlistCourses = async () => {
+  const fetchWishlistCourses = useCallback(async () => {
     try {
       const response = await wishlistService.getWishlist({
         page: 1,
@@ -164,71 +181,71 @@ export function CourseListingPage() {
       console.error("Failed to fetch wishlist courses:", error);
       toast.error("Failed to load wishlist");
     }
-  };
+  }, []);
 
   // Handle wishlist toggle (add/remove)
-  const handleWishlistToggle = async (courseId: string) => {
-    const isWishlisted = wishlist.includes(courseId);
-    try {
-      if (isWishlisted) {
-        await wishlistService.removeFromWishlist(courseId);
-        setWishlist((prev) => prev.filter((id) => id !== courseId));
-        toast.success("Course removed from wishlist");
-      } else {
-        const response = await wishlistService.addToWishlist(courseId);
-        setWishlist((prev) => [...prev, courseId]);
-        toast.success(response?.data.message || "Course added to wishlist");
+  const handleWishlistToggle = useCallback(
+    async (courseId: string) => {
+      const isWishlisted = wishlist.includes(courseId);
+      try {
+        if (isWishlisted) {
+          await wishlistService.removeFromWishlist(courseId);
+          setWishlist((prev) => prev.filter((id) => id !== courseId));
+          toast.success("Course removed from wishlist");
+        } else {
+          const response = await wishlistService.addToWishlist(courseId);
+          setWishlist((prev) => [...prev, courseId]);
+          toast.success(response?.data.message || "Course added to wishlist");
+        }
+      } catch (error) {
+        console.error("Failed to toggle wishlist:", error);
       }
-    } catch (error) {
-      console.error("Failed to toggle wishlist:", error);
-    }
-  };
+    },
+    [wishlist]
+  );
 
   // Initial fetch and category from URL
   useEffect(() => {
-    const categoryParam = searchParams.get("category");
-    if (categoryParam && !selectedCategories.includes(categoryParam)) {
-      setSelectedCategories([categoryParam]);
-    }
-    fetchWishlistCourses();
-  }, [searchParams]);
+    const initializeData = async () => {
+      const categoryParam = searchParams.get("category");
+      if (categoryParam && !selectedCategories.includes(categoryParam)) {
+        setSelectedCategories([categoryParam]);
+      }
+      await fetchWishlistCourses();
+    };
+    initializeData();
+  }, [searchParams, fetchWishlistCourses]);
 
   // Fetch courses whenever filters, sort, or page changes
   useEffect(() => {
     fetchCourses();
-  }, [
-    debouncedValue,
-    selectedCategories,
-    selectedDifficulties,
-    priceRange,
-    sortOption,
-    currentPage,
-  ]);
+  }, [fetchCourses, debouncedValue]);
 
-  const handleCategoryToggle = (category: string) => {
+  // Event handlers
+  const handleCategoryToggle = useCallback((category: string) => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category]
     );
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleDifficultyToggle = (difficulty: string) => {
+  const handleDifficultyToggle = useCallback((difficulty: string) => {
     setSelectedDifficulties((prev) =>
       prev.includes(difficulty)
         ? prev.filter((d) => d !== difficulty)
         : [...prev, difficulty]
     );
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handlePriceRangeChange = (value: number[]) => {
+  const handlePriceRangeChange = useCallback((value: number[]) => {
     setPriceRange(value);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     console.log("Clearing Filters");
     setSearchQuery("");
     setSelectedCategories([]);
@@ -236,18 +253,21 @@ export function CourseListingPage() {
     setPriceRange([0, 1500]);
     setSortOption("popular");
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleEnroll = (courseId: string) => {
-    navigate(`/courses/${courseId}`);
-  };
+  const handleEnroll = useCallback(
+    (courseId: string) => {
+      navigate(`/courses/${courseId}`);
+    },
+    [navigate]
+  );
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -258,15 +278,11 @@ export function CourseListingPage() {
       default:
         return "bg-slate-100 text-slate-800";
     }
-  };
+  }, []);
 
-  const Pagination = () => {
-    const pageNumbers = [];
-    for (let i = 1; i <= totalPages; i++) {
-      pageNumbers.push(i);
-    }
-
-    return (
+  // Memoized Pagination component
+  const Pagination = useMemo(
+    () => (
       <div className="flex justify-center mt-8">
         <div className="flex items-center space-x-2">
           <Button
@@ -278,21 +294,23 @@ export function CourseListingPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center space-x-1">
-            {pageNumbers.map((number) => (
-              <Button
-                key={number}
-                variant={currentPage === number ? "default" : "outline"}
-                size="sm"
-                onClick={() => handlePageChange(number)}
-                className={
-                  currentPage === number
-                    ? " duration-300 bg-primary text-white"
-                    : ""
-                }
-              >
-                {number}
-              </Button>
-            ))}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+              (number) => (
+                <Button
+                  key={number}
+                  variant={currentPage === number ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(number)}
+                  className={
+                    currentPage === number
+                      ? "duration-300 bg-primary text-white"
+                      : ""
+                  }
+                >
+                  {number}
+                </Button>
+              )
+            )}
           </div>
           <Button
             variant="outline"
@@ -306,124 +324,361 @@ export function CourseListingPage() {
           </Button>
         </div>
       </div>
-    );
-  };
+    ),
+    [currentPage, totalPages, handlePageChange]
+  );
 
-  const MobileFilters = () => (
-    <div
-      className={`fixed inset-0 bg-background z-50 transform ${
-        mobileFiltersOpen ? "translate-x-0" : "-translate-x-full"
-      } transition-transform duration-300 ease-in-out md:hidden`}
-    >
-      <div className="flex items-center justify-between p-4 border-b">
-        <h2 className="text-lg font-semibold">Filters</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setMobileFiltersOpen(false)}
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-      <div className="p-4 overflow-y-auto h-[calc(100vh-64px)]">
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-medium mb-3">Price Range</h3>
-            <div className="space-y-4">
-              <Slider
-                defaultValue={priceRange}
-                min={0}
-                max={1500}
-                step={10}
-                value={priceRange}
-                onValueChange={handlePriceRangeChange}
-                className="mb-6"
-              />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  ₹{priceRange[0]}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  ₹{priceRange[1]}
-                </span>
+  // Memoized MobileFilters component
+  const MobileFilters = useMemo(
+    () => (
+      <div
+        className={`fixed inset-0 bg-background z-50 transform ${
+          mobileFiltersOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out md:hidden`}
+      >
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-lg font-semibold">Filters</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileFiltersOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+        <div className="p-4 overflow-y-auto h-[calc(100vh-64px)]">
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-medium mb-3">Price Range</h3>
+              <div className="space-y-4">
+                <Slider
+                  defaultValue={priceRange}
+                  min={0}
+                  max={1500}
+                  step={10}
+                  value={priceRange}
+                  onValueChange={handlePriceRangeChange}
+                  className="mb-6"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    ₹{priceRange[0]}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    ₹{priceRange[1]}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          <div>
-            <h3 className="font-medium mb-3">Categories</h3>
-            <div className="space-y-2">
-              {categories.map((category) => (
-                <div key={category.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category.id}-mobile`}
-                    checked={selectedCategories.includes(category.name)}
-                    onCheckedChange={() => handleCategoryToggle(category.name)}
-                  />
-                  <Label
-                    htmlFor={`category-${category.id}-mobile`}
-                    className="text-sm cursor-pointer"
+            <div>
+              <h3 className="font-medium mb-3">Categories</h3>
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="flex items-center space-x-2"
                   >
-                    {category.name}
-                  </Label>
-                </div>
-              ))}
+                    <Checkbox
+                      id={`category-${category.id}-mobile`}
+                      checked={selectedCategories.includes(category.name)}
+                      onCheckedChange={() =>
+                        handleCategoryToggle(category.name)
+                      }
+                    />
+                    <Label
+                      htmlFor={`category-${category.id}-mobile`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {category.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          <div>
-            <h3 className="font-medium mb-3">Difficulty Level</h3>
-            <div className="space-y-2">
-              {difficulties.map((difficulty) => (
-                <div
-                  key={difficulty.id}
-                  className="flex items-center space-x-2"
-                >
-                  <Checkbox
-                    id={`difficulty-${difficulty.id}-mobile`}
-                    checked={selectedDifficulties.includes(difficulty.name)}
-                    onCheckedChange={() =>
-                      handleDifficultyToggle(difficulty.name)
-                    }
-                  />
-                  <Label
-                    htmlFor={`difficulty-${difficulty.id}-mobile`}
-                    className="text-sm cursor-pointer"
+            <div>
+              <h3 className="font-medium mb-3">Difficulty Level</h3>
+              <div className="space-y-2">
+                {difficulties.map((difficulty) => (
+                  <div
+                    key={difficulty.id}
+                    className="flex items-center space-x-2"
                   >
-                    {difficulty.name}
-                  </Label>
-                </div>
-              ))}
+                    <Checkbox
+                      id={`difficulty-${difficulty.id}-mobile`}
+                      checked={selectedDifficulties.includes(difficulty.name)}
+                      onCheckedChange={() =>
+                        handleDifficultyToggle(difficulty.name)
+                      }
+                    />
+                    <Label
+                      htmlFor={`difficulty-${difficulty.id}-mobile`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {difficulty.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <Separator />
+            <Separator />
 
-          <div className="flex justify-between pt-4">
-            <Button
-              variant="outline"
-              onClick={handleClearFilters}
-              className="text-sm"
-            >
-              Clear All
-            </Button>
-            <Button onClick={() => setMobileFiltersOpen(false)}>
-              Apply Filters
-            </Button>
+            <div className="flex justify-between pt-4">
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="text-sm"
+              >
+                Clear All
+              </Button>
+              <Button onClick={() => setMobileFiltersOpen(false)}>
+                Apply Filters
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    ),
+    [
+      mobileFiltersOpen,
+      priceRange,
+      selectedCategories,
+      selectedDifficulties,
+      categories,
+      difficulties,
+      handlePriceRangeChange,
+      handleCategoryToggle,
+      handleDifficultyToggle,
+      handleClearFilters,
+      setMobileFiltersOpen,
+    ]
+  );
+
+  // Memoized course list rendering
+  const courseList = useMemo(
+    () =>
+      viewMode === "grid"
+        ? courses.map((course) => {
+            const isWishlisted = wishlist.includes(course._id);
+            return (
+              <Card
+                key={course._id}
+                className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
+              >
+                <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail || "/placeholder.svg"}
+                      alt={course.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                      <BookOpen className="h-12 w-12 text-slate-400" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <Badge className={getDifficultyColor(course.difficulty)}>
+                      {course.difficulty}
+                    </Badge>
+                  </div>
+                  <Button
+                    onClick={() => handleWishlistToggle(course._id)}
+                    size="icon"
+                    variant="ghost"
+                    className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
+                      isWishlisted
+                        ? "text-red-500 hover:text-red-700"
+                        : "text-slate-700 hover:text-primary"
+                    }`}
+                  >
+                    <Heart
+                      className={`h-4 w-4 ${
+                        isWishlisted ? "fill-red-500" : ""
+                      }`}
+                    />
+                    <span className="sr-only">
+                      {isWishlisted
+                        ? "Remove from wishlist"
+                        : "Add to wishlist"}
+                    </span>
+                  </Button>
+                </div>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
+                    {course.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {course.tagline}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-2 flex-grow">
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <Tag className="h-4 w-4" />
+                        <span>{course.category}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <span className="font-medium">
+                          ₹{parseFloat(String(course.price)) || 0}
+                        </span>
+                      </div>
+                    </div>
+                    <Separator />
+                    <p className="text-sm text-slate-600 line-clamp-3">
+                      {course.about}
+                    </p>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-2">
+                  <Button
+                    className="w-full bg-primary hover:bg-primary/90"
+                    onClick={() => handleEnroll(course._id)}
+                  >
+                    Enroll Now
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })
+        : courses.map((course) => {
+            const isWishlisted = wishlist.includes(course._id);
+            return (
+              <Card
+                key={course._id}
+                className="overflow-hidden transition-all duration-300 hover:shadow-md border border-slate-200 group"
+              >
+                <div className="flex flex-col md:flex-row">
+                  <div className="relative md:w-1/3 lg:w-1/4 overflow-hidden bg-slate-100">
+                    {course.thumbnail ? (
+                      <img
+                        src={course.thumbnail || "/placeholder.svg"}
+                        alt={course.title}
+                        className="w-full h-full object-cover aspect-video md:aspect-auto transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full aspect-video md:aspect-auto flex items-center justify-center bg-slate-200">
+                        <BookOpen className="h-12 w-12 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <Badge className={getDifficultyColor(course.difficulty)}>
+                        {course.difficulty}
+                      </Badge>
+                    </div>
+                    <Button
+                      onClick={() => handleWishlistToggle(course._id)}
+                      size="icon"
+                      variant="ghost"
+                      className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
+                        isWishlisted
+                          ? "text-red-500 hover:text-red-700"
+                          : "text-slate-700 hover:text-primary"
+                      }`}
+                    >
+                      <Heart
+                        className={`h-4 w-4 ${
+                          isWishlisted ? "fill-red-500" : ""
+                        }`}
+                      />
+                      <span className="sr-only">
+                        {isWishlisted
+                          ? "Remove from wishlist"
+                          : "Add to wishlist"}
+                      </span>
+                    </Button>
+                  </div>
+                  <div className="flex-1 p-6">
+                    <div className="flex flex-col h-full justify-between">
+                      <div>
+                        <div className="flex items-start justify-between mb-2">
+                          <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
+                            {course.title}
+                          </h3>
+                          <div className="flex items-center ml-4">
+                            <div className="flex">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < 4
+                                      ? "fill-amber-400 text-amber-400"
+                                      : "text-slate-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm ml-2">4.0</span>
+                          </div>
+                        </div>
+                        <p className="text-slate-600 mb-4">{course.tagline}</p>
+                        <p className="text-sm text-slate-600 line-clamp-2 mb-4">
+                          {course.about}
+                        </p>
+                        <div className="flex flex-wrap gap-3 mb-4">
+                          <div className="flex items-center text-sm text-slate-600">
+                            <Tag className="h-4 w-4 mr-1" />
+                            {course.category}
+                          </div>
+                          <div className="flex items-center text-sm text-slate-600">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {course.duration || "10 hours"}
+                          </div>
+                          <div className="flex items-center text-sm text-slate-600">
+                            <Users className="h-4 w-4 mr-1" />
+                            {course.students || "1,234"} students
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="text-xl font-bold">
+                          ₹{parseFloat(String(course.price)) || 0}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hidden sm:flex"
+                            onClick={() => handleWishlistToggle(course._id)}
+                          >
+                            <Bookmark className="h-4 w-4 mr-2" />
+                            {isWishlisted ? "Remove" : "Save"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleEnroll(course._id)}
+                          >
+                            Enroll Now
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          }),
+    [
+      courses,
+      wishlist,
+      handleWishlistToggle,
+      handleEnroll,
+      getDifficultyColor,
+      viewMode,
+    ]
   );
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <MobileFilters />
+      {MobileFilters}
       <main className="flex-1">
         <section className="w-full bg-gradient-to-r from-slate-50 to-slate-100 py-12 border-b">
           <div className="container px-4 md:px-6 lg:px-8 mx-auto">
@@ -684,228 +939,19 @@ export function CourseListingPage() {
                       Clear All Filters
                     </Button>
                   </div>
-                ) : viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {courses.map((course) => {
-                      const isWishlisted = wishlist.includes(course._id);
-                      return (
-                        <Card
-                          key={course._id}
-                          className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
-                        >
-                          <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                            {course.thumbnail ? (
-                              <img
-                                src={course.thumbnail || "/placeholder.svg"}
-                                alt={course.title}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                                <BookOpen className="h-12 w-12 text-slate-400" />
-                              </div>
-                            )}
-                            <div className="absolute top-3 right-3 flex gap-2">
-                              <Badge
-                                className={getDifficultyColor(
-                                  course.difficulty
-                                )}
-                              >
-                                {course.difficulty}
-                              </Badge>
-                            </div>
-                            <Button
-                              onClick={() => handleWishlistToggle(course._id)}
-                              size="icon"
-                              variant="ghost"
-                              className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
-                                isWishlisted
-                                  ? "text-red-500 hover:text-red-700"
-                                  : "text-slate-700 hover:text-primary"
-                              }`}
-                            >
-                              <Heart
-                                className={`h-4 w-4 ${
-                                  isWishlisted ? "fill-red-500" : ""
-                                }`}
-                              />
-                              <span className="sr-only">
-                                {isWishlisted
-                                  ? "Remove from wishlist"
-                                  : "Add to wishlist"}
-                              </span>
-                            </Button>
-                          </div>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                              {course.title}
-                            </CardTitle>
-                            <CardDescription className="line-clamp-2">
-                              {course.tagline}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2 flex-grow">
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <Tag className="h-4 w-4" />
-                                  <span>{course.category}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <span className="font-medium">
-                                    ₹{parseFloat(String(course.price)) || 0}
-                                  </span>
-                                </div>
-                              </div>
-                              <Separator />
-                              <p className="text-sm text-slate-600 line-clamp-3">
-                                {course.about}
-                              </p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2">
-                            <Button
-                              className="w-full bg-primary hover:bg-primary/90"
-                              onClick={() => handleEnroll(course._id)}
-                            >
-                              Enroll Now
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      );
-                    })}
-                  </div>
                 ) : (
-                  <div className="space-y-4">
-                    {courses.map((course) => {
-                      const isWishlisted = wishlist.includes(course._id);
-                      return (
-                        <Card
-                          key={course._id}
-                          className="overflow-hidden transition-all duration-300 hover:shadow-md border border-slate-200 group"
-                        >
-                          <div className="flex flex-col md:flex-row">
-                            <div className="relative md:w-1/3 lg:w-1/4 overflow-hidden bg-slate-100">
-                              {course.thumbnail ? (
-                                <img
-                                  src={course.thumbnail || "/placeholder.svg"}
-                                  alt={course.title}
-                                  className="w-full h-full object-cover aspect-video md:aspect-auto transition-transform duration-500 group-hover:scale-105"
-                                />
-                              ) : (
-                                <div className="w-full h-full aspect-video md:aspect-auto flex items-center justify-center bg-slate-200">
-                                  <BookOpen className="h-12 w-12 text-slate-400" />
-                                </div>
-                              )}
-                              <div className="absolute top-3 right-3">
-                                <Badge
-                                  className={getDifficultyColor(
-                                    course.difficulty
-                                  )}
-                                >
-                                  {course.difficulty}
-                                </Badge>
-                              </div>
-                              <Button
-                                onClick={() => handleWishlistToggle(course._id)}
-                                size="icon"
-                                variant="ghost"
-                                className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
-                                  isWishlisted
-                                    ? "text-red-500 hover:text-red-700"
-                                    : "text-slate-700 hover:text-primary"
-                                }`}
-                              >
-                                <Heart
-                                  className={`h-4 w-4 ${
-                                    isWishlisted ? "fill-red-500" : ""
-                                  }`}
-                                />
-                                <span className="sr-only">
-                                  {isWishlisted
-                                    ? "Remove from wishlist"
-                                    : "Add to wishlist"}
-                                </span>
-                              </Button>
-                            </div>
-                            <div className="flex-1 p-6">
-                              <div className="flex flex-col h-full justify-between">
-                                <div>
-                                  <div className="flex items-start justify-between mb-2">
-                                    <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
-                                      {course.title}
-                                    </h3>
-                                    <div className="flex items-center ml-4">
-                                      <div className="flex">
-                                        {[...Array(5)].map((_, i) => (
-                                          <Star
-                                            key={i}
-                                            className={`h-4 w-4 ${
-                                              i < 4
-                                                ? "fill-amber-400 text-amber-400"
-                                                : "text-slate-300"
-                                            }`}
-                                          />
-                                        ))}
-                                      </div>
-                                      <span className="text-sm ml-2">4.0</span>
-                                    </div>
-                                  </div>
-                                  <p className="text-slate-600 mb-4">
-                                    {course.tagline}
-                                  </p>
-                                  <p className="text-sm text-slate-600 line-clamp-2 mb-4">
-                                    {course.about}
-                                  </p>
-                                  <div className="flex flex-wrap gap-3 mb-4">
-                                    <div className="flex items-center text-sm text-slate-600">
-                                      <Tag className="h-4 w-4 mr-1" />
-                                      {course.category}
-                                    </div>
-                                    <div className="flex items-center text-sm text-slate-600">
-                                      <Clock className="h-4 w-4 mr-1" />
-                                      {course.duration || "10 hours"}
-                                    </div>
-                                    <div className="flex items-center text-sm text-slate-600">
-                                      <Users className="h-4 w-4 mr-1" />
-                                      {course.students || "1,234"} students
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center justify-between mt-4">
-                                  <div className="text-xl font-bold">
-                                    ₹{parseFloat(String(course.price)) || 0}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="hidden sm:flex"
-                                      onClick={() =>
-                                        handleWishlistToggle(course._id)
-                                      }
-                                    >
-                                      <Bookmark className="h-4 w-4 mr-2" />
-                                      {isWishlisted ? "Remove" : "Save"}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleEnroll(course._id)}
-                                    >
-                                      Enroll Now
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      );
-                    })}
+                  <div
+                    className={
+                      viewMode === "grid"
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                        : "space-y-4"
+                    }
+                  >
+                    {courseList}
                   </div>
                 )}
 
-                {courses.length > 0 && <Pagination />}
+                {courses.length > 0 && Pagination}
               </div>
             </div>
           </div>
@@ -914,3 +960,5 @@ export function CourseListingPage() {
     </div>
   );
 }
+
+export default React.memo(CourseListingPage);

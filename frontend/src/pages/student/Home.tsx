@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   BookOpen,
@@ -69,8 +69,17 @@ interface FeatureCardProps {
   description: string;
 }
 
-// Category Card Component
-const CategoryCard = ({ icon: Icon, title, count }: CategoryCardProps) => (
+interface CourseCardProps {
+  course: Course;
+  isWishlisted: boolean;
+  handleWishlistToggle: (courseId: string) => void;
+  handleEnroll: (courseId: string) => void;
+  getDifficultyColor: (difficulty: string) => string;
+  showTrendingBadge?: boolean;
+}
+
+// Memoized Category Card Component
+const CategoryCard = memo(({ icon: Icon, title, count }: CategoryCardProps) => (
   <Card className="group overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 hover:border-primary/20 h-full">
     <CardContent className="p-6 flex flex-col items-center text-center">
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
@@ -80,68 +89,153 @@ const CategoryCard = ({ icon: Icon, title, count }: CategoryCardProps) => (
       <p className="text-sm text-muted-foreground">{count} courses</p>
     </CardContent>
   </Card>
-);
+));
+CategoryCard.displayName = "CategoryCard";
 
-// Testimonial Card Component
-const TestimonialCard = ({
-  name,
-  role,
-  image,
-  quote,
-  rating,
-}: TestimonialCardProps) => (
-  <Card className="overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 h-full">
-    <CardContent className="p-6">
-      <div className="flex items-center gap-4 mb-4">
-        <Avatar className="h-12 w-12 border-2 border-primary/20">
-          <AvatarImage src={image} alt={name} />
-          <AvatarFallback className="bg-primary/10 text-primary font-medium">
-            {name.charAt(0)}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <h4 className="font-semibold">{name}</h4>
-          <p className="text-sm text-muted-foreground">{role}</p>
+// Memoized Testimonial Card Component
+const TestimonialCard = memo(
+  ({ name, role, image, quote, rating }: TestimonialCardProps) => (
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md border-slate-200 h-full">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <Avatar className="h-12 w-12 border-2 border-primary/20">
+            <AvatarImage src={image} alt={name} />
+            <AvatarFallback className="bg-primary/10 text-primary font-medium">
+              {name.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h4 className="font-semibold">{name}</h4>
+            <p className="text-sm text-muted-foreground">{role}</p>
+          </div>
         </div>
-      </div>
-      <div className="flex mb-4">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            className={`h-4 w-4 ${
-              i < rating ? "fill-amber-400 text-amber-400" : "text-slate-300"
-            }`}
-          />
-        ))}
-      </div>
-      <p className="text-slate-600 italic">“{quote}”</p>
-    </CardContent>
-  </Card>
+        <div className="flex mb-4">
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              className={`h-4 w-4 ${
+                i < rating ? "fill-amber-400 text-amber-400" : "text-slate-300"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-slate-600 italic">“{quote}”</p>
+      </CardContent>
+    </Card>
+  )
 );
+TestimonialCard.displayName = "TestimonialCard";
 
-// Feature Card Component
-const FeatureCard = ({ icon: Icon, title, description }: FeatureCardProps) => (
-  <div className="flex flex-col items-center text-center p-6 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all">
-    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-      <Icon className="h-7 w-7 text-primary" />
+// Memoized Feature Card Component
+const FeatureCard = memo(
+  ({ icon: Icon, title, description }: FeatureCardProps) => (
+    <div className="flex flex-col items-center text-center p-6 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-md transition-all">
+      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+        <Icon className="h-7 w-7 text-primary" />
+      </div>
+      <h3 className="font-semibold text-lg mb-2">{title}</h3>
+      <p className="text-sm text-slate-600">{description}</p>
     </div>
-    <h3 className="font-semibold text-lg mb-2">{title}</h3>
-    <p className="text-sm text-slate-600">{description}</p>
-  </div>
+  )
 );
+FeatureCard.displayName = "FeatureCard";
+
+// Memoized Course Card Component
+const CourseCard = memo(
+  ({
+    course,
+    isWishlisted,
+    handleWishlistToggle,
+    handleEnroll,
+    getDifficultyColor,
+    showTrendingBadge = false,
+  }: CourseCardProps) => (
+    <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group">
+      <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+        {course.thumbnail ? (
+          <img
+            src={course.thumbnail || "/placeholder.svg"}
+            alt={course.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-slate-200">
+            <BookOpen className="h-12 w-12 text-slate-400" />
+          </div>
+        )}
+        <div className="absolute top-3 right-3 flex gap-2">
+          <Badge className={getDifficultyColor(course.difficulty)}>
+            {course.difficulty}
+          </Badge>
+        </div>
+        {showTrendingBadge && (
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-primary/90 text-white">
+              <TrendingUp className="mr-1 h-3 w-3" />
+              Popular
+            </Badge>
+          </div>
+        )}
+        <Button
+          onClick={() => handleWishlistToggle(course._id)}
+          size="icon"
+          variant="ghost"
+          className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
+            isWishlisted
+              ? "text-red-500 hover:text-red-700"
+              : "text-slate-700 hover:text-primary"
+          }`}
+        >
+          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-red-500" : ""}`} />
+          <span className="sr-only">
+            {isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          </span>
+        </Button>
+      </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
+          {course.title}
+        </CardTitle>
+        <CardDescription className="line-clamp-2">
+          {course.tagline}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pb-2 flex-grow">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-1.5 text-slate-600">
+              <Tag className="h-4 w-4" />
+              <span>{course.category}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-slate-600">
+              <span className="font-medium">₹{course.price}</span>
+            </div>
+          </div>
+          <Separator />
+          <p className="text-sm text-slate-600 line-clamp-3">{course.about}</p>
+        </div>
+      </CardContent>
+      <CardFooter className="pt-2">
+        <Button
+          className="w-full bg-primary hover:bg-primary/90"
+          onClick={() => handleEnroll(course._id)}
+        >
+          Enroll Now
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+);
+CourseCard.displayName = "CourseCard";
 
 // Main UserHomePage Component
-export function UserHomePage() {
+function UserHomePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchCourses();
-    fetchWishlistCourses();
-  }, []);
-
-  const fetchCourses = async () => {
+  // Fetch courses and wishlist
+  const fetchCourses = useCallback(async () => {
     try {
       const response = await courseService.getAllCourse();
       setCourses(response?.data.courses.courses || []);
@@ -149,9 +243,9 @@ export function UserHomePage() {
     } catch (error) {
       console.error("Failed to fetch courses:", error);
     }
-  };
+  }, []);
 
-  const fetchWishlistCourses = async () => {
+  const fetchWishlistCourses = useCallback(async () => {
     try {
       const response = await wishlistService.getWishlist({
         userId: "", // Replace with actual userId if available
@@ -167,27 +261,48 @@ export function UserHomePage() {
       console.error("Failed to fetch wishlist courses:", error);
       toast.error("Failed to load wishlist");
     }
-  };
+  }, []);
 
-  const handleWishlistToggle = async (courseId: string) => {
-    const isWishlisted = wishlist.includes(courseId);
-    try {
-      if (isWishlisted) {
-        await wishlistService.removeFromWishlist(courseId);
-        setWishlist((prev) => prev.filter((id) => id !== courseId));
-        toast.success("Course removed from wishlist");
-      } else {
-        const response = await wishlistService.addToWishlist(courseId);
-        setWishlist((prev) => [...prev, courseId]);
-        toast.success(response?.data.message || "Course added to wishlist");
+  // Initial fetch
+  useEffect(() => {
+    const initializeData = async () => {
+      await Promise.all([fetchCourses(), fetchWishlistCourses()]);
+    };
+    initializeData();
+  }, [fetchCourses, fetchWishlistCourses]);
+
+  // Event handlers
+  const handleWishlistToggle = useCallback(
+    async (courseId: string) => {
+      const isWishlisted = wishlist.includes(courseId);
+      try {
+        if (isWishlisted) {
+          await wishlistService.removeFromWishlist(courseId);
+          setWishlist((prev) => prev.filter((id) => id !== courseId));
+          toast.success("Course removed from wishlist");
+        } else {
+          const response = await wishlistService.addToWishlist(courseId);
+          setWishlist((prev) => [...prev, courseId]);
+          toast.success(response?.data.message || "Course added to wishlist");
+        }
+      } catch (error: any) {
+        console.error("Failed to toggle wishlist:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to update wishlist"
+        );
       }
-    } catch (error: any) {
-      console.error("Failed to toggle wishlist:", error);
-      toast.error(error.response?.data?.message || "Failed to update wishlist");
-    }
-  };
+    },
+    [wishlist]
+  );
 
-  const getDifficultyColor = (difficulty: string) => {
+  const handleEnroll = useCallback(
+    (courseId: string) => {
+      navigate(`/courses/${courseId}`);
+    },
+    [navigate]
+  );
+
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -198,73 +313,110 @@ export function UserHomePage() {
       default:
         return "bg-slate-100 text-slate-800";
     }
-  };
+  }, []);
 
-  const handleEnroll = (courseId: string) => {
-    navigate(`/courses/${courseId}`);
-  };
+  // Memoized static data
+  const categories = useMemo<CategoryCardProps[]>(
+    () => [
+      { icon: Code, title: "Web Development", count: 120 },
+      { icon: Database, title: "Data Science", count: 85 },
+      { icon: Server, title: "Cloud Computing", count: 64 },
+      { icon: Globe, title: "Mobile Development", count: 72 },
+    ],
+    []
+  );
 
-  // Sample data for categories
-  const categories: CategoryCardProps[] = [
-    { icon: Code, title: "Web Development", count: 120 },
-    { icon: Database, title: "Data Science", count: 85 },
-    { icon: Server, title: "Cloud Computing", count: 64 },
-    { icon: Globe, title: "Mobile Development", count: 72 },
-  ];
+  const testimonials = useMemo<TestimonialCardProps[]>(
+    () => [
+      {
+        name: "Sarah Johnson",
+        role: "Frontend Developer",
+        image: "/placeholder.svg?height=48&width=48&text=SJ",
+        quote:
+          "The courses on EduShare helped me transition from a beginner to a professional developer in just 6 months.",
+        rating: 5,
+      },
+      {
+        name: "Michael Chen",
+        role: "Data Scientist",
+        image: "/placeholder.svg?height=48&width=48&text=MC",
+        quote:
+          "The data science curriculum is comprehensive and up-to-date with industry standards. Highly recommended!",
+        rating: 4,
+      },
+      {
+        name: "Jessica Williams",
+        role: "UX Designer",
+        image: "/placeholder.svg?height=48&width=48&text=JW",
+        quote:
+          "I've taken courses on multiple platforms, but EduShare offers the best balance of theory and practical projects.",
+        rating: 5,
+      },
+    ],
+    []
+  );
 
-  // Sample data for testimonials
-  const testimonials: TestimonialCardProps[] = [
-    {
-      name: "Sarah Johnson",
-      role: "Frontend Developer",
-      image: "/placeholder.svg?height=48&width=48&text=SJ",
-      quote:
-        "The courses on EduShare helped me transition from a beginner to a professional developer in just 6 months.",
-      rating: 5,
-    },
-    {
-      name: "Michael Chen",
-      role: "Data Scientist",
-      image: "/placeholder.svg?height=48&width=48&text=MC",
-      quote:
-        "The data science curriculum is comprehensive and up-to-date with industry standards. Highly recommended!",
-      rating: 4,
-    },
-    {
-      name: "Jessica Williams",
-      role: "UX Designer",
-      image: "/placeholder.svg?height=48&width=48&text=JW",
-      quote:
-        "I've taken courses on multiple platforms, but EduShare offers the best balance of theory and practical projects.",
-      rating: 5,
-    },
-  ];
+  const features = useMemo<FeatureCardProps[]>(
+    () => [
+      {
+        icon: Laptop,
+        title: "Learn Anywhere",
+        description: "Access courses on any device, anytime, anywhere",
+      },
+      {
+        icon: Award,
+        title: "Earn Certificates",
+        description:
+          "Get recognized for your achievements with shareable certificates",
+      },
+      {
+        icon: Users,
+        title: "Expert Instructors",
+        description:
+          "Learn from industry professionals with real-world experience",
+      },
+      {
+        icon: Clock,
+        title: "Self-Paced Learning",
+        description: "Study at your own pace with lifetime access to courses",
+      },
+    ],
+    []
+  );
 
-  // Sample data for features
-  const features: FeatureCardProps[] = [
-    {
-      icon: Laptop,
-      title: "Learn Anywhere",
-      description: "Access courses on any device, anytime, anywhere",
-    },
-    {
-      icon: Award,
-      title: "Earn Certificates",
-      description:
-        "Get recognized for your achievements with shareable certificates",
-    },
-    {
-      icon: Users,
-      title: "Expert Instructors",
-      description:
-        "Learn from industry professionals with real-world experience",
-    },
-    {
-      icon: Clock,
-      title: "Self-Paced Learning",
-      description: "Study at your own pace with lifetime access to courses",
-    },
-  ];
+  // Memoized course lists
+  const allCourses = useMemo(
+    () =>
+      courses.map((course) => (
+        <CourseCard
+          key={course._id}
+          course={course}
+          isWishlisted={wishlist.includes(course._id)}
+          handleWishlistToggle={handleWishlistToggle}
+          handleEnroll={handleEnroll}
+          getDifficultyColor={getDifficultyColor}
+        />
+      )),
+    [courses, wishlist, handleWishlistToggle, handleEnroll, getDifficultyColor]
+  );
+
+  const trendingCourses = useMemo(
+    () =>
+      courses
+        .slice(0, 3)
+        .map((course) => (
+          <CourseCard
+            key={course._id}
+            course={course}
+            isWishlisted={wishlist.includes(course._id)}
+            handleWishlistToggle={handleWishlistToggle}
+            handleEnroll={handleEnroll}
+            getDifficultyColor={getDifficultyColor}
+            showTrendingBadge
+          />
+        )),
+    [courses, wishlist, handleWishlistToggle, handleEnroll, getDifficultyColor]
+  );
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -450,92 +602,7 @@ export function UserHomePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {courses.map((course) => {
-                    const isWishlisted = wishlist.includes(course._id);
-                    return (
-                      <Card
-                        key={course._id}
-                        className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
-                      >
-                        <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                          {course.thumbnail ? (
-                            <img
-                              src={course.thumbnail || "/placeholder.svg"}
-                              alt={course.title}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                              <BookOpen className="h-12 w-12 text-slate-400" />
-                            </div>
-                          )}
-                          <div className="absolute top-3 right-3 flex gap-2">
-                            <Badge
-                              className={getDifficultyColor(course.difficulty)}
-                            >
-                              {course.difficulty}
-                            </Badge>
-                          </div>
-                          <Button
-                            onClick={() => handleWishlistToggle(course._id)}
-                            size="icon"
-                            variant="ghost"
-                            className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
-                              isWishlisted
-                                ? "text-red-500 hover:text-red-700"
-                                : "text-slate-700 hover:text-primary"
-                            }`}
-                          >
-                            <Heart
-                              className={`h-4 w-4 ${
-                                isWishlisted ? "fill-red-500" : ""
-                              }`}
-                            />
-                            <span className="sr-only">
-                              {isWishlisted
-                                ? "Remove from wishlist"
-                                : "Add to wishlist"}
-                            </span>
-                          </Button>
-                        </div>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                            {course.title}
-                          </CardTitle>
-                          <CardDescription className="line-clamp-2">
-                            {course.tagline}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pb-2 flex-grow">
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <Tag className="h-4 w-4" />
-                                <span>{course.category}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-slate-600">
-                                <span className="font-medium">
-                                  ₹{course.price}
-                                </span>
-                              </div>
-                            </div>
-                            <Separator />
-                            <p className="text-sm text-slate-600 line-clamp-3">
-                              {course.about}
-                            </p>
-                          </div>
-                        </CardContent>
-                        <CardFooter className="pt-2">
-                          <Button
-                            className="w-full bg-primary hover:bg-primary/90"
-                            onClick={() => handleEnroll(course._id)}
-                          >
-                            Enroll Now
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    );
-                  })}
+                  {allCourses}
                 </div>
               )}
               {courses.length > 0 && (
@@ -601,98 +668,7 @@ export function UserHomePage() {
             </div>
             {courses.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {courses.slice(0, 3).map((course) => {
-                  const isWishlisted = wishlist.includes(course._id);
-                  return (
-                    <Card
-                      key={course._id}
-                      className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col group"
-                    >
-                      <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                        {course.thumbnail ? (
-                          <img
-                            src={course.thumbnail || "/placeholder.svg"}
-                            alt={course.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                            <BookOpen className="h-12 w-12 text-slate-400" />
-                          </div>
-                        )}
-                        <div className="absolute top-3 right-3 flex gap-2">
-                          <Badge
-                            className={getDifficultyColor(course.difficulty)}
-                          >
-                            {course.difficulty}
-                          </Badge>
-                        </div>
-                        <div className="absolute top-3 left-3">
-                          <Badge className="bg-primary/90 text-white">
-                            <TrendingUp className="mr-1 h-3 w-3" />
-                            Popular
-                          </Badge>
-                        </div>
-                        <Button
-                          onClick={() => handleWishlistToggle(course._id)}
-                          size="icon"
-                          variant="ghost"
-                          className={`absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80 ${
-                            isWishlisted
-                              ? "text-red-500 hover:text-red-700"
-                              : "text-slate-700 hover:text-primary"
-                          }`}
-                        >
-                          <Heart
-                            className={`h-4 w-4 ${
-                              isWishlisted ? "fill-red-500" : ""
-                            }`}
-                          />
-                          <span className="sr-only">
-                            {isWishlisted
-                              ? "Remove from wishlist"
-                              : "Add to wishlist"}
-                          </span>
-                        </Button>
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-xl font-bold line-clamp-1 group-hover:text-primary transition-colors">
-                          {course.title}
-                        </CardTitle>
-                        <CardDescription className="line-clamp-2">
-                          {course.tagline}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-2 flex-grow">
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                              <Tag className="h-4 w-4" />
-                              <span>{course.category}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                              <span className="font-medium">
-                                ₹{course.price}
-                              </span>
-                            </div>
-                          </div>
-                          <Separator />
-                          <p className="text-sm text-slate-600 line-clamp-3">
-                            {course.about}
-                          </p>
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-2">
-                        <Button
-                          className="w-full bg-primary hover:bg-primary/90"
-                          onClick={() => handleEnroll(course._id)}
-                        >
-                          Enroll Now
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
+                {trendingCourses}
               </div>
             )}
           </div>
@@ -977,3 +953,5 @@ export function UserHomePage() {
     </div>
   );
 }
+
+export default memo(UserHomePage);

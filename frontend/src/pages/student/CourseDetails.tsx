@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,54 +46,62 @@ export function CourseDetailsPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentLessonIdRef = useRef<string | null>(null);
   const currentUser = useSelector((state: any) => state.user.userDatas);
-  const studentId = currentUser?.id ? currentUser?.id : currentUser?._id;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+  // Memoized studentId
+  const studentId = useMemo(
+    () => currentUser?.id || currentUser?._id,
+    [currentUser]
+  );
+
+  // Fetch course data
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (courseId) {
+        const courseData = await courseService.getCourseDetails(courseId);
+        setCourse(courseData);
+
+        const response = await courseService.getLessons(courseId);
+        if (response) {
+          setLessons(response.data.lessons || []);
+        }
+      }
+
       try {
         if (courseId) {
-          const courseData = await courseService.getCourseDetails(courseId);
-          setCourse(courseData);
-
-          const response = await courseService.getLessons(courseId);
-          if (response) {
-            setLessons(response.data.lessons || []);
-          }
-        }
-
-        try {
-          if (courseId) {
-            const purchaseStatus = await courseService.checkCoursePurchase(
-              courseId
-            );
-            setIsPurchased(purchaseStatus || false);
-          }
-        } catch (error) {
-          console.error("Error checking purchase status:", error);
-          setIsPurchased(false);
-        }
-
-        try {
-          if (courseId) {
-            const completed = await courseService.getCompletedLessons(courseId);
-            setCompletedLessons(completed || []);
-          }
-        } catch (error) {
-          console.error("Error fetching completed lessons:", error);
-          setCompletedLessons([]);
+          const purchaseStatus = await courseService.checkCoursePurchase(
+            courseId
+          );
+          setIsPurchased(purchaseStatus || false);
         }
       } catch (error) {
-        console.error("Error fetching course data:", error);
-        navigate("/courses");
-      } finally {
-        setLoading(false);
+        console.error("Error checking purchase status:", error);
+        setIsPurchased(false);
       }
-    };
-    fetchData();
+
+      try {
+        if (courseId) {
+          const completed = await courseService.getCompletedLessons(courseId);
+          setCompletedLessons(completed || []);
+        }
+      } catch (error) {
+        console.error("Error fetching completed lessons:", error);
+        setCompletedLessons([]);
+      }
+    } catch (error) {
+      console.error("Error fetching course data:", error);
+      navigate("/courses");
+    } finally {
+      setLoading(false);
+    }
   }, [courseId, navigate]);
 
-  const getDifficultyColor = (difficulty: string) => {
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Event handlers and utilities
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -104,7 +112,7 @@ export function CourseDetailsPage() {
       default:
         return "bg-slate-100 text-slate-800";
     }
-  };
+  }, []);
 
   const handlePlayVideo = useCallback(
     (lesson: any, index: number) => {
@@ -178,7 +186,6 @@ export function CourseDetailsPage() {
       });
       return;
     }
-    // const roomId = `videocall_${course._id}_${studentId}_${course.tutorId}`;
     setIsInCall(true);
   }, [isPurchased, courseId, navigate, course, studentId]);
 
@@ -212,11 +219,106 @@ export function CourseDetailsPage() {
       state: {
         studentId,
         tutorId: course.tutorId,
-        courseId, // Use courseId from useParams as fallback
+        courseId,
         courseTitle: course?.title || "Unknown Course",
       },
     });
   }, [isPurchased, courseId, navigate, course, studentId]);
+
+  // Memoized lesson list rendering
+  const lessonList = useMemo(
+    () =>
+      lessons.map((lesson, index) => {
+        const isCompleted = isLessonCompleted(lesson._id);
+        const isLocked = !isPurchased && index !== 0;
+
+        return (
+          <div
+            key={lesson._id}
+            className={cn(
+              "flex items-center justify-between p-4 rounded-lg border transition-all duration-300",
+              isCompleted
+                ? "bg-gradient-to-r from-emerald-50 to-emerald-50/50 border-emerald-100 shadow-sm"
+                : isLocked
+                ? "bg-slate-50 border-slate-200 opacity-80"
+                : "bg-white border-slate-200 hover:border-primary/30 hover:bg-primary/5 shadow-sm hover:shadow-md"
+            )}
+          >
+            <div className="flex items-center gap-4">
+              <div
+                className={cn(
+                  "flex items-center justify-center h-12 w-12 rounded-full shrink-0",
+                  isCompleted
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-gradient-to-br from-primary/20 to-primary/10 text-primary"
+                )}
+              >
+                {isCompleted ? (
+                  <CheckCircle className="h-6 w-6" />
+                ) : (
+                  <span className="text-base font-semibold">{index + 1}</span>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p
+                    className={cn(
+                      "font-medium text-base",
+                      isCompleted ? "text-emerald-700" : "text-slate-800"
+                    )}
+                  >
+                    {lesson.title}
+                  </p>
+                  {isLocked && (
+                    <div className="bg-slate-200 text-slate-500 px-2 py-0.5 rounded-md text-xs flex items-center">
+                      <Lock className="h-3 w-3 mr-1" /> Premium
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-slate-500 mt-1.5">
+                  <span className="flex items-center">
+                    <Clock className="h-3.5 w-3.5 mr-1" />
+                    {lesson.duration ? `${lesson.duration} min` : "No duration"}
+                  </span>
+                  {isCompleted && (
+                    <span className="text-emerald-600 flex items-center bg-emerald-50 px-2 py-0.5 rounded-md">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Completed
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <Button
+              variant={isLocked ? "ghost" : "outline"}
+              size="sm"
+              onClick={() => handlePlayVideo(lesson, index)}
+              className={cn(
+                "transition-all duration-300 hover:scale-105",
+                isCompleted
+                  ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                  : isLocked
+                  ? "text-slate-400"
+                  : "hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+              )}
+            >
+              {isLocked ? (
+                <Lock className="h-4 w-4 mr-1.5" />
+              ) : (
+                <PlayCircle
+                  className={cn(
+                    "h-4 w-4 mr-1.5",
+                    isCompleted ? "text-emerald-600" : "text-primary"
+                  )}
+                />
+              )}
+              {isLocked ? "Locked" : "Play Lesson"}
+            </Button>
+          </div>
+        );
+      }),
+    [lessons, isPurchased, isLessonCompleted, handlePlayVideo]
+  );
 
   if (loading) {
     return (
@@ -452,104 +554,7 @@ export function CourseDetailsPage() {
                         </div>
                       ) : (
                         <div className="space-y-4 max-h-[550px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-slate-50">
-                          {lessons.map((lesson, index) => {
-                            const isCompleted = isLessonCompleted(lesson._id);
-                            const isLocked = !isPurchased && index !== 0;
-
-                            return (
-                              <div
-                                key={lesson._id}
-                                className={cn(
-                                  "flex items-center justify-between p-4 rounded-lg border transition-all duration-300",
-                                  isCompleted
-                                    ? "bg-gradient-to-r from-emerald-50 to-emerald-50/50 border-emerald-100 shadow-sm"
-                                    : isLocked
-                                    ? "bg-slate-50 border-slate-200 opacity-80"
-                                    : "bg-white border-slate-200 hover:border-primary/30 hover:bg-primary/5 shadow-sm hover:shadow-md"
-                                )}
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div
-                                    className={cn(
-                                      "flex items-center justify-center h-12 w-12 rounded-full shrink-0",
-                                      isCompleted
-                                        ? "bg-emerald-100 text-emerald-700"
-                                        : "bg-gradient-to-br from-primary/20 to-primary/10 text-primary"
-                                    )}
-                                  >
-                                    {isCompleted ? (
-                                      <CheckCircle className="h-6 w-6" />
-                                    ) : (
-                                      <span className="text-base font-semibold">
-                                        {index + 1}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <p
-                                        className={cn(
-                                          "font-medium text-base",
-                                          isCompleted
-                                            ? "text-emerald-700"
-                                            : "text-slate-800"
-                                        )}
-                                      >
-                                        {lesson.title}
-                                      </p>
-                                      {isLocked && (
-                                        <div className="bg-slate-200 text-slate-500 px-2 py-0.5 rounded-md text-xs flex items-center">
-                                          <Lock className="h-3 w-3 mr-1" />{" "}
-                                          Premium
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-1.5">
-                                      <span className="flex items-center">
-                                        <Clock className="h-3.5 w-3.5 mr-1" />
-                                        {lesson.duration
-                                          ? `${lesson.duration} min`
-                                          : "No duration"}
-                                      </span>
-                                      {isCompleted && (
-                                        <span className="text-emerald-600 flex items-center bg-emerald-50 px-2 py-0.5 rounded-md">
-                                          <CheckCircle className="h-3 w-3 mr-1" />
-                                          Completed
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant={isLocked ? "ghost" : "outline"}
-                                  size="sm"
-                                  onClick={() => handlePlayVideo(lesson, index)}
-                                  className={cn(
-                                    "transition-all duration-300 hover:scale-105",
-                                    isCompleted
-                                      ? "border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                      : isLocked
-                                      ? "text-slate-400"
-                                      : "hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-                                  )}
-                                >
-                                  {isLocked ? (
-                                    <Lock className="h-4 w-4 mr-1.5" />
-                                  ) : (
-                                    <PlayCircle
-                                      className={cn(
-                                        "h-4 w-4 mr-1.5",
-                                        isCompleted
-                                          ? "text-emerald-600"
-                                          : "text-primary"
-                                      )}
-                                    />
-                                  )}
-                                  {isLocked ? "Locked" : "Play Lesson"}
-                                </Button>
-                              </div>
-                            );
-                          })}
+                          {lessonList}
                         </div>
                       )}
                     </div>
@@ -613,3 +618,5 @@ export function CourseDetailsPage() {
     </div>
   );
 }
+
+export default React.memo(CourseDetailsPage);

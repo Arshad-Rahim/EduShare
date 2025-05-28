@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Search, Check, X } from "lucide-react";
-import { Header } from "./components/admin/Header";
-import { SideBar } from "./components/admin/SideBar";
+import  Header  from "./components/admin/Header";
+import  SideBar  from "./components/admin/SideBar";
 import Table from "@/components/tableStructure/TableReusableStructure";
 import { Switch } from "@/components/ui/switch";
 import { DocumentViewModal } from "@/components/modal-components/DocumentViewModal";
@@ -55,6 +55,7 @@ const TutorListing: React.FC = () => {
   const [tutorToReject, setTutorToReject] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [debouncedValue] = useDebounce(searchQuery, 500);
+
   useEffect(() => {
     const fetchTutors = async () => {
       try {
@@ -62,7 +63,7 @@ const TutorListing: React.FC = () => {
         const response = await tutorService.userList(
           currentPage,
           rowsPerPage,
-          searchQuery
+          debouncedValue
         );
         console.log("Fetched tutors:", response.data.users);
         setTutors(response.data.users);
@@ -78,39 +79,39 @@ const TutorListing: React.FC = () => {
     fetchTutors();
   }, [currentPage, debouncedValue]);
 
-  const handleToggleStatus = async (
-    tutorId: string,
-    currentBlocked: boolean
-  ) => {
-    const newBlocked = !currentBlocked;
-    try {
-      await tutorService.blockTutor(tutorId, newBlocked);
-      setTutors(
-        tutors.map((tutor) =>
-          tutor._id === tutorId ? { ...tutor, isBlocked: newBlocked } : tutor
-        )
-      );
-      toast.success(
-        `Tutor ${newBlocked ? "blocked" : "unblocked"} successfully`
-      );
-    } catch (error) {
-      console.error("Toggle status error:", error);
-      toast.error("Failed to update tutor status");
-    }
-  };
+  const handleToggleStatus = useCallback(
+    async (tutorId: string, currentBlocked: boolean) => {
+      const newBlocked = !currentBlocked;
+      try {
+        await tutorService.blockTutor(tutorId, newBlocked);
+        setTutors((prevTutors) =>
+          prevTutors.map((tutor) =>
+            tutor._id === tutorId ? { ...tutor, isBlocked: newBlocked } : tutor
+          )
+        );
+        toast.success(
+          `Tutor ${newBlocked ? "blocked" : "unblocked"} successfully`
+        );
+      } catch (error) {
+        console.error("Toggle status error:", error);
+        toast.error("Failed to update tutor status");
+      }
+    },
+    []
+  );
 
-  const handleOpenApprovalModal = (tutorId: string) => {
+  const handleOpenApprovalModal = useCallback((tutorId: string) => {
     setTutorToApprove(tutorId);
     setIsApprovalModalOpen(true);
-  };
+  }, []);
 
-  const handleApprove = async () => {
+  const handleApprove = useCallback(async () => {
     if (!tutorToApprove) return;
 
     try {
       await tutorService.tutorApproval(tutorToApprove);
-      setTutors(
-        tutors.map((tutor) =>
+      setTutors((prevTutors) =>
+        prevTutors.map((tutor) =>
           tutor._id === tutorToApprove
             ? { ...tutor, approvalStatus: "approved" }
             : tutor
@@ -123,21 +124,21 @@ const TutorListing: React.FC = () => {
       console.error("Approval error:", error);
       toast.error("Failed to approve tutor");
     }
-  };
+  }, [tutorToApprove]);
 
-  const handleOpenRejectionModal = (tutorId: string) => {
+  const handleOpenRejectionModal = useCallback((tutorId: string) => {
     setTutorToReject(tutorId);
     setRejectionReason("");
     setIsRejectionModalOpen(true);
-  };
+  }, []);
 
-  const handleReject = async () => {
+  const handleReject = useCallback(async () => {
     if (!tutorToReject || !rejectionReason.trim()) return;
 
     try {
-      await tutorService.tutorReject(tutorToReject,rejectionReason)
-      setTutors(
-        tutors.map((tutor) =>
+      await tutorService.tutorReject(tutorToReject, rejectionReason);
+      setTutors((prevTutors) =>
+        prevTutors.map((tutor) =>
           tutor._id === tutorToReject
             ? { ...tutor, approvalStatus: "rejected" }
             : tutor
@@ -151,82 +152,109 @@ const TutorListing: React.FC = () => {
       console.error("Rejection error:", error);
       toast.error("Failed to reject tutor");
     }
-  };
+  }, [tutorToReject, rejectionReason]);
 
-  const handleViewDocument = (documentUrl: string, tutorName: string) => {
-    setSelectedDocumentUrl(documentUrl);
-    setSelectedTutorName(tutorName);
-    setIsDocumentModalOpen(true);
-  };
+  const handleViewDocument = useCallback(
+    (documentUrl: string, tutorName: string) => {
+      setSelectedDocumentUrl(documentUrl);
+      setSelectedTutorName(tutorName);
+      setIsDocumentModalOpen(true);
+    },
+    []
+  );
 
-  const headers = [
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    { key: "specialization", label: "Specialization" },
-    {
-      key: "isBlocked",
-      label: "Status",
-      render: (tutor: Tutor) => (tutor.isBlocked ? "Blocked" : "Active"),
-    },
-    {
-      key: "verificationDocUrl",
-      label: "Verification Document",
-      render: (tutor: Tutor) =>
-        tutor.verificationDocUrl ? (
-          <Button
-            variant="link"
-            className="text-blue-500 p-0 h-auto font-normal hover:underline"
-            onClick={() =>
-              handleViewDocument(tutor.verificationDocUrl!, tutor.name)
-            }
-          >
-            View Document
-          </Button>
-        ) : (
-          "No Document"
-        ),
-    },
-    { key: "lastActive", label: "Last Active" },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (tutor: Tutor) => (
-        <div className="flex gap-2 items-center">
-          {tutor.approvalStatus === "pending" ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleOpenApprovalModal(tutor._id)}
-                className="hover:bg-green-50"
-                disabled={!tutor.verificationDocUrl}
-              >
-                <Check className="h-4 w-4 text-green-500" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleOpenRejectionModal(tutor._id)}
-                className="hover:bg-red-50"
-                disabled={!tutor.verificationDocUrl}
-              >
-                <X className="h-4 w-4 text-red-500" />
-              </Button>
-            </>
-          ) : (
-            <Switch
-              checked={!tutor.isBlocked}
-              onCheckedChange={() =>
-                handleToggleStatus(tutor._id, tutor.isBlocked)
+  const headers = useMemo(
+    () => [
+      { key: "name", label: "Name" },
+      { key: "email", label: "Email" },
+      { key: "specialization", label: "Specialization" },
+      {
+        key: "isBlocked",
+        label: "Status",
+        render: (tutor: Tutor) => (tutor.isBlocked ? "Blocked" : "Active"),
+      },
+      {
+        key: "verificationDocUrl",
+        label: "Verification Document",
+        render: (tutor: Tutor) =>
+          tutor.verificationDocUrl ? (
+            <Button
+              variant="link"
+              className="text-blue-500 p-0 h-auto font-normal hover:underline"
+              onClick={() =>
+                handleViewDocument(tutor.verificationDocUrl!, tutor.name)
               }
-              className="ml-2"
-              disabled={tutor.approvalStatus === "rejected"} // Disable switch if rejected
-            />
-          )}
-        </div>
-      ),
-    },
-  ];
+            >
+              View Document
+            </Button>
+          ) : (
+            "No Document"
+          ),
+      },
+      { key: "lastActive", label: "Last Active" },
+      {
+        key: "actions",
+        label: "Actions",
+        render: (tutor: Tutor) => (
+          <div className="flex gap-2 items-center">
+            {tutor.approvalStatus === "pending" ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleOpenApprovalModal(tutor._id)}
+                  className="hover:bg-green-50"
+                  disabled={!tutor.verificationDocUrl}
+                >
+                  <Check className="h-4 w-4 text-green-500" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleOpenRejectionModal(tutor._id)}
+                  className="hover:bg-red-50"
+                  disabled={!tutor.verificationDocUrl}
+                >
+                  <X className="h-4 w-4 text-red-500" />
+                </Button>
+              </>
+            ) : (
+              <Switch
+                checked={!tutor.isBlocked}
+                onCheckedChange={() =>
+                  handleToggleStatus(tutor._id, tutor.isBlocked)
+                }
+                className="ml-2"
+                disabled={tutor.approvalStatus === "rejected"}
+              />
+            )}
+          </div>
+        ),
+      },
+    ],
+    [
+      handleViewDocument,
+      handleOpenApprovalModal,
+      handleOpenRejectionModal,
+      handleToggleStatus,
+    ]
+  );
+
+  const paginationItems = useMemo(
+    () =>
+      Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        <PaginationItem key={page}>
+          <PaginationLink
+            href="#"
+            isActive={page === currentPage}
+            onClick={() => setCurrentPage(page)}
+          >
+            {page}
+          </PaginationLink>
+        </PaginationItem>
+      )),
+    [totalPages, currentPage]
+  );
 
   return (
     <>
@@ -282,19 +310,7 @@ const TutorListing: React.FC = () => {
                         }
                       />
                     </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            isActive={page === currentPage}
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )
-                    )}
+                    {paginationItems}
                     <PaginationItem>
                       <PaginationNext
                         href="#"
@@ -318,7 +334,6 @@ const TutorListing: React.FC = () => {
         </main>
       </div>
 
-      {/* Document View Modal */}
       <DocumentViewModal
         isOpen={isDocumentModalOpen}
         onClose={() => setIsDocumentModalOpen(false)}
@@ -326,14 +341,12 @@ const TutorListing: React.FC = () => {
         tutorName={selectedTutorName}
       />
 
-      {/* Approval Confirmation Modal */}
       <ApprovalConfirmationModal
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}
         onConfirm={handleApprove}
       />
 
-      {/* Rejection Reason Modal */}
       <RejectionReasonModal
         isOpen={isRejectionModalOpen}
         onClose={() => setIsRejectionModalOpen(false)}
@@ -345,4 +358,4 @@ const TutorListing: React.FC = () => {
   );
 };
 
-export default TutorListing;
+export default React.memo(TutorListing);

@@ -1,7 +1,7 @@
 "use client";
 
 import { AxiosError } from "axios";
-import { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -38,39 +38,49 @@ const AdminLogin: React.FC = () => {
     },
   });
 
-  const handleLoginSubmit = async (data: LoginFormData) => {
-    try {
-      const response = await adminService.loginAdmin(data);
-      const { user } = response.data;
-      const userWithRole = {
-        ...user,
-        role: "admin",
-      };
-      dispatch(addAdmin(userWithRole));
-      toast.success(response.data.message);
-      loginForm.reset();
-      navigate("/admin/home");
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        toast.error(error.response?.data?.error || "Error Login failed");
-      }
-    }
-  };
+  // Memoized roleConfig to prevent recreation
+  const roleConfig = useMemo(
+    () => ({
+      icon: <ShieldCheck className="h-6 w-6" />,
+      title: "Admin Portal",
+      color: "bg-red-500",
+      textColor: "text-red-500",
+      borderColor: "border-red-500",
+    }),
+    []
+  );
 
-  const roleConfig = {
-    icon: <ShieldCheck className="h-6 w-6" />,
-    title: "Admin Portal",
-    color: "bg-red-500",
-    textColor: "text-red-500",
-    borderColor: "border-red-500",
-  };
+  // Memoized className for the main div
+  const containerClass = useMemo(
+    () => cn("flex justify-center items-center min-h-screen p-4 bg-background"),
+    []
+  );
+
+  // Memoized login submit handler
+  const handleLoginSubmit = useCallback(
+    async (data: LoginFormData) => {
+      try {
+        const response = await adminService.loginAdmin(data);
+        const { user } = response.data;
+        const userWithRole = {
+          ...user,
+          role: "admin",
+        };
+        dispatch(addAdmin(userWithRole));
+        toast.success(response.data.message);
+        loginForm.reset();
+        navigate("/admin/home");
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data?.error || "Error Login failed");
+        }
+      }
+    },
+    [dispatch, loginForm, navigate]
+  );
 
   return (
-    <div
-      className={cn(
-        "flex justify-center items-center min-h-screen p-4 bg-background"
-      )}
-    >
+    <div className={containerClass}>
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <div
@@ -152,4 +162,4 @@ const AdminLogin: React.FC = () => {
   );
 };
 
-export default AdminLogin;
+export default React.memo(AdminLogin);

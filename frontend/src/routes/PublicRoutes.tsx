@@ -1,41 +1,59 @@
+import { FC, memo, useMemo } from "react";
 import { Route } from "react-router-dom";
 import { PublicUserRoute } from "../private/user/PublicUserRoute";
 import { PublicAdminRoute } from "../private/admin/PublicAdminRoute";
 import AuthForm from "../pages/AuthForm";
 import AdminLogin from "../pages/admin/AdminLogin";
-import { NotFound } from "../pages/404pageNotFount";
+import  NotFound  from "../pages/404pageNotFount";
 import ErrorBoundary from "../components/error-bountry/ErrorBoundry";
 
-export const PublicRoutes = () => [
-  <Route
-    key="auth"
-    path="/auth"
-    element={
-      <PublicUserRoute>
-        <ErrorBoundary>
-          <AuthForm />
-        </ErrorBoundary>
-      </PublicUserRoute>
-    }
-  />,
-  <Route
-    key="admin-login"
-    path="/admin/login"
-    element={
-      <PublicAdminRoute>
-        <ErrorBoundary>
-          <AdminLogin />
-        </ErrorBoundary>
-      </PublicAdminRoute>
-    }
-  />,
-  <Route
-    key="not-found"
-    path="*"
-    element={
-      <ErrorBoundary>
-        <NotFound />
-      </ErrorBoundary>
-    }
-  />,
-];
+// Memoize components to prevent unnecessary re-renders
+const MemoizedAuthForm = memo(AuthForm);
+const MemoizedAdminLogin = memo(AdminLogin);
+const MemoizedNotFound = memo(NotFound);
+
+const PublicRoutes: FC = () => {
+  // Memoize the routes to avoid recreating JSX on every render
+  const routes = useMemo(
+    () => (
+      <>
+        <Route
+          key="auth"
+          path="/auth"
+          element={
+            <PublicUserRoute>
+              <ErrorBoundary>
+                <MemoizedAuthForm />
+              </ErrorBoundary>
+            </PublicUserRoute>
+          }
+        />
+        <Route
+          key="admin-login"
+          path="/admin/login"
+          element={
+            <PublicAdminRoute>
+              <ErrorBoundary>
+                <MemoizedAdminLogin />
+              </ErrorBoundary>
+            </PublicAdminRoute>
+          }
+        />
+        <Route
+          key="not-found"
+          path="*"
+          element={
+            <ErrorBoundary>
+              <MemoizedNotFound />
+            </ErrorBoundary>
+          }
+        />
+      </>
+    ),
+    [] // Empty dependency array since routes are static
+  );
+
+  return routes;
+};
+
+export default memo(PublicRoutes);

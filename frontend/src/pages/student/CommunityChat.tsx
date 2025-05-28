@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Send, Menu, Check, CheckCheck, Image, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -43,8 +43,12 @@ export function CommunityChat() {
 
   const user = useSelector((state: any) => state.user.userDatas);
 
+  // Memoized userId
+  const computedUserId = useMemo(() => user?.id || user?._id || "", [user]);
+
+  // Fetch user details
   useEffect(() => {
-    const fetchUserDetails = async () => {
+    const fetchUserDetails = useCallback(async () => {
       try {
         const response = await profileService.userDetails();
         setUserName(
@@ -55,14 +59,16 @@ export function CommunityChat() {
         console.error("Failed to fetch user details:", error);
         setUserName(`User_${Math.random().toString(36).substring(7)}`);
       }
-    };
+    }, []);
+
     if (user) {
       fetchUserDetails();
     }
   }, [user]);
 
+  // Fetch communities
   useEffect(() => {
-    const fetchCommunities = async () => {
+    const fetchCommunities = useCallback(async () => {
       try {
         const enrolledCourses = await courseService.getEnrolledCourses();
         const newCommunities: Community[] = enrolledCourses.map(
@@ -83,14 +89,16 @@ export function CommunityChat() {
         console.error("Error fetching enrolled courses:", error);
         toast.error("Failed to load communities");
       }
-    };
+    }, []);
+
     if (user) {
       fetchCommunities();
     }
   }, [user]);
 
+  // Socket.IO setup
   useEffect(() => {
-    setUserId(user?.id ? user.id : user?._id || "");
+    setUserId(computedUserId);
     if (!userId) {
       console.error("No user ID available");
       return;
@@ -103,7 +111,7 @@ export function CommunityChat() {
     if (selectedCommunity) {
       socketRef.current.emit("join_community", selectedCommunity.id);
 
-      socketRef.current.on("message_history", (history: Message[]) => {
+      const messageHistoryHandler = useCallback((history: Message[]) => {
         setMessages(
           history.map((msg) => ({
             _id: msg._id,
@@ -114,9 +122,9 @@ export function CommunityChat() {
             imageUrl: msg.imageUrl,
           }))
         );
-      });
+      }, []);
 
-      socketRef.current.on("receive_message", (message: Message) => {
+      const receiveMessageHandler = useCallback((message: Message) => {
         setMessages((prev) => [
           ...prev,
           {
@@ -128,7 +136,10 @@ export function CommunityChat() {
             imageUrl: message.imageUrl,
           },
         ]);
-      });
+      }, []);
+
+      socketRef.current.on("message_history", messageHistoryHandler);
+      socketRef.current.on("receive_message", receiveMessageHandler);
     }
 
     return () => {
@@ -136,25 +147,22 @@ export function CommunityChat() {
       socketRef.current?.off("receive_message");
       socketRef.current?.disconnect();
     };
-  }, [selectedCommunity?.id, userId]);
+  }, [selectedCommunity?.id, computedUserId]);
 
-  const scrollToBottom = () => {
+  // Event handlers
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSelectCommunity = (community: Community) => {
+  const handleSelectCommunity = useCallback((community: Community) => {
     setSelectedCommunity(community);
     setMessages([]);
     setIsSidebarOpen(false);
     socketRef.current?.emit("join_community", community.id);
-  };
+  }, []);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && userId && selectedCommunity && userName) {
+  const handleSendMessage = useCallback(() => {
+    if (newMessage.trim() && computedUserId && selectedCommunity && userName) {
       const newMsg: Message = {
         sender: userName,
         content: newMessage,
@@ -165,68 +173,131 @@ export function CommunityChat() {
         communityId: selectedCommunity.id,
         message: newMsg,
       });
-      console.log("USERID IN FRONTEND", userId);
-      // Emit notification for enrolled users
+      console.log("USERID IN FRONTEND", computedUserId);
       socketRef.current?.emit("send_notification", {
         communityId: selectedCommunity.id,
         courseTitle: selectedCommunity.course,
         message: newMsg,
-        senderId: userId,
+        senderId: computedUserId,
       });
       setNewMessage("");
     }
-  };
+  }, [newMessage, computedUserId, selectedCommunity, userName]);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && userId && selectedCommunity && userName) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size must be less than 5MB");
-        return;
-      }
-      if (!file.type.startsWith("image/")) {
-        toast.error("Only image files are allowed");
-        return;
-      }
+  const handleImageUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file && computedUserId && selectedCommunity && userName) {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("Image size must be less than 5MB");
+          return;
+        }
+        if (!file.type.startsWith("image/")) {
+          toast.error("Only image files are allowed");
+          return;
+        }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const newMsg: Message = {
-          sender: userName,
-          content: "",
-          timestamp: new Date().toISOString(),
-          status: "sent",
+        const reader = new FileReader();
+        reader.onload = () => {
+          const newMsg: Message = {
+            sender: userName,
+            content: "",
+            timestamp: new Date().toISOString(),
+            status: "sent",
+          };
+          socketRef.current?.emit("send_image_message", {
+            communityId: selectedCommunity.id,
+            message: newMsg,
+            image: {
+              data: reader.result,
+              name: file.name,
+              type: file.type,
+            },
+            senderId: computedUserId,
+          });
+          socketRef.current?.emit("send_notification", {
+            communityId: selectedCommunity.id,
+            courseTitle: selectedCommunity.course,
+            message: { ...newMsg, content: "Sent an image" },
+            senderId: computedUserId,
+          });
         };
-        socketRef.current?.emit("send_image_message", {
-          communityId: selectedCommunity.id,
-          message: newMsg,
-          image: {
-            data: reader.result,
-            name: file.name,
-            type: file.type,
-          },
-          senderId: userId,
-        });
-        // Emit notification for enrolled users
-        socketRef.current?.emit("send_notification", {
-          communityId: selectedCommunity.id,
-          courseTitle: selectedCommunity.course,
-          message: { ...newMsg, content: "Sent an image" },
-          senderId: userId,
-        });
-      };
-      reader.readAsDataURL(file);
-      event.target.value = ""; // Reset file input
-    }
-  };
+        reader.readAsDataURL(file);
+        event.target.value = "";
+      }
+    },
+    [computedUserId, selectedCommunity, userName]
+  );
 
-  const formatTimestamp = (timestamp: string) => {
+  const formatTimestamp = useCallback((timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "numeric",
       hour12: true,
     });
-  };
+  }, []);
+
+  // Scroll to bottom on messages update
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // Memoized message list rendering
+  const messageList = useMemo(
+    () =>
+      messages.map((message) => (
+        <div
+          key={message._id}
+          className={cn(
+            "flex w-full gap-2 items-end animate-fade-in",
+            message.sender === userName ? "justify-end" : "justify-start"
+          )}
+        >
+          <div
+            className={cn(
+              "max-w-md rounded-2xl p-4 shadow-md",
+              "transform transition-all duration-200 hover:scale-[1.01]",
+              message.sender === userName
+                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
+                : "bg-white text-gray-800 rounded-bl-sm"
+            )}
+          >
+            <div className="flex items-baseline justify-between mb-1">
+              <span className="font-medium text-sm">{message.sender}</span>
+              <span
+                className={cn(
+                  "text-xs ml-2 flex items-center gap-1",
+                  message.sender === userName
+                    ? "text-indigo-100"
+                    : "text-gray-400"
+                )}
+              >
+                {formatTimestamp(message.timestamp)}
+                {message.sender === userName && message.status && (
+                  <span className="ml-1">
+                    {message.status === "delivered" ? (
+                      <Check className="h-3 w-3" />
+                    ) : message.status === "read" ? (
+                      <CheckCheck className="h-3 w-3" />
+                    ) : null}
+                  </span>
+                )}
+              </span>
+            </div>
+            {message.imageUrl ? (
+              <img
+                src={message.imageUrl}
+                alt="Uploaded image"
+                className="max-w-full h-auto rounded-lg mt-2"
+              />
+            ) : (
+              <p className="text-[15px] leading-relaxed">{message.content}</p>
+            )}
+          </div>
+        </div>
+      )),
+    [messages, userName, formatTimestamp]
+  );
 
   if (!user) {
     return (
@@ -348,64 +419,7 @@ export function CommunityChat() {
               <main className="flex-1 overflow-hidden relative bg-gradient-to-b from-gray-50 to-gray-100">
                 <div className="absolute inset-0 overflow-y-auto px-6 py-4">
                   <div className="max-w-4xl mx-auto space-y-4">
-                    {messages.map((message) => (
-                      <div
-                        key={message._id}
-                        className={cn(
-                          "flex w-full gap-2 items-end animate-fade-in",
-                          message.sender === userName
-                            ? "justify-end"
-                            : "justify-start"
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            "max-w-md rounded-2xl p-4 shadow-md",
-                            "transform transition-all duration-200 hover:scale-[1.01]",
-                            message.sender === userName
-                              ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
-                              : "bg-white text-gray-800 rounded-bl-sm"
-                          )}
-                        >
-                          <div className="flex items-baseline justify-between mb-1">
-                            <span className="font-medium text-sm">
-                              {message.sender}
-                            </span>
-                            <span
-                              className={cn(
-                                "text-xs ml-2 flex items-center gap-1",
-                                message.sender === userName
-                                  ? "text-indigo-100"
-                                  : "text-gray-400"
-                              )}
-                            >
-                              {formatTimestamp(message.timestamp)}
-                              {message.sender === userName &&
-                                message.status && (
-                                  <span className="ml-1">
-                                    {message.status === "delivered" ? (
-                                      <Check className="h-3 w-3" />
-                                    ) : message.status === "read" ? (
-                                      <CheckCheck className="h-3 w-3" />
-                                    ) : null}
-                                  </span>
-                                )}
-                            </span>
-                          </div>
-                          {message.imageUrl ? (
-                            <img
-                              src={message.imageUrl}
-                              alt="Uploaded image"
-                              className="max-w-full h-auto rounded-lg mt-2"
-                            />
-                          ) : (
-                            <p className="text-[15px] leading-relaxed">
-                              {message.content}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                    {messageList}
                     <div ref={messagesEndRef} />
                   </div>
                 </div>
@@ -471,3 +485,5 @@ export function CommunityChat() {
     </div>
   );
 }
+
+export default React.memo(CommunityChat);

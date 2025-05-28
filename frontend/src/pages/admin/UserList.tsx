@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,8 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Search } from "lucide-react";
-import { Header } from "./components/admin/Header";
-import { SideBar } from "./components/admin/SideBar";
+import Header from "./components/admin/Header";
+import SideBar from "./components/admin/SideBar";
 import Table from "@/components/tableStructure/TableReusableStructure";
 import { Switch } from "@/components/ui/switch";
 import { userService } from "@/services/adminService/userService";
@@ -23,7 +23,7 @@ interface User {
   name: string;
   email: string;
   role: string;
-  isBlocked: boolean; // Change from status (string) to isBlocked (boolean)
+  isBlocked: boolean;
   lastActive: string;
   enrolledCourses: number;
 }
@@ -45,7 +45,7 @@ const UserListing: React.FC = () => {
         const response = await userService.userList(
           currentPage,
           rowsPerPage,
-          searchQuery
+          debouncedValue
         );
         setUsers(response.data.users);
         setTotalPages(Math.ceil(response.data.total / rowsPerPage));
@@ -60,61 +60,82 @@ const UserListing: React.FC = () => {
     fetchUsers();
   }, [currentPage, debouncedValue]);
 
-  const handleToggleStatus = async (
-    userId: string,
-    currentBlocked: boolean
-  ) => {
-    const newBlocked = !currentBlocked; // Toggle boolean
-    try {
-      await userService.blockUser(userId, newBlocked);
-      setUsers(
-        users.map((user) =>
-          user._id === userId ? { ...user, isBlocked: newBlocked } : user
-        )
-      );
-      toast.success(
-        `User ${newBlocked ? "blocked" : "unblocked"} successfully`
-      );
-    } catch (error) {
-      console.error("Toggle status error:", error);
-      toast.error("Failed to update user status");
-    }
-  };
+  const handleToggleStatus = useCallback(
+    async (userId: string, currentBlocked: boolean) => {
+      const newBlocked = !currentBlocked;
+      try {
+        await userService.blockUser(userId, newBlocked);
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
+            user._id === userId ? { ...user, isBlocked: newBlocked } : user
+          )
+        );
+        toast.success(
+          `User ${newBlocked ? "blocked" : "unblocked"} successfully`
+        );
+      } catch (error) {
+        console.error("Toggle status error:", error);
+        toast.error("Failed to update user status");
+      }
+    },
+    []
+  );
 
-  const headers = [
-    { key: "name", label: "Name" },
-    { key: "email", label: "Email" },
-    {
-      key: "isBlocked",
-      label: "Status",
-      render: (user: User) => (user.isBlocked ? "Blocked" : "Active"),
-    },
-    { key: "lastActive", label: "Last Active" },
-    { key: "enrolledCourses", label: "Enrolled Courses" },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (user: User) => (
-        <div className="flex gap-2 items-center">
-          {/* <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
-            <Edit className="h-4 w-4" />
-          </Button> */}
-          {/* <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => handleOpenDeleteModal(user._id)}
+  const headers = useMemo(
+    () => [
+      { key: "name", label: "Name" },
+      { key: "email", label: "Email" },
+      {
+        key: "isBlocked",
+        label: "Status",
+        render: (user: User) => (user.isBlocked ? "Blocked" : "Active"),
+      },
+      { key: "lastActive", label: "Last Active" },
+      { key: "enrolledCourses", label: "Enrolled Courses" },
+      {
+        key: "actions",
+        label: "Actions",
+        render: (user: User) => (
+          <div className="flex gap-2 items-center">
+            {/* <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
+              <Edit className="h-4 w-4" />
+            </Button> */}
+            {/* <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleOpenDeleteModal(user._id)}
+            >
+              <Trash className="h-4 w-4" />
+            </Button> */}
+            <Switch
+              checked={!user.isBlocked}
+              onCheckedChange={() =>
+                handleToggleStatus(user._id, user.isBlocked)
+              }
+              className="ml-2"
+            />
+          </div>
+        ),
+      },
+    ],
+    [handleToggleStatus]
+  );
+
+  const paginationItems = useMemo(
+    () =>
+      Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        <PaginationItem key={page}>
+          <PaginationLink
+            href="#"
+            isActive={page === currentPage}
+            onClick={() => setCurrentPage(page)}
           >
-            <Trash className="h-4 w-4" />
-          </Button> */}
-          <Switch
-            checked={!user.isBlocked}
-            onCheckedChange={() => handleToggleStatus(user._id, user.isBlocked)}
-            className="ml-2"
-          />
-        </div>
-      ),
-    },
-  ];
+            {page}
+          </PaginationLink>
+        </PaginationItem>
+      )),
+    [totalPages, currentPage]
+  );
 
   return (
     <>
@@ -170,19 +191,7 @@ const UserListing: React.FC = () => {
                         }
                       />
                     </PaginationItem>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                      (page) => (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            isActive={page === currentPage}
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )
-                    )}
+                    {paginationItems}
                     <PaginationItem>
                       <PaginationNext
                         href="#"
@@ -218,4 +227,4 @@ const UserListing: React.FC = () => {
   );
 };
 
-export default UserListing;
+export default React.memo(UserListing);

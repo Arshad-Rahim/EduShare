@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -103,11 +103,11 @@ const RenderRazorpay = ({
   setScriptLoading,
 }: RenderRazorpayProps) => {
   const navigate = useNavigate();
-  const razorpayInstance = useRef<any>(null); // Ref to store Razorpay instance
-  const hasOpened = useRef(false); // Prevent multiple openings
+  const razorpayInstance = useRef<any>(null);
+  const hasOpened = useRef(false);
 
-  const displayRazorpay = async () => {
-    if (hasOpened.current) return; // Prevent re-opening
+  const displayRazorpay = useCallback(async () => {
+    if (hasOpened.current) return;
     hasOpened.current = true;
 
     setScriptLoading(true);
@@ -118,101 +118,97 @@ const RenderRazorpay = ({
 
     if (!res) {
       toast.error("Failed to load Razorpay SDK. Please check your connection.");
-      hasOpened.current = false; // Reset to allow retry
+      hasOpened.current = false;
       return;
     }
 
     if (!window.Razorpay) {
       toast.error("Razorpay SDK not available.");
-      hasOpened.current = false; // Reset to allow retry
+      hasOpened.current = false;
       return;
     }
 
-    const options: RazorpayOptions = {
-      key: keyId,
-      amount,
-      currency,
-      name: "Your Organization Name",
-      order_id: orderId,
-      handler: async (response) => {
-        try {
-          // Verify payment
-          await paymentService.payment(orderId, response);
-          // Enroll user
-          await paymentService.enroll(courseId, orderId, amount / 100); // Convert paise to rupees
-          toast.success("Payment and enrollment successful!");
-          // Explicitly close the modal after successful payment
-          if (razorpayInstance.current) {
-            razorpayInstance.current.close();
-            razorpayInstance.current = null; // Clear the instance
-          }
-          navigate(`/courses/${courseId}`);
-        } catch (error: any) {
-          console.error("Payment or enrollment failed:", error);
-          toast.error(
-            `Payment succeeded, but enrollment failed: ${
-              error.response?.data?.error || "Contact support"
-            }`
-          );
-          // Close modal even on error
-          if (razorpayInstance.current) {
-            razorpayInstance.current.close();
-            razorpayInstance.current = null; // Clear the instance
-          }
-        }
-      },
-      modal: {
-        confirm_close: true,
-        ondismiss: async (reason) => {
-          const {
-            reason: paymentReason,
-            field,
-            step,
-            code,
-          } = reason && reason.error ? reason.error : {};
-          const status =
-            reason === undefined
-              ? "cancelled"
-              : reason === "timeout"
-              ? "timedout"
-              : "failed";
+    const options: RazorpayOptions = useMemo(
+      () => ({
+        key: keyId,
+        amount,
+        currency,
+        name: "Your Organization Name",
+        order_id: orderId,
+        handler: async (response) => {
           try {
-            await authAxiosInstance.post("/payment", {
-              status,
-              orderDetails: { orderId, paymentReason, field, step, code },
-            });
-            toast.info(`Payment ${status}.`);
-          } catch (error) {
-            console.error("Failed to update payment status:", error);
-          } finally {
-            // Clean up instance on dismiss
+            await paymentService.payment(orderId, response);
+            await paymentService.enroll(courseId, orderId, amount / 100);
+            toast.success("Payment and enrollment successful!");
             if (razorpayInstance.current) {
+              razorpayInstance.current.close();
               razorpayInstance.current = null;
             }
-            hasOpened.current = false; // Reset to allow retry
+            navigate(`/courses/${courseId}`);
+          } catch (error: any) {
+            console.error("Payment or enrollment failed:", error);
+            toast.error(
+              `Payment succeeded, but enrollment failed: ${
+                error.response?.data?.error || "Contact support"
+              }`
+            );
+            if (razorpayInstance.current) {
+              razorpayInstance.current.close();
+              razorpayInstance.current = null;
+            }
           }
         },
-      },
-      retry: { enabled: false },
-      timeout: 300,
-      theme: { color: "#3399cc" },
-    };
+        modal: {
+          confirm_close: true,
+          ondismiss: async (reason) => {
+            const {
+              reason: paymentReason,
+              field,
+              step,
+              code,
+            } = reason && reason.error ? reason.error : {};
+            const status =
+              reason === undefined
+                ? "cancelled"
+                : reason === "timeout"
+                ? "timedout"
+                : "failed";
+            try {
+              await authAxiosInstance.post("/payment", {
+                status,
+                orderDetails: { orderId, paymentReason, field, step, code },
+              });
+              toast.info(`Payment ${status}.`);
+            } catch (error) {
+              console.error("Failed to update payment status:", error);
+            } finally {
+              if (razorpayInstance.current) {
+                razorpayInstance.current = null;
+              }
+              hasOpened.current = false;
+            }
+          },
+        },
+        retry: { enabled: false },
+        timeout: 300,
+        theme: { color: "#3399cc" },
+      }),
+      [orderId, keyId, currency, amount, courseId, navigate]
+    );
 
     const rzp = new window.Razorpay(options);
     razorpayInstance.current = rzp;
     rzp.open();
 
-    // Listen for modal close event to ensure cleanup
     rzp.on("modal.closed", () => {
       razorpayInstance.current = null;
-      hasOpened.current = false; // Reset to allow retry
+      hasOpened.current = false;
     });
-  };
+  }, [orderId, keyId, currency, amount, courseId, navigate, setScriptLoading]);
 
   useEffect(() => {
     displayRazorpay();
 
-    // Cleanup on unmount
     return () => {
       if (razorpayInstance.current) {
         razorpayInstance.current.close();
@@ -225,7 +221,7 @@ const RenderRazorpay = ({
         document.body.removeChild(script);
       }
     };
-  }, [orderId, keyId, currency, amount, courseId, navigate, setScriptLoading]);
+  }, [displayRazorpay]);
 
   return null;
 };
@@ -246,7 +242,7 @@ const RenderStripe = ({
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
 
-  const handleStripePayment = async () => {
+  const handleStripePayment = useCallback(async () => {
     if (!stripe || !elements) {
       toast.error("Stripe not initialized");
       return;
@@ -255,11 +251,10 @@ const RenderStripe = ({
     setScriptLoading(true);
 
     try {
-      // Create PaymentIntent
       const response = await authAxiosInstance.post(
         "/payment/stripe/create-payment-intent",
         {
-          amount: amount * 100, // Convert to cents
+          amount: amount * 100,
           currency: "usd",
           courseId,
         }
@@ -267,7 +262,6 @@ const RenderStripe = ({
 
       const { clientSecret } = response.data;
 
-      // Confirm payment
       const result = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement)!,
@@ -279,12 +273,11 @@ const RenderStripe = ({
         toast.error(result.error.message);
       } else if (result.paymentIntent?.status === "succeeded") {
         try {
-          // Enroll user
           await paymentService.enroll(
             courseId,
             result.paymentIntent.id,
-            amount, // Amount in dollars
-            true // isStripe flag
+            amount,
+            true
           );
           toast.success("Payment and enrollment successful!");
           navigate(`/courses/${courseId}`);
@@ -307,7 +300,7 @@ const RenderStripe = ({
     } finally {
       setScriptLoading(false);
     }
-  };
+  }, [stripe, elements, courseId, amount, navigate, setScriptLoading]);
 
   return (
     <div className="mt-4">
@@ -336,7 +329,7 @@ const RenderStripe = ({
 };
 
 export function CourseEnrollPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+  const params = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
@@ -358,12 +351,11 @@ export function CourseEnrollPage() {
     amount: null,
   });
 
-  useEffect(() => {
-    fetchCourseDetails();
-    checkEnrollmentStatus();
-  }, [courseId]);
+  // Memoized courseId
+  const courseId = useMemo(() => params.courseId, [params.courseId]);
 
-  const fetchCourseDetails = async () => {
+  // Fetch course and enrollment status
+  const fetchCourseDetails = useCallback(async () => {
     if (!courseId) {
       toast.error("Invalid course ID");
       navigate("/courses");
@@ -382,12 +374,10 @@ export function CourseEnrollPage() {
       console.error("Failed to fetch course details:", error);
       toast.error("Failed to load course details");
       navigate("/courses");
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [courseId, navigate]);
 
-  const checkEnrollmentStatus = async () => {
+  const checkEnrollmentStatus = useCallback(async () => {
     if (!courseId) {
       toast.error("Invalid course ID");
       navigate("/courses");
@@ -400,36 +390,49 @@ export function CourseEnrollPage() {
     } catch (error) {
       console.error("Failed to check enrollment status:", error);
     }
-  };
+  }, [courseId, navigate]);
 
-  const handleCreateOrder = async (amount: number, currency: string) => {
-    setPaymentProcessing(true);
-    try {
-      const response = await authAxiosInstance.post("/payment/order", {
-        amount: amount * 100, // Convert to paise
-        currency,
-        courseId,
-      });
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      await Promise.all([fetchCourseDetails(), checkEnrollmentStatus()]);
+      setLoading(false);
+    };
+    fetchData();
+  }, [fetchCourseDetails, checkEnrollmentStatus]);
 
-      if (response.data && response.data.id) {
-        setOrderDetails({
-          orderId: response.data.id,
-          currency: response.data.currency,
-          amount: response.data.amount,
+  // Event handlers
+  const handleCreateOrder = useCallback(
+    async (amount: number, currency: string) => {
+      setPaymentProcessing(true);
+      try {
+        const response = await authAxiosInstance.post("/payment/order", {
+          amount: amount * 100,
+          currency,
+          courseId,
         });
-        setDisplayRazorpay(true);
-      } else {
-        throw new Error("Order creation failed");
-      }
-    } catch (error) {
-      console.error("Failed to create order:", error);
-      toast.error("Failed to initiate payment. Please try again.");
-    } finally {
-      setPaymentProcessing(false);
-    }
-  };
 
-  const handleEnroll = () => {
+        if (response.data && response.data.id) {
+          setOrderDetails({
+            orderId: response.data.id,
+            currency: response.data.currency,
+            amount: response.data.amount,
+          });
+          setDisplayRazorpay(true);
+        } else {
+          throw new Error("Order creation failed");
+        }
+      } catch (error) {
+        console.error("Failed to create order:", error);
+        toast.error("Failed to initiate payment. Please try again.");
+      } finally {
+        setPaymentProcessing(false);
+      }
+    },
+    [courseId]
+  );
+
+  const handleEnroll = useCallback(() => {
     if (enrollmentStatus === "enrolled") {
       navigate(`/courses/${courseId}/learn`);
       return;
@@ -445,9 +448,16 @@ export function CourseEnrollPage() {
         setDisplayStripe(true);
       }
     }
-  };
+  }, [
+    enrollmentStatus,
+    paymentMethod,
+    course,
+    courseId,
+    navigate,
+    handleCreateOrder,
+  ]);
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -458,7 +468,43 @@ export function CourseEnrollPage() {
       default:
         return "bg-slate-100 text-slate-800";
     }
-  };
+  }, []);
+
+  // Memoized payment details rendering
+  const paymentDetails = useMemo(
+    () =>
+      course && (
+        <div>
+          <h3 className="text-lg sm:text-xl font-semibold text-slate-800">
+            Payment Details
+          </h3>
+          <div className="mt-4 p-4 bg-slate-50 rounded-lg w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <span className="text-slate-600">Course Price</span>
+              <span className="font-medium text-sm sm:text-base">
+                ₹{course.price}
+              </span>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-2">
+              <span className="text-slate-600">Tax</span>
+              <span className="font-medium text-sm sm:text-base">₹0.00</span>
+            </div>
+            <Separator className="my-2" />
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+              <span className="text-slate-800 font-semibold">Total</span>
+              <span className="text-primary font-semibold text-sm sm:text-base">
+                ₹{course.price}
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+            <Lock className="h-3 w-3" />
+            Secure payment processing
+          </p>
+        </div>
+      ),
+    [course]
+  );
 
   if (loading) {
     return (
@@ -546,38 +592,7 @@ export function CourseEnrollPage() {
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-slate-800">
-                          Payment Details
-                        </h3>
-                        <div className="mt-4 p-4 bg-slate-50 rounded-lg w-full">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                            <span className="text-slate-600">Course Price</span>
-                            <span className="font-medium text-sm sm:text-base">
-                              ₹{course.price}
-                            </span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mt-2">
-                            <span className="text-slate-600">Tax</span>
-                            <span className="font-medium text-sm sm:text-base">
-                              ₹0.00
-                            </span>
-                          </div>
-                          <Separator className="my-2" />
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                            <span className="text-slate-800 font-semibold">
-                              Total
-                            </span>
-                            <span className="text-primary font-semibold text-sm sm:text-base">
-                              ₹{course.price}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                          <Lock className="h-3 w-3" />
-                          Secure payment processing
-                        </p>
-                      </div>
+                      {paymentDetails}
 
                       <div>
                         <h3 className="text-lg sm:text-xl font-semibold text-slate-800">
@@ -659,3 +674,5 @@ export function CourseEnrollPage() {
     </div>
   );
 }
+
+export default React.memo(CourseEnrollPage);

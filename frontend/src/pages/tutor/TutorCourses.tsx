@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import {
   Card,
   CardContent,
@@ -39,15 +39,15 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Header } from "./components/Header";
-import { SideBar } from "./components/SideBar";
+import Header from "./components/Header";
+import SideBar from "./components/SideBar";
 import { Link } from "react-router-dom";
 import { ConfirmationModal } from "@/components/modal-components/ConformationModal";
 import { ClipLoader } from "react-spinners";
 import { Progress } from "@/components/ui/progress";
 import { Course, courseService, Lesson } from "@/services/courseService";
 
-export function TutorCourses() {
+function TutorCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -60,58 +60,55 @@ export function TutorCourses() {
   const [confirmDeleteLessonOpen, setConfirmDeleteLessonOpen] = useState(false);
   const [lessonToDelete, setLessonToDelete] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Added sidebar toggle state, default to false for mobile
-  // Pagination states
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [coursesPerPage] = useState(3); // Number of courses per page
-  const [totalCourses, setTotalCourses] = useState(0); // Total courses from backend
+  const [coursesPerPage] = useState(3);
+  const [totalCourses, setTotalCourses] = useState(0);
 
-  useEffect(() => {
-    fetchCourses(currentPage);
-  }, [currentPage]); // Fetch courses whenever the page changes
-
-  const fetchCourses = async (page: number) => {
-    setIsLoading(true);
-    try {
-      const response = await courseService.getSpecificTutorCourse(
-        page,
-        coursesPerPage
-      );
-      if (response?.data) {
-        setCourses(response.data.courses || []);
-        setTotalCourses(response.data.totalCourses || 0);
-      } else {
-        setCourses([]);
-        setTotalCourses(0);
+  const fetchCourses = useCallback(
+    async (page: number) => {
+      setIsLoading(true);
+      try {
+        const response = await courseService.getSpecificTutorCourse(
+          page,
+          coursesPerPage
+        );
+        if (response?.data) {
+          setCourses(response.data.courses || []);
+          setTotalCourses(response.data.totalCourses || 0);
+        } else {
+          setCourses([]);
+          setTotalCourses(0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+        toast.error("Failed to load courses");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to fetch courses:", error);
-      toast.error("Failed to load courses");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [coursesPerPage]
+  );
 
-  const fetchLessons = async (courseId: string) => {
+  const fetchLessons = useCallback(async (courseId: string) => {
     setIsLoading(true);
     try {
       const response = await courseService.getLessons(courseId);
-      // Ensure lessonsData is an array, default to empty array if not
       setLessons(response?.data.lessons || []);
     } catch (error) {
       console.error("Failed to fetch lessons:", error);
-      setLessons([]); // Set to empty array on error
+      setLessons([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleDeleteCourse = (courseId: string) => {
+  const handleDeleteCourse = useCallback((courseId: string) => {
     setCourseToDelete(courseId);
     setConfirmDeleteCourseOpen(true);
-  };
+  }, []);
 
-  const confirmDeleteCourse = async () => {
+  const confirmDeleteCourse = useCallback(async () => {
     if (!courseToDelete) return;
 
     setIsLoading(true);
@@ -120,9 +117,7 @@ export function TutorCourses() {
       if (response) {
         toast.success(response.data.message);
       }
-      // Refetch courses for the current page
       fetchCourses(currentPage);
-      // If the page becomes empty and it's not the first page, go to the previous page
       if (courses.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
@@ -133,14 +128,14 @@ export function TutorCourses() {
       setConfirmDeleteCourseOpen(false);
       setCourseToDelete(null);
     }
-  };
+  }, [courseToDelete, currentPage, courses.length, fetchCourses]);
 
-  const handleDeleteLesson = (lessonId: string) => {
+  const handleDeleteLesson = useCallback((lessonId: string) => {
     setLessonToDelete(lessonId);
     setConfirmDeleteLessonOpen(true);
-  };
+  }, []);
 
-  const confirmDeleteLesson = async () => {
+  const confirmDeleteLesson = useCallback(async () => {
     if (!lessonToDelete) return;
 
     setIsLoading(true);
@@ -155,9 +150,9 @@ export function TutorCourses() {
       setConfirmDeleteLessonOpen(false);
       setLessonToDelete(null);
     }
-  };
+  }, [lessonToDelete, lessons]);
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
       case "Beginner":
         return "bg-emerald-100 text-emerald-800";
@@ -168,16 +163,25 @@ export function TutorCourses() {
       default:
         return "bg-slate-100 text-slate-800";
     }
-  };
+  }, []);
 
-  // Calculate total pages based on totalCourses from backend
-  const totalPages = Math.ceil(totalCourses / coursesPerPage);
+  const totalPages = useMemo(
+    () => Math.ceil(totalCourses / coursesPerPage),
+    [totalCourses, coursesPerPage]
+  );
 
-  const paginate = (pageNumber: number) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
-  };
+  const paginate = useCallback(
+    (pageNumber: number) => {
+      if (pageNumber >= 1 && pageNumber <= totalPages) {
+        setCurrentPage(pageNumber);
+      }
+    },
+    [totalPages]
+  );
+
+  useEffect(() => {
+    fetchCourses(currentPage);
+  }, [currentPage, fetchCourses]);
 
   interface CourseFormModalProps {
     open: boolean;
@@ -187,13 +191,13 @@ export function TutorCourses() {
     isEditMode?: boolean;
   }
 
-  const CourseFormModal = ({
+  const CourseFormModal = memo(function CourseFormModal({
     open,
     onOpenChange,
     course,
     onCourseSaved,
     isEditMode = false,
-  }: CourseFormModalProps) => {
+  }: CourseFormModalProps) {
     const [title, setTitle] = useState(course?.title || "");
     const [tagline, setTagline] = useState(course?.tagline || "");
     const [category, setCategory] = useState(course?.category || "");
@@ -207,36 +211,39 @@ export function TutorCourses() {
     const [formLoading, setFormLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (file) {
-        if (file.size > 2 * 1024 * 1024) {
-          toast.error("Thumbnail size should not exceed 2MB");
-          return;
+    const handleFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+          if (file.size > 2 * 1024 * 1024) {
+            toast.error("Thumbnail size should not exceed 2MB");
+            return;
+          }
+          if (!["image/jpeg", "image/png"].includes(file.type)) {
+            toast.error("Only JPG and PNG files are allowed");
+            return;
+          }
+          setSelectedFile(file);
+          setExistingThumbnailUrl(null);
+          toast.success("Thumbnail selected successfully");
         }
-        if (!["image/jpeg", "image/png"].includes(file.type)) {
-          toast.error("Only JPG and PNG files are allowed");
-          return;
-        }
-        setSelectedFile(file);
-        setExistingThumbnailUrl(null);
-        toast.success("Thumbnail selected successfully");
-      }
-    };
+      },
+      []
+    );
 
-    const triggerFileInput = () => {
+    const triggerFileInput = useCallback(() => {
       if (fileInputRef.current) {
         fileInputRef.current.click();
       }
-    };
+    }, []);
 
-    const removeFile = () => {
+    const removeFile = useCallback(() => {
       setSelectedFile(null);
       setExistingThumbnailUrl(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    };
+    }, []);
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
       if (!title || !tagline || !category || !difficulty || !price || !about) {
         toast.error("Please fill out all required fields");
         return;
@@ -284,18 +291,26 @@ export function TutorCourses() {
       } finally {
         setFormLoading(false);
       }
-    };
+    }, [
+      title,
+      tagline,
+      category,
+      difficulty,
+      price,
+      about,
+      selectedFile,
+      isEditMode,
+      course?._id,
+      onOpenChange,
+      onCourseSaved,
+    ]);
 
-    // Function to shorten and truncate the thumbnail name
-    const getShortenedThumbnailName = (url: string | null) => {
+    const getShortenedThumbnailName = useCallback((url: string | null) => {
       let thumbnailName = url
         ? url.split("/").pop() || "Current Thumbnail"
         : "Current Thumbnail";
-      // Decode URL-encoded characters (e.g., %20 to space)
       thumbnailName = decodeURIComponent(thumbnailName);
-      // Remove query parameters if present (e.g., S3 signed URL params)
       thumbnailName = thumbnailName.split("?")[0];
-      // Truncate to 20 characters with ellipsis if too long
       if (thumbnailName.length > 20) {
         thumbnailName = `${thumbnailName.substring(
           0,
@@ -303,7 +318,7 @@ export function TutorCourses() {
         )}...${thumbnailName.substring(thumbnailName.length - 7)}`;
       }
       return thumbnailName;
-    };
+    }, []);
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -510,7 +525,7 @@ export function TutorCourses() {
         </DialogContent>
       </Dialog>
     );
-  };
+  });
 
   interface LessonFormModalProps {
     open: boolean;
@@ -519,12 +534,12 @@ export function TutorCourses() {
     onLessonSaved: () => void;
   }
 
-  const LessonFormModal: React.FC<LessonFormModalProps> = ({
+  const LessonFormModal = memo(function LessonFormModal({
     open,
     onOpenChange,
     courseId,
     onLessonSaved,
-  }) => {
+  }: LessonFormModalProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [file, setFile] = useState<File | null>(null);
@@ -532,7 +547,7 @@ export function TutorCourses() {
     const [order, setOrder] = useState("");
     const [formLoading, setFormLoading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
-    const [displayProgress, setDisplayProgress] = useState(0); // Smoothed progress
+    const [displayProgress, setDisplayProgress] = useState(0);
     const [isProcessing, setIsProcessing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -543,7 +558,7 @@ export function TutorCourses() {
         setDisplayProgress((prev) => {
           const diff = uploadProgress - prev;
           if (diff <= 0) return prev;
-          const step = Math.min(diff, 0.5); // Adjust this for speed
+          const step = Math.min(diff, 0.5);
           const newProgress = prev + step;
           if (newProgress >= 100 && uploadProgress === 100) {
             setIsProcessing(true);
@@ -555,35 +570,38 @@ export function TutorCourses() {
       return () => clearInterval(interval);
     }, [formLoading, uploadProgress]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFile = event.target.files?.[0];
-      if (selectedFile) {
-        if (selectedFile.size > 50 * 1024 * 1024) {
-          toast.error("Lesson file size should not exceed 50MB");
-          return;
+    const handleFileChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = event.target.files?.[0];
+        if (selectedFile) {
+          if (selectedFile.size > 50 * 1024 * 1024) {
+            toast.error("Lesson file size should not exceed 50MB");
+            return;
+          }
+          if (!["video/mp4", "video/webm"].includes(selectedFile.type)) {
+            toast.error("Only MP4 and WebM files are allowed");
+            return;
+          }
+          setFile(selectedFile);
+          toast.success("Lesson file selected successfully");
         }
-        if (!["video/mp4", "video/webm"].includes(selectedFile.type)) {
-          toast.error("Only MP4 and WebM files are allowed");
-          return;
-        }
-        setFile(selectedFile);
-        toast.success("Lesson file selected successfully");
-      }
-    };
+      },
+      []
+    );
 
-    const triggerFileInput = () => {
+    const triggerFileInput = useCallback(() => {
       if (fileInputRef.current) fileInputRef.current.click();
-    };
+    }, []);
 
-    const removeFile = () => {
+    const removeFile = useCallback(() => {
       setFile(null);
       setUploadProgress(0);
       setDisplayProgress(0);
       setIsProcessing(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    };
+    }, []);
 
-    const handleSaveLesson = async () => {
+    const handleSaveLesson = useCallback(async () => {
       if (!title || !description || !file) {
         toast.error(
           "Please fill out all required fields (title, description, file)"
@@ -630,7 +648,16 @@ export function TutorCourses() {
         setFormLoading(false);
         setIsProcessing(false);
       }
-    };
+    }, [
+      title,
+      description,
+      file,
+      duration,
+      order,
+      courseId,
+      onOpenChange,
+      onLessonSaved,
+    ]);
 
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -782,7 +809,248 @@ export function TutorCourses() {
         </DialogContent>
       </Dialog>
     );
-  };
+  });
+
+  const loadingUI = useMemo(
+    () => (
+      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-50 w-full">
+        <ClipLoader size={50} color="#3b82f6" />
+      </div>
+    ),
+    []
+  );
+
+  const noCoursesUI = useMemo(
+    () => (
+      <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
+        <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-slate-700 mb-2">
+          No courses available
+        </h3>
+        <p className="text-slate-500 max-w-md mx-auto mb-6">
+          You haven’t created any courses yet. Add your first course to start
+          building your catalog.
+        </p>
+        <Button
+          onClick={() => setAddModalOpen(true)}
+          variant="outline"
+          className="border-primary text-primary hover:bg-primary/5"
+          disabled={isLoading}
+        >
+          Create Your First Course
+        </Button>
+      </div>
+    ),
+    [isLoading]
+  );
+
+  const coursesUI = useMemo(
+    () => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        {courses.map((course) => (
+          <Card
+            key={course._id}
+            className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col w-full"
+          >
+            <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+              {course.thumbnail ? (
+                <img
+                  src={course.thumbnail || "/placeholder.svg"}
+                  alt={course.title}
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                  <BookOpen className="h-12 w-12 text-slate-400" />
+                </div>
+              )}
+              <div className="absolute top-3 right-3 flex gap-2">
+                <Badge className={getDifficultyColor(course.difficulty)}>
+                  {course.difficulty}
+                </Badge>
+              </div>
+            </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl font-bold line-clamp-1">
+                {course.title}
+              </CardTitle>
+              <CardDescription className="line-clamp-2">
+                {course.tagline}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pb-2 flex-grow">
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div className="flex items-center gap-1.5 text-slate-600">
+                    <Tag className="h-4 w-4" />
+                    <span>{course.category}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-600">
+                    <span className="font-medium">₹{course.price}</span>
+                  </div>
+                </div>
+                <Separator />
+                <p className="text-sm text-slate-600 line-clamp-3">
+                  {course.about}
+                </p>
+              </div>
+            </CardContent>
+            <CardFooter className="pt-2 flex flex-col gap-2 w-full">
+              <div className="flex justify-between w-full gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-slate-300 hover:bg-slate-50"
+                  onClick={() => {
+                    setSelectedCourse(course);
+                    setEditModalOpen(true);
+                  }}
+                  disabled={isLoading}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                  onClick={() => handleDeleteCourse(course._id)}
+                  disabled={isLoading}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+              <div className="flex justify-between w-full gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                  onClick={() => {
+                    setSelectedCourse(course);
+                    fetchLessons(course._id);
+                    setLessonModalOpen(true);
+                  }}
+                  disabled={isLoading}
+                >
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Manage Lessons
+                </Button>
+                <Link to={`/tutor/courses/${course._id}`} className="flex-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
+                    disabled={isLoading}
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                </Link>
+              </div>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    ),
+    [courses, isLoading, getDifficultyColor, handleDeleteCourse, fetchLessons]
+  );
+
+  const paginationUI = useMemo(
+    () =>
+      totalPages > 1 ? (
+        <div className="flex justify-between items-center mt-6">
+          <Button
+            variant="outline"
+            onClick={() => paginate(currentPage - 1)}
+            disabled={currentPage === 1 || isLoading}
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                onClick={() => paginate(page)}
+                disabled={isLoading}
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => paginate(currentPage + 1)}
+            disabled={currentPage === totalPages || isLoading}
+          >
+            Next
+          </Button>
+        </div>
+      ) : null,
+    [currentPage, totalPages, isLoading, paginate]
+  );
+
+  const lessonsDialogUI = useMemo(
+    () =>
+      lessonModalOpen && selectedCourse ? (
+        <Dialog open={lessonModalOpen} onOpenChange={setLessonModalOpen}>
+          <DialogContent className="w-full sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                Manage Lessons for {selectedCourse.title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Button
+                onClick={() => setAddLessonModalOpen(true)}
+                className="w-full bg-primary hover:bg-primary/90 text-white"
+                disabled={isLoading}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add New Lesson
+              </Button>
+              {lessons.length === 0 ? (
+                <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
+                  <Video className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-500">No lessons added yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-4 max-h-[300px] overflow-y-auto w-full">
+                  {lessons.map((lesson) => (
+                    <div
+                      key={lesson._id}
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Video className="h-5 w-5 text-primary" />
+                        <div>
+                          <p className="text-sm font-medium">{lesson.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {lesson.duration
+                              ? `${lesson.duration} min`
+                              : "No duration"}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => handleDeleteLesson(lesson._id)}
+                        variant="ghost"
+                        size="sm"
+                        disabled={isLoading}
+                      >
+                        <Trash2 className="h-4 w-4 text-rose-600" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : null,
+    [lessonModalOpen, selectedCourse, lessons, isLoading, handleDeleteLesson]
+  );
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col w-full">
@@ -794,11 +1062,7 @@ export function TutorCourses() {
         <div
           className={`flex-1 w-full relative ${sidebarOpen ? "md:ml-64" : ""}`}
         >
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-50 w-full">
-              <ClipLoader size={50} color="#3b82f6" />
-            </div>
-          )}
+          {isLoading && loadingUI}
           <div className="space-y-8 w-full">
             <Card className="border-0 shadow-md w-full">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-xl">
@@ -822,239 +1086,16 @@ export function TutorCourses() {
               </CardHeader>
               <CardContent className="pt-6 w-full">
                 {courses.length === 0 && currentPage === 1 ? (
-                  <div className="text-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
-                    <BookOpen className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-700 mb-2">
-                      No courses available
-                    </h3>
-                    <p className="text-slate-500 max-w-md mx-auto mb-6">
-                      You haven’t created any courses yet. Add your first course
-                      to start building your catalog.
-                    </p>
-                    <Button
-                      onClick={() => setAddModalOpen(true)}
-                      variant="outline"
-                      className="border-primary text-primary hover:bg-primary/5"
-                      disabled={isLoading}
-                    >
-                      Create Your First Course
-                    </Button>
-                  </div>
+                  noCoursesUI
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-                      {courses.map((course) => (
-                        <Card
-                          key={course._id}
-                          className="overflow-hidden transition-all duration-300 hover:shadow-lg border border-slate-200 h-full flex flex-col w-full"
-                        >
-                          <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
-                            {course.thumbnail ? (
-                              <img
-                                src={course.thumbnail || "/placeholder.svg"}
-                                alt={course.title}
-                                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                                <BookOpen className="h-12 w-12 text-slate-400" />
-                              </div>
-                            )}
-                            <div className="absolute top-3 right-3 flex gap-2">
-                              <Badge
-                                className={getDifficultyColor(
-                                  course.difficulty
-                                )}
-                              >
-                                {course.difficulty}
-                              </Badge>
-                            </div>
-                          </div>
-                          <CardHeader className="pb-2">
-                            <CardTitle className="text-xl font-bold line-clamp-1">
-                              {course.title}
-                            </CardTitle>
-                            <CardDescription className="line-clamp-2">
-                              {course.tagline}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="pb-2 flex-grow">
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <Tag className="h-4 w-4" />
-                                  <span>{course.category}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-slate-600">
-                                  <span className="font-medium">
-                                    ₹{course.price}
-                                  </span>
-                                </div>
-                              </div>
-                              <Separator />
-                              <p className="text-sm text-slate-600 line-clamp-3">
-                                {course.about}
-                              </p>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2 flex flex-col gap-2 w-full">
-                            <div className="flex justify-between w-full gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-slate-300 hover:bg-slate-50"
-                                onClick={() => {
-                                  setSelectedCourse(course);
-                                  setEditModalOpen(true);
-                                }}
-                                disabled={isLoading}
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                                onClick={() => handleDeleteCourse(course._id)}
-                                disabled={isLoading}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </Button>
-                            </div>
-                            <div className="flex justify-between w-full gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                                onClick={() => {
-                                  setSelectedCourse(course);
-                                  fetchLessons(course._id);
-                                  setLessonModalOpen(true);
-                                }}
-                                disabled={isLoading}
-                              >
-                                <PlusCircle className="h-4 w-4 mr-2" />
-                                Manage Lessons
-                              </Button>
-                              <Link
-                                to={`/tutor/courses/${course._id}`}
-                                className="flex-1"
-                              >
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="w-full border-green-200 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                  disabled={isLoading}
-                                >
-                                  <BookOpen className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Button>
-                              </Link>
-                            </div>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                    {/* Pagination Controls */}
-                    {totalPages > 1 && (
-                      <div className="flex justify-between items-center mt-6">
-                        <Button
-                          variant="outline"
-                          onClick={() => paginate(currentPage - 1)}
-                          disabled={currentPage === 1 || isLoading}
-                        >
-                          Previous
-                        </Button>
-                        <div className="flex items-center gap-2">
-                          {Array.from(
-                            { length: totalPages },
-                            (_, i) => i + 1
-                          ).map((page) => (
-                            <Button
-                              key={page}
-                              variant={
-                                currentPage === page ? "default" : "outline"
-                              }
-                              onClick={() => paginate(page)}
-                              disabled={isLoading}
-                            >
-                              {page}
-                            </Button>
-                          ))}
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => paginate(currentPage + 1)}
-                          disabled={currentPage === totalPages || isLoading}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
+                    {coursesUI}
+                    {paginationUI}
                   </>
                 )}
               </CardContent>
             </Card>
-            {lessonModalOpen && selectedCourse && (
-              <Dialog open={lessonModalOpen} onOpenChange={setLessonModalOpen}>
-                <DialogContent className="w-full sm:max-w-[600px]">
-                  <DialogHeader>
-                    <DialogTitle>
-                      Manage Lessons for {selectedCourse.title}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Button
-                      onClick={() => setAddLessonModalOpen(true)}
-                      className="w-full bg-primary hover:bg-primary/90 text-white"
-                      disabled={isLoading}
-                    >
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add New Lesson
-                    </Button>
-                    {lessons.length === 0 ? (
-                      <div className="text-center py-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 w-full">
-                        <Video className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                        <p className="text-slate-500">No lessons added yet.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 max-h-[300px] overflow-y-auto w-full">
-                        {lessons.map((lesson) => (
-                          <div
-                            key={lesson._id}
-                            className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Video className="h-5 w-5 text-primary" />
-                              <div>
-                                <p className="text-sm font-medium">
-                                  {lesson.title}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {lesson.duration
-                                    ? `${lesson.duration} min`
-                                    : "No duration"}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              onClick={() => handleDeleteLesson(lesson._id)}
-                              variant="ghost"
-                              size="sm"
-                              disabled={isLoading}
-                            >
-                              <Trash2 className="h-4 w-4 text-rose-600" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
+            {lessonsDialogUI}
             <CourseFormModal
               open={addModalOpen}
               onOpenChange={setAddModalOpen}
@@ -1102,3 +1143,5 @@ export function TutorCourses() {
     </div>
   );
 }
+
+export default memo(TutorCourses);
