@@ -70,18 +70,7 @@ export function CallNotification({ tutorId }: CallNotificationProps) {
       socket.off("call_rejected");
     };
   }, [socket, tutorId, isOpen]);
-
-  const handleAccept = () => {
-    if (!callRequest) return;
-    console.log("Accepting call for room:", callRequest.roomId);
-    const navigateUrl = `/tutor/courses/${callRequest.courseId}?call=${callRequest.roomId}`;
-    console.log("Navigating to:", navigateUrl);
-    setIsOpen(false);
-    setCallRequest(null);
-    activeRoomId.current = null; // Clear active roomId
-    socket.off("call_request"); // Disable further call_request events
-    navigate(navigateUrl);
-  };
+  if (!socket || !tutorId) return;
 
   const handleReject = () => {
     if (!callRequest) return;
@@ -95,6 +84,20 @@ export function CallNotification({ tutorId }: CallNotificationProps) {
     activeRoomId.current = null; // Clear active roomId
     toast.info("Call rejected");
   };
+
+  const handleAccept = () => {
+    if (!callRequest) return;
+    console.log("Accepting call for room:", callRequest.roomId);
+    const navigateUrl = `/tutor/courses/${callRequest.courseId}?call=${callRequest.roomId}`;
+    console.log("Navigating to:", navigateUrl);
+    setIsOpen(false);
+    setCallRequest(null);
+    activeRoomId.current = null; // Clear active roomId
+    socket.off("call_request"); // Disable further call_request events
+    navigate(navigateUrl);
+  };
+
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {

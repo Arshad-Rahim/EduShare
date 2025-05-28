@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes } from "react-router-dom";
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
 import { Notifications } from "./pages/student/components/Notification";
-import  CallNotification  from "./components/videoCall/CallNotification";
+import  {CallNotification}  from "./components/videoCall/CallNotification";
 import { useAppContext } from "./provider/AppProvider";
 import { lazy, memo, Suspense, useCallback, useMemo } from "react";
 
