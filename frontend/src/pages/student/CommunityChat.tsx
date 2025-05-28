@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { useSelector } from "react-redux";
 import { Send, Menu, Check, CheckCheck, Image, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,55 +52,59 @@ export function CommunityChat() {
   // Memoized userId
   const computedUserId = useMemo(() => user?.id || user?._id || "", [user]);
 
+  // Define fetchUserDetails at top level
+  const fetchUserDetails = useCallback(async () => {
+    console.log("fetchUserDetails called");
+    try {
+      const response = await profileService.userDetails();
+      setUserName(
+        response.data.users.name ||
+          `User_${Math.random().toString(36).substring(7)}`
+      );
+    } catch (error) {
+      console.error("Failed to fetch user details:", error);
+      setUserName(`User_${Math.random().toString(36).substring(7)}`);
+    }
+  }, []);
+
+  // Define fetchCommunities at top level
+  const fetchCommunities = useCallback(async () => {
+    console.log("fetchCommunities called");
+    try {
+      const enrolledCourses = await courseService.getEnrolledCourses();
+      const newCommunities: Community[] = enrolledCourses.map(
+        (course: any) => ({
+          id: course._id,
+          name: `${course.title} Community`,
+          course: course.title,
+          messages: [],
+          members: course.enrollments || 100,
+          activeNow: Math.floor(Math.random() * 20) + 5,
+        })
+      );
+      setCommunities(newCommunities);
+      if (newCommunities.length > 0) {
+        setSelectedCommunity(newCommunities[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching enrolled courses:", error);
+      toast.error("Failed to load communities");
+    }
+  }, []);
+
   // Fetch user details
   useEffect(() => {
-    const fetchUserDetails = useCallback(async () => {
-      try {
-        const response = await profileService.userDetails();
-        setUserName(
-          response.data.users.name ||
-            `User_${Math.random().toString(36).substring(7)}`
-        );
-      } catch (error) {
-        console.error("Failed to fetch user details:", error);
-        setUserName(`User_${Math.random().toString(36).substring(7)}`);
-      }
-    }, []);
-
     if (user) {
       fetchUserDetails();
     }
-  }, [user]);
+  }, [user, fetchUserDetails]);
 
   // Fetch communities
   useEffect(() => {
-    const fetchCommunities = useCallback(async () => {
-      try {
-        const enrolledCourses = await courseService.getEnrolledCourses();
-        const newCommunities: Community[] = enrolledCourses.map(
-          (course: any) => ({
-            id: course._id,
-            name: `${course.title} Community`,
-            course: course.title,
-            messages: [],
-            members: course.enrollments || 100,
-            activeNow: Math.floor(Math.random() * 20) + 5,
-          })
-        );
-        setCommunities(newCommunities);
-        if (newCommunities.length > 0) {
-          setSelectedCommunity(newCommunities[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching enrolled courses:", error);
-        toast.error("Failed to load communities");
-      }
-    }, []);
-
     if (user) {
       fetchCommunities();
     }
-  }, [user]);
+  }, [user, fetchCommunities]);
 
   // Socket.IO setup
   useEffect(() => {
@@ -111,7 +121,9 @@ export function CommunityChat() {
     if (selectedCommunity) {
       socketRef.current.emit("join_community", selectedCommunity.id);
 
-      const messageHistoryHandler = useCallback((history: Message[]) => {
+      // Define message handlers at top level
+      const messageHistoryHandler = (history: Message[]) => {
+        console.log("Received message_history:", history);
         setMessages(
           history.map((msg) => ({
             _id: msg._id,
@@ -122,9 +134,10 @@ export function CommunityChat() {
             imageUrl: msg.imageUrl,
           }))
         );
-      }, []);
+      };
 
-      const receiveMessageHandler = useCallback((message: Message) => {
+      const receiveMessageHandler = (message: Message) => {
+        console.log("Received receive_message:", message);
         setMessages((prev) => [
           ...prev,
           {
@@ -136,10 +149,15 @@ export function CommunityChat() {
             imageUrl: message.imageUrl,
           },
         ]);
-      }, []);
+      };
 
       socketRef.current.on("message_history", messageHistoryHandler);
       socketRef.current.on("receive_message", receiveMessageHandler);
+
+      return () => {
+        socketRef.current?.off("message_history", messageHistoryHandler);
+        socketRef.current?.off("receive_message", receiveMessageHandler);
+      };
     }
 
     return () => {
@@ -147,7 +165,7 @@ export function CommunityChat() {
       socketRef.current?.off("receive_message");
       socketRef.current?.disconnect();
     };
-  }, [selectedCommunity?.id, computedUserId]);
+  }, [selectedCommunity?.id, computedUserId, userId]);
 
   // Event handlers
   const scrollToBottom = useCallback(() => {

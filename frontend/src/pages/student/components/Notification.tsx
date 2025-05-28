@@ -26,29 +26,38 @@ export function Notifications() {
 
   // Determine user ID and role
   const userId = user?.id || user?._id;
-  const isTutor = user?.role === "tutor"; // Assuming role is stored in user object
+  const isTutor = user?.role === "tutor";
 
   useEffect(() => {
     if (!userId) {
-      console.error("No user ID (id or _id) in Notifications", { user });
+      console.error("No user ID in Notifications", { user });
       return;
     }
-    console.log("Notifications user ID:", userId, { user });
+    console.log("Notifications initializing:", { userId, isTutor });
 
+    // Initialize socket
     socketRef.current = io("https://edushare.arshadrahim.tech", {
       reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
-    // http://localhost:3000
 
     socketRef.current.on("connect", () => {
-      console.log("Socket.IO connected:", socketRef.current?.id);
+      console.log("Socket connected:", {
+        socketId: socketRef.current?.id,
+        userId,
+      });
       socketRef.current?.emit("join_user", userId);
       console.log("Emitted join_user:", userId);
 
+      // Fetch enrolled courses
       courseService
         .getEnrolledCourses()
         .then((courses) => {
           console.log("Enrolled courses:", courses);
+          if (!courses || courses.length === 0) {
+            console.warn("No enrolled courses found for user:", userId);
+          }
           courses.forEach((course: any) => {
             socketRef.current?.emit("join_community", course._id);
             console.log("Joined community:", course._id);
@@ -59,9 +68,8 @@ export function Notifications() {
         });
     });
 
-    socketRef.current.on(
-      "notification",
-      ({
+    socketRef.current.on("notification", (data) => {
+      const {
         type,
         message,
         courseId,
@@ -69,105 +77,98 @@ export function Notifications() {
         tutorId,
         timestamp,
         senderId,
-      }) => {
-        console.log("Received notification:", {
-          userId,
-          senderId,
-          isTutor,
-          type,
-          message,
-          courseId,
-          studentId,
-          tutorId,
-          timestamp,
-        });
-        if (userId === senderId) {
-          console.log("Skipping notification for sender:", {
-            userId,
-            senderId,
-          });
-          return; // Skip processing for the sender
-        }
+      } = data;
+      console.log("Received notification:", {
+        userId,
+        senderId,
+        isTutor,
+        type,
+        message,
+        courseId,
+        studentId,
+        tutorId,
+        timestamp,
+      });
 
-        console.log("Processing notification for recipient:", userId);
-
-        // Check if the user is on the chat page for this course or on the /community route
-        const currentPath = window.location.pathname;
-        const chatPageRegex = /^\/courses\/([a-f0-9]+)\/chat$/;
-        const match = currentPath.match(chatPageRegex);
-        const isOnChatPage = !!match;
-        const chatCourseId = match ? match[1] : null;
-        const isOnCommunityPage = currentPath === "/community";
-        const shouldSuppressNotification =
-          (isOnChatPage && chatCourseId === courseId) || isOnCommunityPage;
-
-        console.log("Notification check:", {
-          currentPath,
-          isOnChatPage,
-          chatCourseId,
-          isOnCommunityPage,
-          courseId,
-          shouldSuppressNotification,
-        });
-
-        // Create the notification, marking it as read if suppressed
-        const notification: Notification = {
-          id: Math.random().toString(36).substring(7),
-          type,
-          message,
-          courseId,
-          studentId,
-          tutorId,
-          timestamp,
-          read: shouldSuppressNotification, // Mark as read if suppressed
-          userId: userId,
-          senderId: senderId,
-        };
-
-        // Always add to notifications state
-        setNotifications((prev) => {
-          const newNotifications = [notification, ...prev];
-          console.log("New notifications state:", newNotifications);
-          return newNotifications;
-        });
-
-        // Suppress the toast if the user is on the chat page for this course or on /community
-        if (shouldSuppressNotification) {
-          console.log(
-            "Suppressing notification toast and marking as read: User is on relevant page",
-            { courseId, isOnCommunityPage }
-          );
-          return;
-        }
-
-        const redirectPath = isTutor ? `/tutor/messages` : `/community`;
-
-        toast(message, {
-          description: new Date(timestamp).toLocaleString(),
-          action: {
-            label: "View",
-            onClick: () => {
-              if (!notification.read) {
-                (window as any).markNotificationRead(notification.id);
-              }
-              navigate(redirectPath);
-            },
-          },
-          duration: 5000,
-          id: notification.id,
-        });
+      if (userId === senderId) {
+        console.log("Skipping notification for sender:", { userId, senderId });
+        return;
       }
-    );
 
-    socketRef.current.on("connect_error", (error) => {
-      console.error("Socket.IO connection error:", error);
+      // Check if user is on chat or community page
+      const currentPath = window.location.pathname;
+      const chatPageRegex = /^\/courses\/([a-f0-9]+)\/chat$/;
+      const match = currentPath.match(chatPageRegex);
+      const isOnChatPage = !!match;
+      const chatCourseId = match ? match[1] : null;
+      const isOnCommunityPage = currentPath === "/community";
+      const shouldSuppressNotification =
+        (isOnChatPage && chatCourseId === courseId) || isOnCommunityPage;
+
+      console.log("Notification check:", {
+        currentPath,
+        isOnChatPage,
+        chatCourseId,
+        isOnCommunityPage,
+        courseId,
+        shouldSuppressNotification,
+      });
+
+      // Create notification
+      const notification: Notification = {
+        id: Math.random().toString(36).substring(7),
+        type,
+        message,
+        courseId,
+        studentId,
+        tutorId,
+        timestamp,
+        read: shouldSuppressNotification,
+        userId,
+        senderId,
+      };
+
+      // Update notifications state
+      setNotifications((prev) => {
+        const newNotifications = [notification, ...prev];
+        console.log("Updated notifications:", newNotifications);
+        return newNotifications;
+      });
+
+      if (shouldSuppressNotification) {
+        console.log("Suppressed notification toast:", { courseId });
+        return;
+      }
+
+      const redirectPath = isTutor ? `/tutor/messages` : `/community`;
+
+      toast(message, {
+        description: new Date(timestamp).toLocaleString(),
+        action: {
+          label: "View",
+          onClick: () => {
+            if (!notification.read) {
+              (window as any).markNotificationRead(notification.id);
+            }
+            navigate(redirectPath);
+          },
+        },
+        duration: 5000,
+        id: notification.id,
+      });
     });
 
-    socketRef.current.on("reconnect", () => {
-      console.log("Socket.IO reconnected:", socketRef.current?.id);
-      socketRef.current?.emit("join_user", userId);
-      console.log("Re-emitted join_user:", userId);
+    socketRef.current.on("connect_error", (error) => {
+      console.error("Socket connection error:", error.message);
+    });
 
+    socketRef.current.on("reconnect", (attempt) => {
+      console.log("Socket reconnected:", {
+        socketId: socketRef.current?.id,
+        attempt,
+        userId,
+      });
+      socketRef.current?.emit("join_user", userId);
       courseService
         .getEnrolledCourses()
         .then((courses) => {
@@ -186,12 +187,13 @@ export function Notifications() {
     });
 
     return () => {
+      console.log("Cleaning up Notifications socket:", { userId });
       socketRef.current?.off("connect");
       socketRef.current?.off("notification");
       socketRef.current?.off("connect_error");
       socketRef.current?.off("reconnect");
       socketRef.current?.disconnect();
-      console.log("Socket.IO disconnected");
+      socketRef.current = null;
     };
   }, [userId, navigate, isTutor]);
 
@@ -206,7 +208,6 @@ export function Notifications() {
       setNotifications([]);
     };
     console.log("Updated window.notifications:", notifications);
-    // Dispatch custom event to notify listeners
     window.dispatchEvent(new Event("notifications-updated"));
   }, [notifications]);
 
