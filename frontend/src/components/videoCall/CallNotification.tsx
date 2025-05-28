@@ -48,13 +48,16 @@ function CallNotification({ tutorId }: CallNotificationProps) {
       activeRoomId.current = data.roomId;
       setCallRequest(data);
       setIsOpen(true);
-      toast.info(`Incoming call request for ${data.courseTitle}`);
+      toast.info(`Incoming call for ${data.courseTitle}`);
     },
     [isOpen]
   );
 
   useEffect(() => {
-    if (!socket || !tutorId) return;
+    if (!socket || !tutorId) {
+      console.warn("Socket or tutorId missing:", { socket: !!socket, tutorId });
+      return;
+    }
 
     socket.on("call_request", handleCallRequest);
 
@@ -73,15 +76,21 @@ function CallNotification({ tutorId }: CallNotificationProps) {
   }, [socket, tutorId, handleCallRequest]);
 
   const handleAccept = useCallback(() => {
-    if (!callRequest) return;
-    console.log("Accepting call for room:", callRequest.roomId);
+    if (!callRequest) {
+      console.warn("No call request to accept");
+      return;
+    }
+    console.log("Accepting call:", {
+      courseId: callRequest.courseId,
+      roomId: callRequest.roomId,
+    });
     const navigateUrl = `/tutor/courses/${callRequest.courseId}?call=${callRequest.roomId}`;
     console.log("Navigating to:", navigateUrl);
     setIsOpen(false);
     setCallRequest(null);
     activeRoomId.current = null;
     if (socket) {
-      socket.off("call_request"); // Safely disable call_request events
+      socket.off("call_request");
     } else {
       console.warn("Socket is null; cannot disable call_request events");
     }
@@ -89,7 +98,10 @@ function CallNotification({ tutorId }: CallNotificationProps) {
   }, [callRequest, socket, navigate]);
 
   const handleReject = useCallback(() => {
-    if (!callRequest) return;
+    if (!callRequest) {
+      console.warn("No call request to reject");
+      return;
+    }
     console.log("Rejecting call for room:", callRequest.roomId);
     if (socket) {
       socket.emit("call_rejected", {
@@ -146,7 +158,7 @@ function CallNotification({ tutorId }: CallNotificationProps) {
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) {
-          handleReject(); // Treat dialog close as reject
+          handleReject();
         }
         setIsOpen(open);
       }}
