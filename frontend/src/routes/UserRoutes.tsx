@@ -1,5 +1,5 @@
 import { FC, memo } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { ProtectedUserRoute } from "../private/user/ProtectedUserRoute";
 import UserHomePage from "../pages/student/Home";
 import StudentProfile from "../pages/student/UserProfile";
@@ -25,7 +25,7 @@ const MemoizedPrivateChat = memo(PrivateChat);
 
 const UserRoutes: FC = () => {
   return (
-    <Routes>
+    <>
       <Route
         key="user-home"
         path="/"
@@ -125,7 +125,7 @@ const UserRoutes: FC = () => {
           </ProtectedUserRoute>
         }
       />
-    </Routes>
+    </>
   );
 };
 

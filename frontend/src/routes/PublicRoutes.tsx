@@ -1,5 +1,5 @@
 import { FC, memo } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { PublicUserRoute } from "../private/user/PublicUserRoute";
 import { PublicAdminRoute } from "../private/admin/PublicAdminRoute";
 import AuthForm from "../pages/AuthForm";
@@ -14,7 +14,7 @@ const MemoizedNotFound = memo(NotFound);
 
 const PublicRoutes: FC = () => {
   return (
-    <Routes>
+    <>
       <Route
         key="auth"
         path="/auth"
@@ -46,7 +46,7 @@ const PublicRoutes: FC = () => {
           </ErrorBoundary>
         }
       />
-    </Routes>
+    </>
   );
 };
 

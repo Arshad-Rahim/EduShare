@@ -1,5 +1,5 @@
 import { FC, memo } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { ProtectedAdminRoute } from "../private/admin/ProtectedAdminRoute";
 import { AdminHome } from "../pages/admin/Home";
 import UsersList from "../pages/admin/UserList";
@@ -19,7 +19,7 @@ const MemoizedAdminCourseDetails = memo(AdminCourseDetails);
 
 const AdminRoutes: FC = () => {
   return (
-    <Routes>
+    <>
       <Route
         key="admin-home"
         path="/admin/home"
@@ -86,7 +86,7 @@ const AdminRoutes: FC = () => {
           </ProtectedAdminRoute>
         }
       />
-    </Routes>
+    </>
   );
 };
 

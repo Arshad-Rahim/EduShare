@@ -1,5 +1,5 @@
 import { FC, memo } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 import { ProtectedUserRoute } from "../private/user/ProtectedUserRoute";
 import { TutorHome } from "../pages/tutor/Home";
 import TutorCourses from "../pages/tutor/TutorCourses";
@@ -21,7 +21,7 @@ const MemoizedTutorProfileDetails = memo(TutorProfileDetails);
 
 const TutorRoutes: FC = () => {
   return (
-    <Routes>
+    <>
       <Route
         key="tutor-home"
         path="/tutor/home"
@@ -99,7 +99,7 @@ const TutorRoutes: FC = () => {
           </ProtectedUserRoute>
         }
       />
-    </Routes>
+    </>
   );
 };
 
