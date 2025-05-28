@@ -1,17 +1,25 @@
-import { BrowserRouter, Routes } from "react-router-dom";
-import AdminRoutes from "./routes/AdminRoutes";
-import PublicRoutes from "./routes/PublicRoutes";
-import TutorRoutes from "./routes/TutorRoutes";
-import UserRoutes from "./routes/UserRoutes";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { adminRoutes } from "./routes/AdminRoutes";
+import { publicRoutes } from "./routes/PublicRoutes";
+import { tutorRoutes } from "./routes/TutorRoutes";
+import { userRoutes } from "./routes/UserRoutes";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <AdminRoutes />
-        <TutorRoutes />
-        <UserRoutes />
-        <PublicRoutes /> {/* Place PublicRoutes last due to catch-all */}
+        {adminRoutes.map((route) => (
+          <Route key={route.key} path={route.path} element={route.element} />
+        ))}
+        {tutorRoutes.map((route) => (
+          <Route key={route.key} path={route.path} element={route.element} />
+        ))}
+        {userRoutes.map((route) => (
+          <Route key={route.key} path={route.path} element={route.element} />
+        ))}
+        {publicRoutes.map((route) => (
+          <Route key={route.key} path={route.path} element={route.element} />
+        ))}
       </Routes>
     </BrowserRouter>
   );

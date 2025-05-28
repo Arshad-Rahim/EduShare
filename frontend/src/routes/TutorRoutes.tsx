@@ -1,5 +1,4 @@
-import { FC, memo } from "react";
-import { Route } from "react-router-dom";
+import { memo } from "react";
 import { ProtectedUserRoute } from "../private/user/ProtectedUserRoute";
 import { TutorHome } from "../pages/tutor/Home";
 import TutorCourses from "../pages/tutor/TutorCourses";
@@ -19,88 +18,82 @@ const MemoizedMessagesPage = memo(MessagesPage);
 const MemoizedWalletPage = memo(WalletPage);
 const MemoizedTutorProfileDetails = memo(TutorProfileDetails);
 
-const TutorRoutes: FC = () => {
-  return (
-    <>
-      <Route
-        key="tutor-home"
-        path="/tutor/home"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedTutorHome />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-      <Route
-        key="tutor-courses"
-        path="/tutor/courses"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedTutorCourses />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-      <Route
-        key="tutor-course-details"
-        path="/tutor/courses/:courseId"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedCourseDetails />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-      <Route
-        key="tutor-students"
-        path="/tutor/students"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedStudentsPage />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-      <Route
-        key="tutor-messages"
-        path="/tutor/messages"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedMessagesPage />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-      <Route
-        key="tutor-wallet"
-        path="/tutor/wallet"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedWalletPage />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-      <Route
-        key="tutor-profile-details"
-        path="/tutor/profileDetails"
-        element={
-          <ProtectedUserRoute>
-            <ErrorBoundary>
-              <MemoizedTutorProfileDetails />
-            </ErrorBoundary>
-          </ProtectedUserRoute>
-        }
-      />
-    </>
-  );
-};
-
-export default memo(TutorRoutes);
+export const tutorRoutes = [
+  {
+    key: "tutor-home",
+    path: "/tutor/home",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedTutorHome />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+  {
+    key: "tutor-courses",
+    path: "/tutor/courses",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedTutorCourses />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+  {
+    key: "tutor-course-details",
+    path: "/tutor/courses/:courseId",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedCourseDetails />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+  {
+    key: "tutor-students",
+    path: "/tutor/students",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedStudentsPage />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+  {
+    key: "tutor-messages",
+    path: "/tutor/messages",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedMessagesPage />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+  {
+    key: "tutor-wallet",
+    path: "/tutor/wallet",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedWalletPage />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+  {
+    key: "tutor-profile-details",
+    path: "/tutor/profileDetails",
+    element: (
+      <ProtectedUserRoute>
+        <ErrorBoundary>
+          <MemoizedTutorProfileDetails />
+        </ErrorBoundary>
+      </ProtectedUserRoute>
+    ),
+  },
+];
