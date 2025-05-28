@@ -70,6 +70,7 @@ export function CallNotification({ tutorId }: CallNotificationProps) {
       socket.off("call_rejected");
     };
   }, [socket, tutorId, isOpen]);
+  console.log("SOCKET AND TUTOR",socket,tutorId)
   if (!socket || !tutorId) return;
 
   const handleReject = () => {
