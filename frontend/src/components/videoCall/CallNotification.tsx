@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,24 +24,20 @@ interface CallNotificationProps {
   tutorId: string;
 }
 
-export function CallNotification({ tutorId }: CallNotificationProps) {
+function CallNotification({ tutorId }: CallNotificationProps) {
   const { socket } = useAppContext();
   const navigate = useNavigate();
   const [callRequest, setCallRequest] = useState<CallRequest | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const activeRoomId = useRef<string | null>(null); // Track active roomId to deduplicate
+  const activeRoomId = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!socket || !tutorId) return;
-
-    const handleCallRequest = (data: CallRequest) => {
+  const handleCallRequest = useCallback(
+    (data: CallRequest) => {
       console.log("Received call request:", data);
-      // Ignore if same roomId is already active
       if (activeRoomId.current === data.roomId) {
         console.log("Ignoring duplicate call request for roomId:", data.roomId);
         return;
       }
-      // Ignore if modal is already open for a different roomId
       if (isOpen && activeRoomId.current) {
         console.log(
           "Ignoring call request; modal already open for roomId:",
@@ -49,11 +45,24 @@ export function CallNotification({ tutorId }: CallNotificationProps) {
         );
         return;
       }
+      if (!data.courseId || !data.roomId) {
+        console.error("Invalid call request data:", data);
+        toast.error("Received invalid call request");
+        return;
+      }
       activeRoomId.current = data.roomId;
       setCallRequest(data);
       setIsOpen(true);
-      toast.info(`Incoming call request for ${data.courseTitle}`);
-    };
+      toast.info(`Incoming call for ${data.courseTitle ?? "Unknown Course"}`);
+    },
+    [isOpen]
+  );
+
+  useEffect(() => {
+    if (!socket || !tutorId) {
+      console.warn("Socket or tutorId missing:", { socket: !!socket, tutorId });
+      return;
+    }
 
     socket.on("call_request", handleCallRequest);
 
@@ -69,64 +78,84 @@ export function CallNotification({ tutorId }: CallNotificationProps) {
       socket.off("call_request", handleCallRequest);
       socket.off("call_rejected");
     };
-  }, [socket, tutorId, isOpen]);
-  console.log("SOCKET AND TUTOR",socket,tutorId)
-  if (!socket || !tutorId) return;
+  }, [socket, tutorId, handleCallRequest]);
 
-  const handleReject = () => {
-    if (!callRequest) return;
-    console.log("Rejecting call for room:", callRequest.roomId);
-    socket.emit("call_rejected", {
+  const handleAccept = useCallback(() => {
+    if (!callRequest) {
+      console.warn("No call request to accept");
+      return;
+    }
+    if (!callRequest.courseId || !callRequest.roomId) {
+      console.error("Invalid call request data:", callRequest);
+      toast.error("Cannot accept call: Invalid course or room ID");
+      setIsOpen(false);
+      setCallRequest(null);
+      activeRoomId.current = null;
+      return;
+    }
+    console.log("Accepting call:", {
+      courseId: callRequest.courseId,
       roomId: callRequest.roomId,
-      tutorId,
     });
-    setIsOpen(false);
-    setCallRequest(null);
-    activeRoomId.current = null; // Clear active roomId
-    toast.info("Call rejected");
-  };
-
-  const handleAccept = () => {
-    if (!callRequest) return;
-    console.log("Accepting call for room:", callRequest.roomId);
     const navigateUrl = `/tutor/courses/${callRequest.courseId}?call=${callRequest.roomId}`;
     console.log("Navigating to:", navigateUrl);
     setIsOpen(false);
     setCallRequest(null);
-    activeRoomId.current = null; // Clear active roomId
-    socket.off("call_request"); // Disable further call_request events
+    activeRoomId.current = null;
+    if (socket) {
+      socket.off("call_request");
+    } else {
+      console.warn("Socket is null; cannot disable call_request events");
+    }
     navigate(navigateUrl);
-  };
+  }, [callRequest, socket, navigate]);
 
+  const handleReject = useCallback(() => {
+    if (!callRequest) {
+      console.warn("No call request to reject");
+      return;
+    }
+    console.log("Rejecting call for room:", callRequest.roomId);
+    if (socket && callRequest.roomId) {
+      socket.emit("call_rejected", {
+        roomId: callRequest.roomId,
+        tutorId,
+      });
+    } else {
+      console.warn("Socket or roomId is null; cannot emit call_rejected");
+    }
+    setIsOpen(false);
+    setCallRequest(null);
+    activeRoomId.current = null;
+    toast.info("Call rejected");
+  }, [callRequest, socket, tutorId]);
 
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open) {
-        handleReject(); // Treat dialog close as reject
-      }
-      setIsOpen(open);
-    }}>
+  const dialogContentUI = useMemo(
+    () => (
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Incoming Call Request</DialogTitle>
           <DialogDescription>
             {callRequest
-              ? `A student is requesting a video call for the course "${callRequest.courseTitle}".`
+              ? `A student is requesting a video call for the course "${
+                  callRequest.courseTitle ?? "Unknown Course"
+                }".`
               : "No call request available."}
           </DialogDescription>
         </DialogHeader>
         {callRequest && (
           <div className="space-y-2">
             <p>
-              <strong>Course:</strong> {callRequest.courseTitle}
+              <strong>Course:</strong> {callRequest.courseTitle ?? "N/A"}
             </p>
             <p>
-              <strong>Student ID:</strong> {callRequest.studentId}
+              <strong>Student ID:</strong> {callRequest.studentId ?? "N/A"}
             </p>
             <p>
               <strong>Time:</strong>{" "}
-              {new Date(callRequest.timestamp).toLocaleString()}
+              {callRequest.timestamp
+                ? new Date(callRequest.timestamp).toLocaleString()
+                : "N/A"}
             </p>
           </div>
         )}
@@ -137,6 +166,23 @@ export function CallNotification({ tutorId }: CallNotificationProps) {
           <Button onClick={handleAccept}>Accept</Button>
         </DialogFooter>
       </DialogContent>
+    ),
+    [callRequest, handleAccept, handleReject]
+  );
+
+  return (
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleReject();
+        }
+        setIsOpen(open);
+      }}
+    >
+      {dialogContentUI}
     </Dialog>
   );
 }
+
+export default memo(CallNotification);
