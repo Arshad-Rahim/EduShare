@@ -44,7 +44,7 @@ const NotFound: React.FC = () => {
         </Card>
       </div>
     ),
-    [handleGoBack]
+    [handleGoBack] 
   );
 
   return notFoundUI;
