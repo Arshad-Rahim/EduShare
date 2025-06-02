@@ -38,7 +38,7 @@ interface AppContextType {
 
 // Constants for configuration
 const SOCKET_URL =
-  process.env.REACT_APP_SOCKET_URL || "https://edushare.arshadrahim.tech";
+  import.meta.env.REACT_APP_SOCKET_URL || "https://edushare.arshadrahim.tech";
 const ROLES = {
   TUTOR: "tutor" as const,
 };
