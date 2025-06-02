@@ -35,15 +35,19 @@ export class WishlistReposiotry implements IWishlistRepository {
     page: number,
     limit: number
   ): Promise<TCourseAdd[] | []> {
-    const whishlist = await wishlistModel.findOne({ userId });
-    if (!whishlist) {
+    const wishlist = await wishlistModel.findOne({ userId });
+    if (!wishlist) {
       return [];
     }
 
-    const courseId = whishlist.wishlist.map((item) => item.courseId);
+    const courseIds = wishlist.wishlist.map((item) => item.courseId);
 
+    // Fetch courses that are in the wishlist but not purchased by the user
     const courses = await courseModel
-      .find({ _id: { $in: courseId } })
+      .find({
+        _id: { $in: courseIds },
+        enrollments: { $nin: [userId] }, // Exclude courses where userId is in enrollments
+      })
       .skip((page - 1) * limit)
       .limit(limit);
 
@@ -58,10 +62,11 @@ export class WishlistReposiotry implements IWishlistRepository {
 
     wishlist.wishlist.pull({ courseId });
 
-     if (wishlist.wishlist.length === 0) {
-       await wishlistModel.deleteOne({ userId }); 
-     } else {
-       await wishlist.save();
-     }
+    if (wishlist.wishlist.length === 0) {
+      await wishlistModel.deleteOne({ userId });
+    } else {
+      await wishlist.save();
+    }
   }
 }
+
