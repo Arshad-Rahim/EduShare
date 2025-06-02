@@ -6,8 +6,8 @@ type CourseParams = {
   search?: string;
   category?: string;
   difficulty?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  minPrice?: number;
+  maxPrice?: number;
   sort?: string;
   page?: string;
   limit?: string;
