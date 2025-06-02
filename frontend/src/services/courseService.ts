@@ -6,8 +6,8 @@ type CourseParams = {
   search?: string;
   category?: string;
   difficulty?: string;
-  minPrice?: number;
-  maxPrice?: number;
+  minPrice?: string;
+  maxPrice?: string;
   sort?: string;
   page?: string;
   limit?: string;
@@ -105,7 +105,6 @@ export const courseService = {
   async getAllCourse(params?: CourseParams) {
     try {
       if (params) {
-        // Create URLSearchParams to properly serialize query parameters
         const queryParams = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== "") {
@@ -120,8 +119,12 @@ export const courseService = {
         const response = await authAxiosInstance.get(`/courses/all-courses`);
         return response;
       }
-    } catch (error) {
-      console.error("Failed to fetch courses:", error);
+    } catch (error: any) {
+      console.error("Failed to fetch courses:", error.response || error);
+      if (error.response?.status === 401) {
+        // Ignore 401 for guest users, return empty courses
+        return { data: { courses: { courses: [], total: 0 } } };
+      }
       toast.error("Failed to load courses");
       throw error;
     }

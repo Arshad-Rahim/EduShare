@@ -10,14 +10,38 @@ export const authAxiosInstance = axios.create({
 
 let isRefreshing = false;
 
+authAxiosInstance.interceptors.request.use(
+  (config) => {
+    // Skip Authorization header for /all-courses
+    if (config.url?.includes("/all-courses")) {
+      delete config.headers.Authorization;
+    } else {
+      const token = localStorage.getItem("userDatas")
+        ? JSON.parse(localStorage.getItem("userDatas")!).token
+        : null;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 authAxiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAllCourses = originalRequest?.url?.includes("/all-courses");
+
+    // Skip token refresh and redirect for /all-courses
+    if (isAllCourses) {
+      return Promise.reject(error);
+    }
 
     if (
       error.response?.status === 401 &&
-      error.response.data.message == "Unauthorized access." &&
+      error.response.data.message === "Unauthorized access." &&
       !originalRequest._retry
     ) {
       originalRequest._retry = true;
@@ -27,12 +51,10 @@ authAxiosInstance.interceptors.response.use(
         try {
           await authAxiosInstance.post("/auth/refresh-token");
           isRefreshing = false;
-
           return authAxiosInstance(originalRequest);
         } catch (refreshError) {
           isRefreshing = false;
           store.dispatch(removeUser());
-
           localStorage.removeItem("userDatas");
           window.location.href = "/auth";
           toast.info("Please login again");
@@ -42,7 +64,7 @@ authAxiosInstance.interceptors.response.use(
     }
 
     if (
-      error.response.status === 403 &&
+      error.response?.status === 403 &&
       error.response.data.message === "Token Expired" &&
       !originalRequest._retry
     ) {
@@ -54,7 +76,7 @@ authAxiosInstance.interceptors.response.use(
     }
 
     if (
-      error.response.status === 403 &&
+      error.response?.status === 403 &&
       error.response.data.message ===
         "Access denied: Your account has been blocked" &&
       !originalRequest._retry
