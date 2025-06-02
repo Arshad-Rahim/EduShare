@@ -6,7 +6,7 @@ import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 const tokenService = new JwtService();
 
 export interface CustomJwtPayload extends JwtPayload {
-  id: string;
+  userId: string; // Changed from 'id' to 'userId' to match controller usage
   email: string;
   role: string;
 }
@@ -91,7 +91,7 @@ export const decodeToken = async (
     }
 
     (req as CustomRequest).user = {
-      id: user.userId,
+      userId: user.userId, // Changed from 'id' to 'userId'
       email: user.email,
       role: user.role,
     };
@@ -117,7 +117,7 @@ export const authorizeRole = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as CustomRequest).user;
 
-    console.log("USER IN ROLE:",user);
+    console.log("USER IN ROLE:", user);
 
     if (!user || !allowedRoles.includes(user.role)) {
       console.log("role not allowed");

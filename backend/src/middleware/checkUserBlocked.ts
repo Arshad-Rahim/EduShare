@@ -1,5 +1,3 @@
-
-
 import { NextFunction, Request, Response } from "express";
 import { userModel } from "../models/userModels";
 import { CustomRequest } from "./authMiddleware";
@@ -11,26 +9,27 @@ export const checkUserBlocked = async (
   next: NextFunction
 ) => {
   try {
-    if (!(req as CustomRequest).user) {
-      res.status(401).json({
+    const user = (req as CustomRequest).user;
+    if (!user || !user.userId) {
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
         status: "error",
-        message: "Unauthorized: No user found in request",
+        message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
       });
       return;
     }
 
-    const { userId } = (req as CustomRequest).user;
-    const user = await userModel.findById(userId);
-    if (!user) {
-      res.status(404).json({
+    const userId = user.userId;
+    const userDoc = await userModel.findById(userId);
+    if (!userDoc) {
+      res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
         message: "User not found",
       });
       return;
     }
 
-    if (user.isBlocked) {
-      res.status(403).json({
+    if (userDoc.isBlocked) {
+      res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
         message: "Access denied: Your account has been blocked",
       });
@@ -40,9 +39,9 @@ export const checkUserBlocked = async (
   } catch (error) {
     console.error("Error in blocked status middleware:", error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-           success: false,
-           message: ERROR_MESSAGES.SERVER_ERROR,
-         });
+      success: false,
+      message: ERROR_MESSAGES.SERVER_ERROR,
+    });
     return;
   }
 };

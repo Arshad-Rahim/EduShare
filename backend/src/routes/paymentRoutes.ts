@@ -9,7 +9,7 @@ import { WalletModel } from "../models/walletModel";
 import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
 import { CourseService } from "../service/courseService";
 import { CourseRepository } from "../repository/courseRepository";
-import { purchaseModel } from "../models/purchaseModel"; // Import PurchaseModel
+import { purchaseModel } from "../models/purchaseModel";
 import { TransactionModel } from "../models/transactionModel";
 import { ERROR_MESSAGES, HTTP_STATUS } from "../shared/constant";
 
@@ -44,7 +44,16 @@ export class PaymentRoutes {
         try {
           const { amount, currency, courseId } = req.body;
           const user = (req as CustomRequest).user;
-          const userId = user?.userId;
+          if (!user || !user.userId) {
+            res
+              .status(HTTP_STATUS.UNAUTHORIZED)
+              .json({
+                success: false,
+                message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+              });
+            return;
+          }
+          const userId = user.userId;
 
           const options = {
             amount: amount, // Amount in paise
@@ -80,35 +89,36 @@ export class PaymentRoutes {
       "/",
       authMiddleware,
       async (req: AuthenticatedRequest, res: Response) => {
-        const { orderDetails, status } = req.body;
-        const user = (req as CustomRequest).user;
-        const userId = user?.userId;
+        try {
+          const { orderDetails, status } = req.body;
+          const user = (req as CustomRequest).user;
+          if (!user || !user.userId) {
+            res
+              .status(HTTP_STATUS.UNAUTHORIZED)
+              .json({
+                success: false,
+                message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+              });
+            return;
+          }
+          const userId = user.userId;
 
-        if (status === "cancelled") {
-          try {
+          if (status === "cancelled") {
             await paymentService.updateRazorpayPayment(
               orderDetails.orderId,
               "cancelled",
               userId
             );
             res.json({ status: "cancelled", message: "Payment cancelled" });
-          } catch (error) {
-            console.error("Error updating cancelled payment:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-              success: false,
-              message: ERROR_MESSAGES.SERVER_ERROR,
-            });
+            return;
           }
-          return;
-        }
 
-        const generatedSignature = crypto
-          .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
-          .update(`${orderDetails.orderId}|${orderDetails.paymentId}`)
-          .digest("hex");
+          const generatedSignature = crypto
+            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+            .update(`${orderDetails.orderId}|${orderDetails.paymentId}`)
+            .digest("hex");
 
-        if (generatedSignature === orderDetails.signature) {
-          try {
+          if (generatedSignature === orderDetails.signature) {
             await paymentService.updateRazorpayPayment(
               orderDetails.orderId,
               "succeeded",
@@ -124,17 +134,17 @@ export class PaymentRoutes {
               userId
             );
             res.json({ status: "success", message: "Payment verified" });
-          } catch (error) {
-            console.error("Error updating successful payment:", error);
-            res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-              success: false,
-              message: ERROR_MESSAGES.SERVER_ERROR,
-            });
+          } else {
+            res
+              .status(HTTP_STATUS.BAD_REQUEST)
+              .json({ status: "failure", message: "Invalid signature" });
           }
-        } else {
-          res
-            .status(HTTP_STATUS.BAD_REQUEST)
-            .json({ status: "failure", message: "Invalid signature" });
+        } catch (error) {
+          console.error("Error updating Razorpay payment:", error);
+          res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            success: false,
+            message: ERROR_MESSAGES.SERVER_ERROR,
+          });
         }
       }
     );
@@ -147,7 +157,16 @@ export class PaymentRoutes {
         try {
           const { amount, currency, courseId } = req.body;
           const user = (req as CustomRequest).user;
-          const userId = user?.userId;
+          if (!user || !user.userId) {
+            res
+              .status(HTTP_STATUS.UNAUTHORIZED)
+              .json({
+                success: false,
+                message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+              });
+            return;
+          }
+          const userId = user.userId;
 
           if (!amount || !currency || !courseId) {
             res
@@ -189,7 +208,16 @@ export class PaymentRoutes {
         try {
           const { paymentIntentId, status } = req.body;
           const user = (req as CustomRequest).user;
-          const userId = user?.userId;
+          if (!user || !user.userId) {
+            res
+              .status(HTTP_STATUS.UNAUTHORIZED)
+              .json({
+                success: false,
+                message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+              });
+            return;
+          }
+          const userId = user.userId;
 
           if (!paymentIntentId || !status) {
             res
@@ -227,7 +255,16 @@ export class PaymentRoutes {
         try {
           const { courseId, orderId, paymentIntentId, amount } = req.body;
           const user = (req as CustomRequest).user;
-          const userId = user?.userId;
+          if (!user || !user.userId) {
+            res
+              .status(HTTP_STATUS.UNAUTHORIZED)
+              .json({
+                success: false,
+                message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+              });
+            return;
+          }
+          const userId = user.userId;
 
           if (!courseId || (!orderId && !paymentIntentId) || !amount) {
             console.log("Missing fields:", {
@@ -283,7 +320,7 @@ export class PaymentRoutes {
 
           // Admin Wallet Update
           let adminWallet = await WalletModel.findOne({
-            userId: process.env.ADMIN_ID, // Replace with your admin userId
+            userId: process.env.ADMIN_ID,
           }).session(session);
           if (!adminWallet) {
             adminWallet = new WalletModel({
@@ -299,7 +336,7 @@ export class PaymentRoutes {
           const adminTransaction = new TransactionModel({
             transactionId: `txn_admin_${Date.now()}`,
             wallet_id: adminWallet._id,
-            purchase_id: purchaseId, // Use the Purchase document's _id
+            purchase_id: purchaseId,
             transaction_type: "credit",
             amount: adminShare,
             description: `Payment split for course purchase (Course ID: ${courseId})`,
@@ -324,7 +361,7 @@ export class PaymentRoutes {
           const tutorTransaction = new TransactionModel({
             transactionId: `txn_tutor_${Date.now()}`,
             wallet_id: tutorWallet._id,
-            purchase_id: purchaseId, // Use the Purchase document's _id
+            purchase_id: purchaseId,
             transaction_type: "credit",
             amount: tutorShare,
             description: `Payment split for course purchase (Course ID: ${courseId})`,

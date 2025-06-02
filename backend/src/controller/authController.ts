@@ -98,8 +98,17 @@ export class AuthController {
       const { password } = req.body;
       console.log("REQBODY", req.body);
       const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
       const valid = await this._authService.verifyPassword(
-        user?.userId,
+        user.userId,
         password
       );
 
@@ -122,17 +131,16 @@ export class AuthController {
 
   async logoutUser(req: Request, res: Response) {
     try {
-     res.clearCookie("userAccessToken");
-    res.clearCookie("tutorAccessToken");
-    res.clearCookie("adminAccessToken");
-    res.clearCookie("userRefreshToken");
-    res.clearCookie("tutorRefreshToken");
-    res.clearCookie("adminRefreshToken");
+      res.clearCookie("userAccessToken");
+      res.clearCookie("tutorAccessToken");
+      res.clearCookie("adminAccessToken");
+      res.clearCookie("userRefreshToken");
+      res.clearCookie("tutorRefreshToken");
+      res.clearCookie("adminRefreshToken");
 
-    (req as CustomRequest).user = undefined;
+      (req as CustomRequest).user = undefined;
 
-        res.status(200)
-        .json({ message: "Logout successful" });
+      res.status(200).json({ message: "Logout successful" });
     } catch (error) {
       if (error instanceof CustomError) {
         res.status(error.statusCode).json({ error: error.message });

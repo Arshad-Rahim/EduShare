@@ -13,22 +13,29 @@ import { IUserProfileRepository } from "../interfaces/repositoryInterfaces/IUser
 export class UserController {
   constructor(
     private _userService: IUserService,
-
     private _userRepository: IUserRepository,
-
     private _userProfileRepository: IUserProfileRepository
   ) {}
 
   async logedInUserData(req: Request, res: Response) {
     try {
       const user = (req as CustomRequest).user;
-
-      let users = await this._userService.logedInUserData(user?.userId);
-      if (!users) {
-        users = await this._userRepository.findByEmail(user?.email);
+      if (!user || !user.userId || !user.email) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
       }
 
-      res.status(HTTP_STATUS.CREATED).json({
+      let users = await this._userService.logedInUserData(user.userId);
+      if (!users) {
+        users = await this._userRepository.findByEmail(user.email);
+      }
+
+      res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
         users,
@@ -49,12 +56,10 @@ export class UserController {
 
   async findUserData(req: Request, res: Response) {
     try {
-     
+      let { userId } = req.params;
+      let users = await this._userRepository.findById(userId);
 
-     let {userId} = req.params;
-     let users = await this._userRepository.findById(userId)
-
-      res.status(HTTP_STATUS.CREATED).json({
+      res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
         users,
@@ -75,7 +80,18 @@ export class UserController {
 
   async updateUserProfile(req: Request, res: Response) {
     try {
-      const id = (req as CustomRequest).user.userId;
+      const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const id = user.userId;
+
       await this._userProfileRepository.updateUserProfile(req.body, id);
       res.status(HTTP_STATUS.OK).json({
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
@@ -96,8 +112,18 @@ export class UserController {
 
   async updatePassword(req: Request, res: Response) {
     try {
+      const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
       const { newPassword } = req.body;
-      const id = (req as CustomRequest).user.userId;
+      const id = user.userId;
 
       await this._userService.updatePassword(id, newPassword);
       res.status(HTTP_STATUS.OK).json({

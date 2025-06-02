@@ -15,7 +15,16 @@ export class TutorController {
   async getNotification(req: Request, res: Response) {
     try {
       const user = (req as CustomRequest).user;
-      const { userId } = user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const userId = user.userId;
       const notifications = await this._tutorService.getNotification(userId);
 
       res.status(HTTP_STATUS.CREATED).json({
@@ -26,7 +35,7 @@ export class TutorController {
     } catch (error) {
       if (error instanceof CustomError) {
         res.status(error.statusCode).json({
-          successs: false,
+          success: false,
           message: error.message,
         });
         return;
@@ -40,7 +49,17 @@ export class TutorController {
 
   async updateProfile(req: Request, res: Response) {
     try {
-      const id = (req as CustomRequest).user.userId;
+      const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const id = user.userId;
 
       let verificationDocUrl: string = "";
 
@@ -83,7 +102,17 @@ export class TutorController {
 
   async getTutorDetails(req: Request, res: Response) {
     try {
-      const id = (req as CustomRequest).user.userId;
+      const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const id = user.userId;
 
       const tutor = await this._tutorService.getTutorDetails(id);
 
@@ -108,8 +137,17 @@ export class TutorController {
 
   async markAllNotificationsAsRead(req: Request, res: Response) {
     try {
-      
-      const id = (req as CustomRequest).user.userId;
+      const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const id = user.userId;
 
       await this._tutorService.markAllNotificationsAsRead(id);
 
@@ -131,54 +169,60 @@ export class TutorController {
     }
   }
 
-
-  async getEnrolledStudent(req:Request,res:Response){
+  async getEnrolledStudent(req: Request, res: Response) {
     try {
-
-       const tutorId = (req as CustomRequest).user.userId;
-       const { students, totalRevenue } =
-         await this._tutorService.getEnrolledStudent(tutorId);
-        res.status(HTTP_STATUS.CREATED).json({
-          success: true,
-          message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-          students,
-          totalRevenue,
-        });
+      const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const tutorId = user.userId;
+      const { students, totalRevenue } =
+        await this._tutorService.getEnrolledStudent(tutorId);
+      res.status(HTTP_STATUS.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        students, // Corrected from 'studentsiquet' to 'students'
+        totalRevenue,
+      });
     } catch (error) {
-       if (error instanceof CustomError) {
-         res
-           .status(error.statusCode)
-           .json({ success: false, message: error.message });
-         return;
-       }
-       console.log(error);
-       res
-         .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+      if (error instanceof CustomError) {
+        res
+          .status(error.statusCode)
+          .json({ success: false, message: error.message });
+        return;
+      }
+      console.log(error);
+      res
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
     }
   }
 
-
-  async tutorPurchaseCount(req:Request,res:Response){
+  async tutorPurchaseCount(req: Request, res: Response) {
     try {
       const tutorPurchaseCount = await this._tutorService.tutorPurchaseCount();
-        res.status(HTTP_STATUS.CREATED).json({
-          success: true,
-          message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-          tutorPurchaseCount,
-        });
-
+      res.status(HTTP_STATUS.CREATED).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        tutorPurchaseCount,
+      });
     } catch (error) {
-       if (error instanceof CustomError) {
-         res
-           .status(error.statusCode)
-           .json({ success: false, message: error.message });
-         return;
-       }
-       console.log(error);
-       res
-         .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
+      if (error instanceof CustomError) {
+        res
+          .status(error.statusCode)
+          .json({ success: false, message: error.message });
+        return;
+      }
+      console.log(error);
+      res
+        .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+        .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
     }
   }
 }

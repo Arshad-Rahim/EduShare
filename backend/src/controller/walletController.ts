@@ -14,12 +14,22 @@ export class WalletController {
   async walletDetails(req: Request, res: Response) {
     try {
       const user = (req as CustomRequest).user;
-      let wallet = await this._walletService.walletDetails(user?.userId);
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+
+      let wallet = await this._walletService.walletDetails(user.userId);
 
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-        wallet
+        wallet,
       });
     } catch (error) {
       if (error instanceof CustomError) {

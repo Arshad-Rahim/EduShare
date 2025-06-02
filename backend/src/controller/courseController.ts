@@ -19,94 +19,66 @@ export class CourseController {
   async addCourse(req: Request, res: Response) {
     try {
       const tutor = (req as CustomRequest).user;
-      // let publicId: string = "";
+      if (!tutor || !tutor.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
       let key: string = "";
 
       if (req.file) {
-        // this code is for uploading the image in the clodinary
-
-        //   const timestamp = Math.round(new Date().getTime() / 1000);
-        //   const signature = cloudinary.utils.api_sign_request(
-        //     {
-        //       timestamp,
-        //       folder: "course_thumbnails",
-        //       access_mode: "authenticated",
-        //     },
-        //     process.env.CLOUDINARY_API_SECRET as string
-        //   );
-
-        //   const uploadResult = await new Promise((resolve, reject) => {
-        //     const stream = cloudinary.uploader.upload_stream(
-        //       {
-        //         resource_type: "auto",
-        //         folder: "course_thumbnails",
-        //         access_mode: "authenticated",
-        //         timestamp,
-        //         signature,
-        //         api_key: process.env.CLOUDINARY_API_KEY as string,
-        //       },
-        //       (error, result) => {
-        //         if (error) return reject(error);
-        //         resolve(result as UploadApiResponse);
-        //       }
-        //     );
-        //     stream.end(req.file?.buffer);
-        //   });
-
-        //   publicId = (uploadResult as UploadApiResponse).public_id;
-        //   console.log("Uploaded Secure Image Public ID:", publicId);
-        // }
-
-        // await this._courseService.addCourse(req.body, publicId, tutor?.userId);
-        // res.status(201).json({
-        //   success: true,
-        //   message: "Course created successfully",
-        // });
-
-        // this code that upload the image to the cloudinary
-
         const timestamp = Date.now();
         const fileExtension = req.file.mimetype.split("/")[1];
-        key = `course_thumbnails/${tutor?.userId}-${timestamp}.${fileExtension}`;
+        key = `course_thumbnails/${tutor.userId}-${timestamp}.${fileExtension}`;
 
         const uploadParams = {
           Bucket: process.env.AWS_S3_BUCKET as string,
           Key: key,
           Body: req.file.buffer,
           ContentType: req.file.mimetype,
-          ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
+          ACL: ObjectCannedACL.private,
         };
 
         await s3.send(new PutObjectCommand(uploadParams));
         console.log("Uploaded to S3 with Key:", key);
       }
 
-      await this._courseService.addCourse(req.body, key, tutor?.userId); // Updated: Pass S3 key instead of Cloudinary publicId
+      await this._courseService.addCourse(req.body, key, tutor.userId);
       res.status(201).json({
         success: true,
         message: "Course created successfully",
       });
-
-
     } catch (error) {
       console.error(error);
-       res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-         success: false,
-         message: ERROR_MESSAGES.SERVER_ERROR,
-       });
+      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: ERROR_MESSAGES.SERVER_ERROR,
+      });
     }
   }
 
   async getTutorCourses(req: Request, res: Response) {
     try {
       const tutor = (req as CustomRequest).user;
+      if (!tutor || !tutor.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 6;
 
       const { courses, totalCourses } =
-        await this._courseService.getTutorCourses(tutor?.userId, page, limit);
+        await this._courseService.getTutorCourses(tutor.userId, page, limit);
 
-      // Ensure courses exist before mapping
       const updatedCourses = courses
         ? await Promise.all(
             courses.map(async (course) => {
@@ -140,54 +112,8 @@ export class CourseController {
   async updateCourse(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
-      // let publicId: string = "";
       let key: string = "";
       if (req.file) {
-        // this code is for uploading the image in the cloudinary
-
-        //   const timestamp = Math.round(new Date().getTime() / 1000);
-        //   const signature = cloudinary.utils.api_sign_request(
-        //     {
-        //       timestamp,
-        //       folder: "course_thumbnails",
-        //       access_mode: "authenticated",
-        //     },
-        //     process.env.CLOUDINARY_API_SECRET as string
-        //   );
-
-        //   const uploadResult = await new Promise((resolve, reject) => {
-        //     const stream = cloudinary.uploader.upload_stream(
-        //       {
-        //         resource_type: "auto",
-        //         folder: "course_thumbnails",
-        //         access_mode: "authenticated",
-        //         timestamp,
-        //         signature,
-        //         api_key: process.env.CLOUDINARY_API_KEY as string,
-        //       },
-        //       (error, result) => {
-        //         if (error) return reject(error);
-        //         resolve(result as UploadApiResponse);
-        //       }
-        //     );
-        //     stream.end(req.file?.buffer);
-        //   });
-
-        //   publicId = (uploadResult as UploadApiResponse).public_id;
-        //   console.log("Uploaded Secure Image Public ID:", publicId);
-        // }
-        // await this._courseService.updateCourse(
-        //   req.body,
-        //   publicId,
-        //   courseId.toString()
-        // );
-        // res.status(HTTP_STATUS.OK).json({
-        //   success: true,
-        //   message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
-        // });
-
-        // this code is for uploading the image in the s3 bucket
-
         const timestamp = Date.now();
         const fileExtension = req.file.mimetype.split("/")[1];
         key = `course_thumbnails/${courseId}-${timestamp}.${fileExtension}`;
@@ -197,7 +123,7 @@ export class CourseController {
           Key: key,
           Body: req.file.buffer,
           ContentType: req.file.mimetype,
-          ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
+          ACL: ObjectCannedACL.private,
         };
 
         await s3.send(new PutObjectCommand(uploadParams));
@@ -208,13 +134,11 @@ export class CourseController {
         req.body,
         key,
         courseId.toString()
-      ); // Updated: Pass S3 key instead of Cloudinary publicId
+      );
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
       });
-
-
     } catch (error) {
       if (error instanceof CustomError) {
         res
@@ -317,8 +241,17 @@ export class CourseController {
     try {
       const { courseId } = req.params;
       const user = (req as CustomRequest).user;
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
       const status = await this._courseService.purchaseStatus(
-        user?.userId,
+        user.userId,
         courseId
       );
 
@@ -344,9 +277,16 @@ export class CourseController {
   async getEnrolledCourses(req: Request, res: Response) {
     try {
       const user = (req as CustomRequest).user;
-      const courses = await this._courseService.getEnrolledCourses(
-        user?.userId
-      );
+      if (!user || !user.userId) {
+        res
+          .status(HTTP_STATUS.UNAUTHORIZED)
+          .json({
+            success: false,
+            message: ERROR_MESSAGES.UNAUTHORIZED_ACCESS,
+          });
+        return;
+      }
+      const courses = await this._courseService.getEnrolledCourses(user.userId);
 
       const updatedCourses = courses
         ? await Promise.all(
@@ -403,15 +343,15 @@ export class CourseController {
     }
   }
 
-  async coursePurchaseCount(req:Request,res:Response){
+  async coursePurchaseCount(req: Request, res: Response) {
     try {
-      const coursePurchaseCount = await this._courseService.coursePurchaseCount();
-       res.status(HTTP_STATUS.OK).json({
-         success: true,
-         message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
-         coursePurchaseCount,
-       });
-
+      const coursePurchaseCount =
+        await this._courseService.coursePurchaseCount();
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        message: SUCCESS_MESSAGES.DATA_RETRIEVED_SUCCESS,
+        coursePurchaseCount,
+      });
     } catch (error) {
       if (error instanceof CustomError) {
         res
@@ -425,5 +365,4 @@ export class CourseController {
         .json({ success: false, message: ERROR_MESSAGES.SERVER_ERROR });
     }
   }
-  
 }
