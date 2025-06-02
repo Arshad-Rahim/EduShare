@@ -282,25 +282,20 @@ export function CourseDetailsPage() {
       });
       return;
     }
-    try {
-      console.log("Navigating to private chat with state:", {
+    console.log("Navigating to private chat with state:", {
+      studentId,
+      tutorId: course.tutorId,
+      courseId,
+      courseTitle: course.title,
+    });
+    navigate(`/courses/${courseId}/chat`, {
+      state: {
         studentId,
         tutorId: course.tutorId,
         courseId,
         courseTitle: course?.title || "Unknown Course",
-      });
-      navigate(`/courses/${courseId}/chat`, {
-        state: {
-          studentId,
-          tutorId: course.tutorId,
-          courseId,
-          courseTitle: course?.title || "Unknown Course",
-        },
-      });
-    } catch (error) {
-      console.error("Navigation to chat failed:", error);
-      toast.error("Failed to open chat. Please try again.");
-    }
+      },
+    });
   }, [isPurchased, courseId, navigate, course, studentId, isAuthenticated]);
 
   // Memoized lesson list rendering
@@ -442,7 +437,7 @@ export function CourseDetailsPage() {
 
         <section className="w-full pb-16">
           <div className="container px-4 md:px-6 lg:px-8 mx-auto">
-            <Card className="border-0 rounded-xl shadow-full bg-white/80 backdrop-blur-md">
+            <Card className="border-0 rounded-xl shadow-xl overflow-hidden w-full bg-white/80 backdrop-blur-sm">
               <CardContent className="pt-6 w-full p-6 md:p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-1">
@@ -467,7 +462,7 @@ export function CourseDetailsPage() {
                             "absolute top-3 left-3 h-8 w-8 rounded-full bg-white/80",
                             wishlist.includes(courseId)
                               ? "text-red-600 hover:text-red-700"
-                              : "text-gray Comments-774 Removed: -600 hover:text-gray-700",
+                              : "text-gray-600 hover:text-blue-600",
                             !isAuthenticated && "opacity-50 cursor-not-allowed"
                           )}
                           disabled={!isAuthenticated}
@@ -706,8 +701,8 @@ export function CourseDetailsPage() {
               <VideoCall
                 roomId={courseId}
                 userId={studentId}
-                isInitiator={true}
-                courseTitle={course?.title}
+                isInitiator={true} 
+                courseTitle={course?.title} 
                 onEndCall={handleEndCall}
               />
             )}
