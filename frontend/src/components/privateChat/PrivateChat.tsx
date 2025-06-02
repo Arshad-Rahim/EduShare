@@ -8,8 +8,8 @@ import { profileService } from "@/services/userService/profileService";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { toast } from "sonner";
 import { Header } from "@/pages/student/components/Header"; // Student header
-import  TutorHeader  from "@/pages/tutor/components/Header"; // Tutor header
-import  SideBar  from "@/pages/tutor/components/SideBar"; // Tutor sidebar
+import TutorHeader from "@/pages/tutor/components/Header"; // Tutor header
+import SideBar from "@/pages/tutor/components/SideBar"; // Tutor sidebar
 
 interface Message {
   _id?: string;
@@ -50,7 +50,7 @@ export function PrivateChat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const user = useSelector((state: any) => state.user.userDatas);
   const [isTutor, setIsTutor] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false); // Updated to include setter, default to false for mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const courseId = stateCourseId || paramCourseId;
   const studentId = stateStudentId || paramStudentId;
@@ -68,15 +68,12 @@ export function PrivateChat() {
         try {
           userResponse = await tutorService.tutorDetails();
           setIsTutor(true);
+          setUserName(userResponse?.data?.tutor?.name || "User");
         } catch (error) {
           userResponse = await profileService.userDetails();
           setIsTutor(false);
+          setUserName(userResponse?.data?.users?.name || "User");
         }
-        setUserName(
-          userResponse.data.tutor?.name ||
-            userResponse.data.users?.name ||
-            "User"
-        );
       } catch (error) {
         console.error("Failed to fetch user details:", error);
         setUserName("User");
@@ -87,7 +84,7 @@ export function PrivateChat() {
       if (!tutorId) return;
       try {
         const response = await profileService.getUserById(tutorId);
-        setTutorName(response.data.name || "Tutor");
+        setTutorName(response?.data?.name || "Tutor");
       } catch (error) {
         console.error("Failed to fetch tutor details:", error);
         setTutorName("Tutor");
@@ -98,7 +95,7 @@ export function PrivateChat() {
       if (!studentId) return;
       try {
         const response = await profileService.getUserById(studentId);
-        setStudentName(response.data.name || "Student");
+        setStudentName(response?.data?.name || "Student");
       } catch (error) {
         console.error("Failed to fetch student details:", error);
         setStudentName("Student");
@@ -141,30 +138,48 @@ export function PrivateChat() {
     });
 
     socketRef.current.on("private_message_history", (history: Message[]) => {
+      // Filter out invalid messages
+      const validMessages = (history || []).filter(
+        (msg): msg is Message =>
+          msg &&
+          typeof msg.sender === "string" &&
+          typeof msg.content === "string" &&
+          typeof msg.timestamp === "string"
+      );
       setMessages(
-        history.map((msg) => ({
-          _id: msg._id,
+        validMessages.map((msg) => ({
+          _id: msg._id || undefined,
           sender: msg.sender,
           content: msg.content,
           timestamp: msg.timestamp,
-          status: msg.status,
-          imageUrl: msg.imageUrl,
+          status: msg.status || "sent",
+          imageUrl: msg.imageUrl || undefined,
         }))
       );
     });
 
     socketRef.current.on("receive_private_message", (message: Message) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          _id: message._id,
-          sender: message.sender,
-          content: message.content,
-          timestamp: message.timestamp,
-          status: message.status,
-          imageUrl: message.imageUrl,
-        },
-      ]);
+      // Validate incoming message
+      if (
+        message &&
+        typeof message.sender === "string" &&
+        typeof message.content === "string" &&
+        typeof message.timestamp === "string"
+      ) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            _id: message._id || undefined,
+            sender: message.sender,
+            content: message.content,
+            timestamp: message.timestamp,
+            status: message.status || "sent",
+            imageUrl: message.imageUrl || undefined,
+          },
+        ]);
+      } else {
+        console.error("Invalid message received:", message);
+      }
     });
 
     return () => {
@@ -310,53 +325,55 @@ export function PrivateChat() {
           <main className="flex-1 overflow-hidden relative bg-gradient-to-b from-gray-50 to-gray-100">
             <div className="absolute inset-0 overflow-y-auto px-6 py-4">
               <div className="max-w-4xl mx-auto space-y-4">
-                {messages.map((message) => (
-                  <div
-                    key={message._id}
-                    className={cn(
-                      "flex w-full gap-2 items-end animate-fade-in",
-                      message.sender === userName
-                        ? "justify-end"
-                        : "justify-start"
-                    )}
-                  >
+                {messages.map((message) =>
+                  message && message._id && message.sender ? (
                     <div
+                      key={message._id}
                       className={cn(
-                        "max-w-md rounded-2xl p-4 shadow-md",
+                        "flex w-full gap-2 items-end animate-fade-in",
                         message.sender === userName
-                          ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
-                          : "bg-white text-gray-800 rounded-bl-sm"
+                          ? "justify-end"
+                          : "justify-start"
                       )}
                     >
-                      <div className="flex items-baseline justify-between mb-1">
-                        <span className="font-medium text-sm">
-                          {message.sender}
-                        </span>
-                        <span
-                          className={cn(
-                            "text-xs ml-2",
-                            message.sender === userName
-                              ? "text-indigo-100"
-                              : "text-gray-400"
-                          )}
-                        >
-                          {formatTimestamp(message.timestamp)}
-                        </span>
+                      <div
+                        className={cn(
+                          "max-w-md rounded-2xl p-4 shadow-md",
+                          message.sender === userName
+                            ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
+                            : "bg-white text-gray-800 rounded-bl-sm"
+                        )}
+                      >
+                        <div className="flex items-baseline justify-between mb-1">
+                          <span className="font-medium text-sm">
+                            {message.sender}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-xs ml-2",
+                              message.sender === userName
+                                ? "text-indigo-100"
+                                : "text-gray-400"
+                            )}
+                          >
+                            {formatTimestamp(message.timestamp)}
+                          </span>
+                        </div>
+                        {message.imageUrl ? (
+                          <img
+                            src={message.imageUrl}
+                            alt="Uploaded image"
+                            className="max-w-full h-auto rounded-lg mt-2"
+                          />
+                        ) : (
+                          <p className="text-[15px] leading-relaxed">
+                            {message.content}
+                          </p>
+                        )}
                       </div>
-                      {message.imageUrl ? (
-                        <img
-                          src={message.imageUrl}
-                          alt="Uploaded image"
-                          className="max-w-full h-auto rounded-lg mt-2"
-                        />
-                      ) : (
-                        <p className="text-[15px] leading-relaxed">
-                          {message.content}
-                        </p>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  ) : null
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>
