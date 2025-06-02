@@ -700,19 +700,6 @@ function UserHomePage() {
                 transform your career today.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                {!isAuthenticated && (
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="font-medium"
-                    asChild
-                  >
-                    <Link to="/auth">
-                      Sign Up for Free
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                )}
                 <Button
                   size="lg"
                   variant="outline"
