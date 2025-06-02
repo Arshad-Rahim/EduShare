@@ -1,4 +1,5 @@
 import { authAxiosInstance } from "@/api/authAxiosInstance";
+import { publicAxiosInstance } from "@/api/publicAxiosInstance";
 import { toast } from "sonner";
 
 // Updated type to match CourseListingPage and make fields optional
@@ -111,12 +112,12 @@ export const courseService = {
             queryParams.append(key, value.toString());
           }
         });
-        const response = await authAxiosInstance.get(
+        const response = await publicAxiosInstance.get(
           `/courses/all-courses?${queryParams.toString()}`
         );
         return response;
       } else {
-        const response = await authAxiosInstance.get(`/courses/all-courses`);
+        const response = await publicAxiosInstance.get(`/courses/all-courses`);
         return response;
       }
     } catch (error: any) {
