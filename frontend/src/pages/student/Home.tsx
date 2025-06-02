@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { Header } from "./components/Header";
 import { wishlistService } from "@/services/wishlistService";
 import { courseService } from "@/services/courseService";
+import { useSelector } from "react-redux";
 
 // Define interfaces
 interface Course {
@@ -233,6 +234,12 @@ function UserHomePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const navigate = useNavigate();
+  const currentUser = useSelector((state: any) => state.user.userDatas);
+  const userId = useMemo(
+    () => currentUser?.id || currentUser?._id,
+    [currentUser]
+  );
+  const isAuthenticated = useMemo(() => !!userId, [userId]);
 
   // Fetch courses and wishlist
   const fetchCourses = useCallback(async () => {
@@ -246,9 +253,10 @@ function UserHomePage() {
   }, []);
 
   const fetchWishlistCourses = useCallback(async () => {
+    if (!isAuthenticated) return; // Skip wishlist fetch for unauthenticated users
     try {
       const response = await wishlistService.getWishlist({
-        userId: "", // Replace with actual userId if available
+        userId: userId || "",
         page: 1,
         limit: 100,
       });
@@ -261,7 +269,7 @@ function UserHomePage() {
       console.error("Failed to fetch wishlist courses:", error);
       toast.error("Failed to load wishlist");
     }
-  }, []);
+  }, [isAuthenticated, userId]);
 
   // Initial fetch
   useEffect(() => {
@@ -274,6 +282,11 @@ function UserHomePage() {
   // Event handlers
   const handleWishlistToggle = useCallback(
     async (courseId: string) => {
+      if (!isAuthenticated) {
+        toast.error("Please sign in to add courses to your wishlist");
+        navigate("/auth");
+        return;
+      }
       const isWishlisted = wishlist.includes(courseId);
       try {
         if (isWishlisted) {
@@ -292,7 +305,7 @@ function UserHomePage() {
         );
       }
     },
-    [wishlist]
+    [wishlist, isAuthenticated, navigate]
   );
 
   const handleEnroll = useCallback(
@@ -687,17 +700,19 @@ function UserHomePage() {
                 transform your career today.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="font-medium"
-                  asChild
-                >
-                  <Link to="/auth">
-                    Sign Up for Free
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                {!isAuthenticated && (
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="font-medium"
+                    asChild
+                  >
+                    <Link to="/auth">
+                      Sign Up for Free
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   size="lg"
                   variant="outline"

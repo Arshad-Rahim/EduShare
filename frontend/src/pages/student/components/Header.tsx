@@ -48,6 +48,9 @@ export function Header() {
     [currentUser]
   );
 
+  // Check if user is authenticated
+  const isAuthenticated = useMemo(() => !!userId, [userId]);
+
   // Log userId and currentUser for debugging
   useEffect(() => {
     console.log("Header user ID:", userId, { currentUser });
@@ -162,7 +165,7 @@ export function Header() {
       localStorage.removeItem("userDatas");
       dispatch(removeUser());
       clearNotifications?.();
-      navigate("/auth");
+      navigate("/"); // Redirect to homepage after logout
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Failed to sign out");
@@ -257,11 +260,23 @@ export function Header() {
           >
             Community
           </RouterLink>
+          {!isAuthenticated && (
+            <RouterLink
+              to="/auth"
+              className={`text-sm font-medium transition-colors hover:underline ${
+                location.pathname === "/auth"
+                  ? "text-primary underline"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Sign Up
+            </RouterLink>
+          )}
         </nav>
 
         {/* Right Section */}
         <div className="flex items-center gap-4">
-          {user && (
+          {isAuthenticated && user ? (
             <>
               {/* Notification Bell */}
               <div className="relative">
@@ -379,6 +394,14 @@ export function Header() {
                 </div>
               </div>
             </>
+          ) : (
+            <Button
+              variant="outline"
+              className="font-medium"
+              onClick={() => navigate("/auth")}
+            >
+              Sign Up
+            </Button>
           )}
 
           {/* Mobile Menu Button */}
@@ -451,6 +474,20 @@ export function Header() {
                 <Users className="h-5 w-5" />
                 Community
               </RouterLink>
+              {!isAuthenticated && (
+                <RouterLink
+                  to="/auth"
+                  className={`text-lg font-medium hover:underline flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+                    location.pathname === "/auth"
+                      ? "text-primary underline bg-primary/10"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                  onClick={handleToggleMobileMenu}
+                >
+                  <User className="h-5 w-5" />
+                  Sign Up
+                </RouterLink>
+              )}
             </nav>
           </div>
         </div>
