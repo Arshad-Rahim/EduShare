@@ -26,9 +26,6 @@ export class LessonRoutes {
 
      this.router.get(
        "/course/:courseId",
-         authMiddleware,
-         authorizeRole(["tutor","user","admin"]),
-         checkUserBlocked,
        (req: Request, res: Response) =>
          injectedLessonController.getLessons(req, res)
      );
