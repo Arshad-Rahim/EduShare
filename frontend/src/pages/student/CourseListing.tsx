@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { Header } from "./components/Header";
 import { wishlistService } from "@/services/wishlistService";
 import { courseService } from "@/services/courseService";
+import { useSelector } from "react-redux";
 
 // Define interfaces
 interface Course {
@@ -89,12 +90,17 @@ export function CourseListingPage() {
   const [priceRange, setPriceRange] = useState<number[]>([0, 1500]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>(
     []
   );
   const [debouncedValue] = useDebounce(searchQuery, 500);
+
+  // Get current user from Redux store
+  const currentUser = useSelector((state: any) => state.user.userDatas);
+
+  // Check if user is authenticated
+  const isAuthenticated = useMemo(() => !!currentUser, [currentUser]);
 
   // Memoized static data
   const categories = useMemo(
@@ -167,6 +173,10 @@ export function CourseListingPage() {
 
   // Fetch wishlist courses from backend
   const fetchWishlistCourses = useCallback(async () => {
+    if (!isAuthenticated) {
+      setWishlist([]);
+      return;
+    }
     try {
       const response = await wishlistService.getWishlist({
         page: 1,
@@ -181,11 +191,16 @@ export function CourseListingPage() {
       console.error("Failed to fetch wishlist courses:", error);
       toast.error("Failed to load wishlist");
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // Handle wishlist toggle (add/remove)
   const handleWishlistToggle = useCallback(
     async (courseId: string) => {
+      if (!isAuthenticated) {
+        toast.info("Please sign up or sign in to add courses to your wishlist");
+        navigate("/auth");
+        return;
+      }
       const isWishlisted = wishlist.includes(courseId);
       try {
         if (isWishlisted) {
@@ -199,9 +214,10 @@ export function CourseListingPage() {
         }
       } catch (error) {
         console.error("Failed to toggle wishlist:", error);
+        toast.error("Failed to update wishlist");
       }
     },
-    [wishlist]
+    [wishlist, isAuthenticated, navigate]
   );
 
   // Initial fetch and category from URL
@@ -496,7 +512,10 @@ export function CourseListingPage() {
                       isWishlisted
                         ? "text-red-500 hover:text-red-700"
                         : "text-slate-700 hover:text-primary"
+                    } ${
+                      !isAuthenticated ? "opacity-50 cursor-not-allowed" : ""
                     }`}
+                    disabled={!isAuthenticated}
                   >
                     <Heart
                       className={`h-4 w-4 ${
@@ -581,7 +600,10 @@ export function CourseListingPage() {
                         isWishlisted
                           ? "text-red-500 hover:text-red-700"
                           : "text-slate-700 hover:text-primary"
+                      } ${
+                        !isAuthenticated ? "opacity-50 cursor-not-allowed" : ""
                       }`}
+                      disabled={!isAuthenticated}
                     >
                       <Heart
                         className={`h-4 w-4 ${
@@ -647,6 +669,7 @@ export function CourseListingPage() {
                             size="sm"
                             className="hidden sm:flex"
                             onClick={() => handleWishlistToggle(course._id)}
+                            disabled={!isAuthenticated}
                           >
                             <Bookmark className="h-4 w-4 mr-2" />
                             {isWishlisted ? "Remove" : "Save"}
@@ -672,6 +695,7 @@ export function CourseListingPage() {
       handleEnroll,
       getDifficultyColor,
       viewMode,
+      isAuthenticated,
     ]
   );
 
