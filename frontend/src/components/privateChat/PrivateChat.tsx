@@ -5,11 +5,8 @@ import { Send, Image, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { io, Socket } from "socket.io-client";
 import { profileService } from "@/services/userService/profileService";
-import { tutorService } from "@/services/tutorService/tutorService";
 import { toast } from "sonner";
-import { Header } from "@/pages/student/components/Header"; // Student header
-import TutorHeader from "@/pages/tutor/components/Header"; // Tutor header
-import SideBar from "@/pages/tutor/components/SideBar"; // Tutor sidebar
+import { Header } from "@/pages/student/components/Header";
 
 interface Message {
   _id?: string;
@@ -44,13 +41,10 @@ export function PrivateChat() {
   const [newMessage, setNewMessage] = useState("");
   const [userName, setUserName] = useState<string>("");
   const [tutorName, setTutorName] = useState<string>("");
-  const [studentName, setStudentName] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const user = useSelector((state: any) => state.user.userDatas);
-  const [isTutor, setIsTutor] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const courseId = stateCourseId || paramCourseId;
   const studentId = stateStudentId || paramStudentId;
@@ -64,19 +58,11 @@ export function PrivateChat() {
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        let userResponse;
-        try {
-          userResponse = await tutorService.tutorDetails();
-          setIsTutor(true);
-          setUserName(userResponse?.data?.tutor?.name || "User");
-        } catch (error) {
-          userResponse = await profileService.userDetails();
-          setIsTutor(false);
-          setUserName(userResponse?.data?.users?.name || "User");
-        }
+        const userResponse = await profileService.userDetails();
+        setUserName(userResponse?.data?.users?.name || "Student");
       } catch (error) {
         console.error("Failed to fetch user details:", error);
-        setUserName("User");
+        setUserName("Student");
       }
     };
 
@@ -91,23 +77,11 @@ export function PrivateChat() {
       }
     };
 
-    const fetchStudentDetails = async () => {
-      if (!studentId) return;
-      try {
-        const response = await profileService.getUserById(studentId);
-        setStudentName(response?.data?.name || "Student");
-      } catch (error) {
-        console.error("Failed to fetch student details:", error);
-        setStudentName("Student");
-      }
-    };
-
     if (user) {
       fetchUserDetails();
       fetchTutorDetails();
-      fetchStudentDetails();
     }
-  }, [user, tutorId, studentId]);
+  }, [user, tutorId]);
 
   useEffect(() => {
     if (!user) {
@@ -131,14 +105,17 @@ export function PrivateChat() {
       reconnection: true,
     });
 
-    socketRef.current.emit("join_private_chat", {
-      courseId,
-      studentId,
-      tutorId,
+    socketRef.current.on("connect", () => {
+      console.log("Socket connected:", socketRef.current?.id);
+      socketRef.current?.emit("join_user", user._id || user.id);
+      socketRef.current?.emit("join_private_chat", {
+        courseId,
+        studentId,
+        tutorId,
+      });
     });
 
     socketRef.current.on("private_message_history", (history: Message[]) => {
-      // Filter out invalid messages
       const validMessages = (history || []).filter(
         (msg): msg is Message =>
           msg &&
@@ -159,35 +136,49 @@ export function PrivateChat() {
     });
 
     socketRef.current.on("receive_private_message", (message: Message) => {
-      // Validate incoming message
       if (
         message &&
         typeof message.sender === "string" &&
         typeof message.content === "string" &&
         typeof message.timestamp === "string"
       ) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            _id: message._id || undefined,
-            sender: message.sender,
-            content: message.content,
-            timestamp: message.timestamp,
-            status: message.status || "sent",
-            imageUrl: message.imageUrl || undefined,
-          },
-        ]);
+        if (message.sender !== userName) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              _id: message._id || undefined,
+              sender: message.sender,
+              content: message.content,
+              timestamp: message.timestamp,
+              status: message.status || "sent",
+              imageUrl: message.imageUrl || undefined,
+            },
+          ]);
+        }
       } else {
         console.error("Invalid message received:", message);
       }
     });
 
+    socketRef.current.on("error", (error: { message: string }) => {
+      console.error("Socket error:", error);
+      toast.error(error.message || "An error occurred in the chat");
+    });
+
+    socketRef.current.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
+      toast.error("Failed to connect to server, retrying...");
+    });
+
     return () => {
+      socketRef.current?.off("connect");
       socketRef.current?.off("private_message_history");
       socketRef.current?.off("receive_private_message");
+      socketRef.current?.off("error");
+      socketRef.current?.off("connect_error");
       socketRef.current?.disconnect();
     };
-  }, [studentId, tutorId, courseId, navigate, user]);
+  }, [studentId, tutorId, courseId, navigate, user, userName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -211,6 +202,7 @@ export function PrivateChat() {
         tutorId,
         message: newMsg,
       });
+      setMessages((prev) => [...prev, newMsg]);
       setNewMessage("");
     }
   };
@@ -234,6 +226,7 @@ export function PrivateChat() {
           content: "",
           timestamp: new Date().toISOString(),
           status: "sent",
+          imageUrl: reader.result as string,
         };
         socketRef.current?.emit("send_private_image_message", {
           courseId,
@@ -245,8 +238,9 @@ export function PrivateChat() {
             name: file.name,
             type: file.type,
           },
-          senderId: isTutor ? tutorId : studentId,
+          senderId: studentId,
         });
+        setMessages((prev) => [...prev, newMsg]);
       };
       reader.readAsDataURL(file);
       event.target.value = "";
@@ -282,28 +276,9 @@ export function PrivateChat() {
           }
         `}
       </style>
-      {isTutor ? (
-        <TutorHeader
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
-      ) : (
-        <Header />
-      )}
+      <Header />
       <div className="flex flex-1">
-        {isTutor && (
-          <div className="w-full md:w-64 flex-shrink-0">
-            <SideBar
-              sidebarOpen={sidebarOpen}
-              setSidebarOpen={setSidebarOpen}
-            />
-          </div>
-        )}
-        <div
-          className={`flex-1 flex flex-col min-w-0 ${
-            isTutor && sidebarOpen ? "md:ml-64" : ""
-          }`}
-        >
+        <div className="flex-1 flex flex-col min-w-0">
           <header className="bg-white border-b px-6 py-4 flex items-center justify-between shadow-sm">
             <div className="flex items-center space-x-4">
               <button
@@ -314,8 +289,7 @@ export function PrivateChat() {
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-800">
-                  Chat with {isTutor ? studentName : tutorName} (
-                  {courseTitle || "Unknown Course"})
+                  Chat with {tutorName} ({courseTitle || "Unknown Course"})
                 </h1>
                 <p className="text-sm text-gray-500">Private Conversation</p>
               </div>
