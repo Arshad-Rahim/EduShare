@@ -61,11 +61,7 @@ export class CourseRoutes {
 
      this.router.get(
        "/all-courses",
-      //  authMiddleware,
-      //  authorizeRole(["user","admin"]),
-      //  checkUserBlocked,
-
-       (req: Request, res: Response) =>
+         (req: Request, res: Response) =>
          injectedCourseController.getAllCourses(req, res)
      );
 
