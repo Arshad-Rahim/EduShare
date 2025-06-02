@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { Navigate } from "react-router-dom"; // Import Navigate for redirection
 import { PublicUserRoute } from "../private/user/PublicUserRoute";
 import { PublicAdminRoute } from "../private/admin/PublicAdminRoute";
 import AuthForm from "../pages/AuthForm";
@@ -8,6 +9,7 @@ import ErrorBoundary from "../components/error-bountry/ErrorBoundry";
 import UserHomePage from "../pages/student/Home";
 import { CourseListingPage } from "../pages/student/CourseListing";
 import { CourseDetailsPage } from "../pages/student/CourseDetails";
+import { useSelector } from "react-redux"; // Import useSelector to check user state
 
 // Memoize components to prevent unnecessary re-renders
 const MemoizedAuthForm = memo(AuthForm);
@@ -17,6 +19,17 @@ const MemoizedUserHomePage = memo(UserHomePage);
 const MemoizedCourseListingPage = memo(CourseListingPage);
 const MemoizedCourseDetailsPage = memo(CourseDetailsPage);
 
+// Component to handle redirect based on authentication status
+const AuthRedirect = () => {
+  const user = useSelector((state: any) => state.user.userDatas);
+  // If user is not authenticated, redirect to home; otherwise, show auth page
+  return !user?.id && !user?._id ? (
+    <Navigate to="/" replace />
+  ) : (
+    <MemoizedAuthForm />
+  );
+};
+
 export const publicRoutes = [
   {
     key: "auth",
@@ -24,7 +37,7 @@ export const publicRoutes = [
     element: (
       <PublicUserRoute>
         <ErrorBoundary>
-          <MemoizedAuthForm />
+          <AuthRedirect />
         </ErrorBoundary>
       </PublicUserRoute>
     ),
