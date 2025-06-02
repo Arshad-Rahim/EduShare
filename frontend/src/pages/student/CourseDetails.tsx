@@ -699,10 +699,10 @@ export function CourseDetailsPage() {
 
             {isInCall && isAuthenticated && courseId && (
               <VideoCall
-                roomId={courseId}
+                roomId={`videocall_${courseId}_${studentId}_${course.tutorId}`}
                 userId={studentId}
-                isInitiator={true} 
-                courseTitle={course?.title} 
+                isInitiator={true}
+                courseTitle={course?.title}
                 onEndCall={handleEndCall}
               />
             )}
