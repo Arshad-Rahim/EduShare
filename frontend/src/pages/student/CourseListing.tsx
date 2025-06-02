@@ -153,6 +153,7 @@ export function CourseListingPage() {
       const coursesData = response.data.courses.courses || [];
       const totalCourses = response.data.courses.total || 0;
 
+      
       setCourses(coursesData);
       setTotalPages(Math.ceil(totalCourses / coursesPerPage));
     } catch (error) {
