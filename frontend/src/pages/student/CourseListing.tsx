@@ -497,7 +497,6 @@ export function CourseListingPage() {
                         ? "text-red-500 hover:text-red-700"
                         : "text-slate-700 hover:text-primary"
                     }`}
-                    disabled
                   >
                     <Heart
                       className={`h-4 w-4 ${
@@ -583,7 +582,6 @@ export function CourseListingPage() {
                           ? "text-red-500 hover:text-red-700"
                           : "text-slate-700 hover:text-primary"
                       }`}
-                      disabled
                     >
                       <Heart
                         className={`h-4 w-4 ${
@@ -649,7 +647,6 @@ export function CourseListingPage() {
                             size="sm"
                             className="hidden sm:flex"
                             onClick={() => handleWishlistToggle(course._id)}
-                            disabled
                           >
                             <Bookmark className="h-4 w-4 mr-2" />
                             {isWishlisted ? "Remove" : "Save"}
