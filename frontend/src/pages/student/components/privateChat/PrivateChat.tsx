@@ -160,6 +160,14 @@ export function PrivateChat() {
       }
     });
 
+    socketRef.current.on("message_ack", (ack: { messageId: string; status: "delivered" | "read" }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === ack.messageId ? { ...msg, status: ack.status } : msg
+        )
+      );
+    });
+
     socketRef.current.on("error", (error: { message: string }) => {
       console.error("Socket error:", error);
       toast.error(error.message || "An error occurred in the chat");
@@ -174,6 +182,7 @@ export function PrivateChat() {
       socketRef.current?.off("connect");
       socketRef.current?.off("private_message_history");
       socketRef.current?.off("receive_private_message");
+      socketRef.current?.off("message_ack");
       socketRef.current?.off("error");
       socketRef.current?.off("connect_error");
       socketRef.current?.disconnect();
@@ -190,20 +199,46 @@ export function PrivateChat() {
 
   const handleSendMessage = () => {
     if (newMessage.trim() && studentId && tutorId && courseId && userName) {
+      const tempId = `temp_${Date.now()}`; // Temporary ID for optimistic update
       const newMsg: Message = {
+        _id: tempId,
         sender: userName,
         content: newMessage,
         timestamp: new Date().toISOString(),
         status: "sent",
       };
+
+      // Optimistically update UI
+      setMessages((prev) => [...prev, newMsg]);
+      setNewMessage("");
+
+      // Emit message to server
       socketRef.current?.emit("send_private_message", {
         courseId,
         studentId,
         tutorId,
         message: newMsg,
+      }, (response: { success: boolean; message?: Message; error?: string }) => {
+        if (response.success && response.message) {
+          // Update message with server-provided _id and status
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg._id === tempId
+                ? {
+                    ...msg,
+                    _id: response.message?._id,
+                    status: response.message?.status || "sent",
+                  }
+                : msg
+            )
+          );
+        } else {
+          console.error("Failed to send message:", response.error);
+          toast.error("Failed to send message");
+          // Remove optimistic message if server fails
+          setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+        }
       });
-      setMessages((prev) => [...prev, newMsg]);
-      setNewMessage("");
     }
   };
 
@@ -221,13 +256,20 @@ export function PrivateChat() {
 
       const reader = new FileReader();
       reader.onload = () => {
+        const tempId = `temp_${Date.now()}`; // Temporary ID for optimistic update
         const newMsg: Message = {
+          _id: tempId,
           sender: userName,
           content: "",
           timestamp: new Date().toISOString(),
           status: "sent",
           imageUrl: reader.result as string,
         };
+
+        // Optimistically update UI
+        setMessages((prev) => [...prev, newMsg]);
+
+        // Emit image message to server
         socketRef.current?.emit("send_private_image_message", {
           courseId,
           studentId,
@@ -239,8 +281,28 @@ export function PrivateChat() {
             type: file.type,
           },
           senderId: studentId,
+        }, (response: { success: boolean; message?: Message; error?: string }) => {
+          if (response.success && response.message) {
+            // Update message with server-provided _id and status
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg._id === tempId
+                  ? {
+                      ...msg,
+                      _id: response.message?._id,
+                      status: response.message?.status || "sent",
+                      imageUrl: response.message?.imageUrl,
+                    }
+                  : msg
+              )
+            );
+          } else {
+            console.error("Failed to send image message:", response.error);
+            toast.error("Failed to send image message");
+            // Remove optimistic message if server fails
+            setMessages((prev) => prev.filter((msg) => msg._id !== tempId));
+          }
         });
-        setMessages((prev) => [...prev, newMsg]);
       };
       reader.readAsDataURL(file);
       event.target.value = "";

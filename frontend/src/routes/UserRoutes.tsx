@@ -5,7 +5,7 @@ import WishlistPage from "../pages/student/Wishlist";
 import { CourseEnrollPage } from "../pages/student/CourseEnrollPage";
 import { CommunityChat } from "../pages/student/CommunityChat";
 import MyCoursesPage from "../pages/student/MyCoursePage";
-import { PrivateChat } from "../components/privateChat/PrivateChat";
+import { PrivateChat } from "../pages/student/components/privateChat/PrivateChat";
 import ErrorBoundary from "../components/error-bountry/ErrorBoundry";
 
 // Memoize components to prevent unnecessary re-renders
