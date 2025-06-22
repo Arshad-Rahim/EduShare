@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -386,9 +392,15 @@ export function CourseEnrollPage() {
 
     try {
       const response = await enrollmentService.checkEnrollmentStatus(courseId);
-      setEnrollmentStatus(response.data.isEnrolled ? "enrolled" : null);
+      if (response.data.isEnrolled) {
+        setEnrollmentStatus("enrolled");
+        navigate(`/courses/${courseId}/learn`);
+      } else {
+        setEnrollmentStatus(null);
+      }
     } catch (error) {
       console.error("Failed to check enrollment status:", error);
+      setEnrollmentStatus(null);
     }
   }, [courseId, navigate]);
 
