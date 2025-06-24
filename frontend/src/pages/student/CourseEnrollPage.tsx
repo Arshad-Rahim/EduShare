@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -78,10 +84,23 @@ declare global {
 // Load Razorpay script
 const loadScript = (src: string) =>
   new Promise<boolean>((resolve) => {
+    // Check if script is already loaded
+    if (document.querySelector(`script[src="${src}"]`)) {
+      console.log("Razorpay script already loaded");
+      resolve(true);
+      return;
+    }
     const script = document.createElement("script");
     script.src = src;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.async = true;
+    script.onload = () => {
+      console.log("Razorpay script loaded successfully");
+      resolve(true);
+    };
+    script.onerror = () => {
+      console.error("Failed to load Razorpay script");
+      resolve(false);
+    };
     document.body.appendChild(script);
   });
 
@@ -107,35 +126,50 @@ const RenderRazorpay = ({
   const hasOpened = useRef(false);
 
   const displayRazorpay = useCallback(async () => {
-    if (hasOpened.current) return;
+    if (hasOpened.current) {
+      console.log("Razorpay modal already opened or attempted");
+      return;
+    }
     hasOpened.current = true;
 
+    console.log("Initiating Razorpay modal display", {
+      orderId,
+      keyId,
+      amount,
+      currency,
+    });
+
     setScriptLoading(true);
-    const res = await loadScript(
-      "https://checkout.razorpay.com/v1/checkout.js"
-    );
-    setScriptLoading(false);
+    try {
+      const res = await loadScript(
+        "https://checkout.razorpay.com/v1/checkout.js"
+      );
+      if (!res) {
+        console.error("Razorpay SDK failed to load");
+        toast.error(
+          "Failed to load Razorpay SDK. Please check your connection."
+        );
+        hasOpened.current = false;
+        setScriptLoading(false);
+        return;
+      }
 
-    if (!res) {
-      toast.error("Failed to load Razorpay SDK. Please check your connection.");
-      hasOpened.current = false;
-      return;
-    }
+      if (!window.Razorpay) {
+        console.error("Razorpay SDK not available on window object");
+        toast.error("Razorpay SDK not available. Please try again.");
+        hasOpened.current = false;
+        setScriptLoading(false);
+        return;
+      }
 
-    if (!window.Razorpay) {
-      toast.error("Razorpay SDK not available.");
-      hasOpened.current = false;
-      return;
-    }
-
-    const options: RazorpayOptions = useMemo(
-      () => ({
+      const options: RazorpayOptions = {
         key: keyId,
         amount,
         currency,
         name: "Your Organization Name",
         order_id: orderId,
         handler: async (response) => {
+          console.log("Razorpay payment success", response);
           try {
             await paymentService.payment(orderId, response);
             await paymentService.enroll(courseId, orderId, amount / 100);
@@ -161,6 +195,7 @@ const RenderRazorpay = ({
         modal: {
           confirm_close: true,
           ondismiss: async (reason) => {
+            console.log("Razorpay modal dismissed", reason);
             const {
               reason: paymentReason,
               field,
@@ -192,33 +227,53 @@ const RenderRazorpay = ({
         retry: { enabled: false },
         timeout: 300,
         theme: { color: "#3399cc" },
-      }),
-      [orderId, keyId, currency, amount, courseId, navigate]
-    );
+      };
 
-    const rzp = new window.Razorpay(options);
-    razorpayInstance.current = rzp;
-    rzp.open();
+      console.log("Creating Razorpay instance with options", options);
+      const rzp = new window.Razorpay(options);
+      razorpayInstance.current = rzp;
 
-    rzp.on("modal.closed", () => {
-      razorpayInstance.current = null;
+      rzp.on("payment.error", (error: any) => {
+        console.error("Razorpay payment error", error);
+        toast.error(
+          `Payment failed: ${error.error.description || "Unknown error"}`
+        );
+      });
+
+      try {
+        console.log("Opening Razorpay modal");
+        rzp.open();
+      } catch (error) {
+        console.error("Failed to open Razorpay modal", error);
+        toast.error("Failed to open payment modal. Please try again.");
+        hasOpened.current = false;
+        razorpayInstance.current = null;
+      }
+    } catch (error) {
+      console.error("Error in displayRazorpay", error);
+      toast.error("An error occurred while initiating payment.");
       hasOpened.current = false;
-    });
+    } finally {
+      setScriptLoading(false);
+    }
   }, [orderId, keyId, currency, amount, courseId, navigate, setScriptLoading]);
 
   useEffect(() => {
+    console.log("RenderRazorpay useEffect triggered");
     displayRazorpay();
 
     return () => {
+      console.log("RenderRazorpay cleanup");
       if (razorpayInstance.current) {
         razorpayInstance.current.close();
         razorpayInstance.current = null;
       }
+      // Remove script only if it exists
       const script = document.querySelector(
         `script[src="https://checkout.razorpay.com/v1/checkout.js"]`
       );
-      if (script) {
-        document.body.removeChild(script);
+      if (script && script.parentNode) {
+        script.parentNode.removeChild(script);
       }
     };
   }, [displayRazorpay]);
