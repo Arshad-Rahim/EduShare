@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { courseService } from "@/services/courseService";
 import { paymentService } from "@/services/enrollmentService/paymentService";
-import { enrollmentService } from "@/services/enrollmentService/enrollmentService";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -38,6 +37,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { useSelector } from "react-redux";
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -388,7 +388,7 @@ export function CourseEnrollPage() {
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
-  const [enrollmentStatus, setEnrollmentStatus] = useState<string | null>(null);
+  const [isPurchased, setIsPurchased] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [scriptLoading, setScriptLoading] = useState(false);
   const [displayRazorpay, setDisplayRazorpay] = useState(false);
@@ -405,11 +405,15 @@ export function CourseEnrollPage() {
     currency: null,
     amount: null,
   });
+  const currentUser = useSelector((state: any) => state.user.userDatas);
 
   // Memoized courseId
   const courseId = useMemo(() => params.courseId, [params.courseId]);
 
-  // Fetch course and enrollment status
+  // Check if user is authenticated
+  const isAuthenticated = useMemo(() => !!currentUser, [currentUser]);
+
+  // Fetch course and purchase status
   const fetchCourseDetails = useCallback(async () => {
     if (!courseId) {
       toast.error("Invalid course ID");
@@ -432,35 +436,43 @@ export function CourseEnrollPage() {
     }
   }, [courseId, navigate]);
 
-  const checkEnrollmentStatus = useCallback(async () => {
+  const checkPurchaseStatus = useCallback(async () => {
     if (!courseId) {
       toast.error("Invalid course ID");
       navigate("/courses");
       return;
     }
 
-    try {
-      const response = await enrollmentService.checkEnrollmentStatus(courseId);
-      if (response.data.isEnrolled) {
-        setEnrollmentStatus("enrolled");
-        navigate(`/courses/${courseId}/learn`);
-      } else {
-        setEnrollmentStatus(null);
+    if (isAuthenticated) {
+      try {
+        const purchaseStatus = await courseService.checkCoursePurchase(
+          courseId
+        );
+        setIsPurchased(purchaseStatus || false);
+      } catch (error) {
+        console.error("Failed to check purchase status:", error);
+        setIsPurchased(false);
       }
-    } catch (error) {
-      console.error("Failed to check enrollment status:", error);
-      setEnrollmentStatus(null);
+    } else {
+      setIsPurchased(false);
     }
-  }, [courseId, navigate]);
+  }, [courseId, navigate, isAuthenticated]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([fetchCourseDetails(), checkEnrollmentStatus()]);
-      setLoading(false);
+      try {
+        await Promise.all([fetchCourseDetails(), checkPurchaseStatus()]);
+      } catch (error) {
+        console.error("Error fetching enrollment data:", error);
+        toast.error("Failed to load enrollment page");
+        navigate("/courses");
+      } finally {
+        setLoading(false);
+      }
     };
     fetchData();
-  }, [fetchCourseDetails, checkEnrollmentStatus]);
+  }, [fetchCourseDetails, checkPurchaseStatus]);
 
   // Event handlers
   const handleCreateOrder = useCallback(
@@ -494,10 +506,6 @@ export function CourseEnrollPage() {
   );
 
   const handleEnroll = useCallback(() => {
-    if (enrollmentStatus === "enrolled") {
-      navigate(`/courses/${courseId}/learn`);
-      return;
-    }
     if (!paymentMethod) {
       toast.error("Please select a payment method");
       return;
@@ -509,14 +517,11 @@ export function CourseEnrollPage() {
         setDisplayStripe(true);
       }
     }
-  }, [
-    enrollmentStatus,
-    paymentMethod,
-    course,
-    courseId,
-    navigate,
-    handleCreateOrder,
-  ]);
+  }, [paymentMethod, course, handleCreateOrder]);
+
+  const handleBackToCourse = useCallback(() => {
+    navigate(`/courses/${courseId}`);
+  }, [courseId, navigate]);
 
   const getDifficultyColor = useCallback((difficulty: string) => {
     switch (difficulty) {
@@ -583,8 +588,8 @@ export function CourseEnrollPage() {
       <main className="flex-1 w-full px-4 sm:px-6 lg:px-8">
         <section className="w-full py-12">
           <div className="container mx-auto w-full">
-            <Card className="border-0 shadow-md w-full">
-              <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-t-xl">
+            <Card className="border-0 shadow-md w-full rounded-xl">
+              <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-t-xl">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <CardTitle className="text-xl sm:text-2xl font-bold text-slate-800">
                     Enroll in {course.title}
@@ -592,17 +597,17 @@ export function CourseEnrollPage() {
                   <Button
                     variant="outline"
                     onClick={() => navigate(`/courses/${courseId}`)}
-                    className="border-slate-300 hover:bg-slate-50 w-full sm:w-auto"
+                    className="border-gray-300 hover:bg-white hover:border-blue-600 transition-all duration-200 shadow-sm w-full sm:w-auto"
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Course
                   </Button>
                 </div>
-                <CardDescription className="text-slate-600 mt-2 text-sm sm:text-base">
+                <CardDescription className="text-gray-600 mt-2 text-sm sm:text-base">
                   {course.tagline}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6 w-full">
+              <CardContent className="pt-6 w-full p-6 lg:p-8">
                 <div className="space-y-6">
                   <div className="flex flex-col sm:flex-row items-start gap-4">
                     <div className="aspect-square w-full sm:w-24 h-24 overflow-hidden rounded-lg bg-slate-100 flex-shrink-0">
@@ -614,7 +619,7 @@ export function CourseEnrollPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-slate-200">
-                          <BookOpen className="h-12 w-12 text-slate-400" />
+                          <BookOpen className="h-12 w-12 text-gray-400" />
                         </div>
                       )}
                     </div>
@@ -622,11 +627,11 @@ export function CourseEnrollPage() {
                       <Badge className={getDifficultyColor(course.difficulty)}>
                         {course.difficulty}
                       </Badge>
-                      <p className="text-sm text-slate-600 mt-2">
+                      <p className="text-sm text-gray-600 mt-2">
                         Category: {course.category}
                       </p>
-                      <div className="flex items-center gap-2 text-slate-600 mt-1">
-                        <span className="font-medium text-sm sm:text-base">
+                      <div className="flex items-center gap-2 text-gray-700 mt-1">
+                        <span className="font-medium text-blue-600 text-sm sm:text-base">
                           ₹{course.price}
                         </span>
                       </div>
@@ -635,19 +640,21 @@ export function CourseEnrollPage() {
 
                   <Separator />
 
-                  {enrollmentStatus === "enrolled" ? (
-                    <div className="text-center">
-                      <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-4" />
-                      <p className="text-lg sm:text-xl font-semibold text-slate-800">
-                        You are already enrolled!
+                  {isPurchased ? (
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 text-center">
+                      <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                      <p className="text-lg font-semibold text-gray-800 mb-2">
+                        You're Already Enrolled!
                       </p>
-                      <p className="text-sm text-slate-600 mt-2">
-                        Start learning now or revisit your course content.
+                      <p className="text-sm text-gray-600 mb-4">
+                        You have access to {course.title}. Continue your
+                        learning journey.
                       </p>
                       <Button
-                        className="mt-4 bg-primary hover:bg-primary/90 w-full sm:w-auto"
-                        onClick={() => navigate(`/courses/${courseId}/learn`)}
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white shadow-sm rounded-lg transition-all duration-200 text-sm font-semibold"
+                        onClick={handleBackToCourse}
                       >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
                         Go to Course
                       </Button>
                     </div>
@@ -656,7 +663,7 @@ export function CourseEnrollPage() {
                       {paymentDetails}
 
                       <div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-slate-800">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">
                           Select Payment Method
                         </h3>
                         <div className="mt-4 flex flex-col gap-4">
@@ -669,7 +676,7 @@ export function CourseEnrollPage() {
                               onChange={() => setPaymentMethod("razorpay")}
                               className="h-4 w-4"
                             />
-                            <span className="text-sm text-slate-600">
+                            <span className="text-sm text-gray-600">
                               Pay with Razorpay
                             </span>
                           </label>
@@ -682,7 +689,7 @@ export function CourseEnrollPage() {
                               onChange={() => setPaymentMethod("stripe")}
                               className="h-4 w-4"
                             />
-                            <span className="text-sm text-slate-600">
+                            <span className="text-sm text-gray-600">
                               Pay with Stripe
                             </span>
                           </label>
@@ -700,7 +707,7 @@ export function CourseEnrollPage() {
                       )}
 
                       <Button
-                        className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center gap-2 text-sm sm:text-base"
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 py-6 rounded-lg shadow-md text-sm font-semibold"
                         onClick={handleEnroll}
                         disabled={paymentProcessing || scriptLoading}
                       >
