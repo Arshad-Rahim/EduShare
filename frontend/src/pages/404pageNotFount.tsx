@@ -47,7 +47,6 @@ const NotFound: React.FC = () => {
     [handleGoBack] 
   );
 
-  
   return notFoundUI;
 };
 
