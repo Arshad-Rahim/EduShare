@@ -50,5 +50,4 @@ const NotFound: React.FC = () => {
   return notFoundUI;
 };
 
-
 export default memo(NotFound);
