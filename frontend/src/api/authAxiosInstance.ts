@@ -4,7 +4,9 @@ import axios from "axios";
 import { toast } from "sonner";
 
 export const authAxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_BASEURL,
+  // baseURL: import.meta.env.VITE_AUTH_BASEURL,
+  baseURL: 'https://edushare.arshadrahim.tech',
+
   withCredentials: true,
 });
 
