@@ -16,6 +16,7 @@ export type TTutorModel = {
   _id?: Types.ObjectId;
   isBlocked: boolean;
   isAccepted?: boolean;
+  profileCompleted?: boolean;
   specialization: string;
   verificationDocUrl: string;
   approvalStatus: string;

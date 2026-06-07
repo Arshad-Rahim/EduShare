@@ -100,22 +100,33 @@ export class TutorRepository implements ITutorRepository {
 
     if (!tutor || tutor.length === 0) return null;
 
-    const tutorData = tutor[0];
-    return {
-      _id: tutorData._id,
-      name: tutorData.name,
-      email: tutorData.email,
-      password: tutorData.password || null,
-      role: tutorData.role,
-      isBlocked: tutorData.isBlocked || false,
-      isAccepted: tutorData.isAccepted || false,
-      specialization: tutorData.tutorProfile?.specialization || "",
-      verificationDocUrl: tutorData.tutorProfile?.verificationDocUrl || "",
-      approvalStatus: tutorData.tutorProfile?.approvalStatus || "pending",
-      phone: tutorData.tutorProfile?.phone || "",
-      bio: tutorData.tutorProfile?.bio || "",
-      rejectionReason: tutorData.tutorProfile?.rejectionReason || "",
-    };
+   const tutorData = tutor[0];
+const tutorProfile = tutorData.tutorProfile;
+
+const profileCompleted = Boolean(
+  tutorProfile &&
+    String(tutorProfile.phone || "").trim() &&
+    String(tutorProfile.specialization || "").trim() &&
+    String(tutorProfile.bio || "").trim() &&
+    String(tutorProfile.verificationDocUrl || "").trim()
+);
+
+return {
+  _id: tutorData._id,
+  name: tutorData.name,
+  email: tutorData.email,
+  password: tutorData.password || null,
+  role: tutorData.role,
+  isBlocked: tutorData.isBlocked || false,
+  isAccepted: tutorData.isAccepted || false,
+  profileCompleted,
+  specialization: tutorProfile?.specialization || "",
+  verificationDocUrl: tutorProfile?.verificationDocUrl || "",
+  approvalStatus: tutorProfile?.approvalStatus || "pending",
+  phone: tutorProfile?.phone || "",
+  bio: tutorProfile?.bio || "",
+  rejectionReason: tutorProfile?.rejectionReason || "",
+};
   }
 
   async markAllNotificationsAsRead(id: string): Promise<void> {

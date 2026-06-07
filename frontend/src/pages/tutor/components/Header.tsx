@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import {
   Bell,
@@ -49,10 +49,26 @@ interface ChatNotification {
   read?: boolean;
 }
 
+type TutorProfileGateState = {
+  isAccepted: boolean;
+  profileCompleted: boolean;
+  approvalStatus: string;
+};
+
 interface HeaderProps {
   sidebarOpen?: boolean;
   setSidebarOpen?: (open: boolean) => void;
 }
+
+const isTutorProfileCompleted = (tutor: any) => {
+  return Boolean(
+    tutor?.profileCompleted ||
+      (String(tutor?.phone || "").trim() &&
+        String(tutor?.specialization || "").trim() &&
+        String(tutor?.bio || "").trim() &&
+        String(tutor?.verificationDocUrl || "").trim())
+  );
+};
 
 function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const dispatch = useDispatch();
@@ -70,19 +86,29 @@ function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
-  const [isAccepted, setIsAccepted] = useState<boolean | null>(null);
+  const location = useLocation();
+
+const [profileGate, setProfileGate] =
+  useState<TutorProfileGateState | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   // Fetch user details
   useEffect(() => {
     async function fetchUser() {
       try {
-        const response = await tutorService.tutorDetails();
-        setUser({
-          name: response?.data.tutor.name,
-          email: response?.data.tutor.email,
-        });
-        setIsAccepted(response?.data.tutor.isAccepted);
+       const response = await tutorService.tutorDetails();
+const tutor = response?.data?.tutor;
+
+setUser({
+  name: tutor?.name || "",
+  email: tutor?.email || "",
+});
+
+setProfileGate({
+  isAccepted: Boolean(tutor?.isAccepted),
+  profileCompleted: isTutorProfileCompleted(tutor),
+  approvalStatus: tutor?.approvalStatus || "pending",
+});
       } catch (error) {
         console.error("Failed to fetch user details:", error);
         toast.error("Failed to load user data");
@@ -91,12 +117,35 @@ function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
     fetchUser();
   }, []);
 
-  // Show profile verification toast
-  useEffect(() => {
-    if (isAccepted === false) {
+ // Show profile verification toast only when profile is actually incomplete.
+// Do not show it again and again after the tutor already submitted profile.
+useEffect(() => {
+  if (!profileGate) return;
+
+  const completionToastId = "tutor-profile-completion-toast";
+  const pendingToastId = "tutor-profile-pending-toast";
+
+  if (location.pathname === "/tutor/profileDetails") {
+    toast.dismiss(completionToastId);
+    toast.dismiss(pendingToastId);
+    return;
+  }
+
+  if (
+    !profileGate.profileCompleted ||
+    profileGate.approvalStatus === "rejected"
+  ) {
+    toast.dismiss(pendingToastId);
+
+    if (sessionStorage.getItem(completionToastId) !== "shown") {
+      sessionStorage.setItem(completionToastId, "shown");
+
       toast.info(
-        "Please complete your profile verification to access all features.",
+        profileGate.approvalStatus === "rejected"
+          ? "Your tutor profile was rejected. Please update and resubmit your profile."
+          : "Please complete your profile verification to access all features.",
         {
+          id: completionToastId,
           action: {
             label: "Update Profile",
             onClick: () => navigate("/tutor/profileDetails"),
@@ -106,7 +155,27 @@ function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
         }
       );
     }
-  }, [isAccepted, navigate]);
+
+    return;
+  }
+
+  toast.dismiss(completionToastId);
+
+  if (!profileGate.isAccepted && profileGate.approvalStatus === "pending") {
+    if (sessionStorage.getItem(pendingToastId) !== "shown") {
+      sessionStorage.setItem(pendingToastId, "shown");
+
+      toast.info(
+        "Your profile is submitted. Please wait for admin approval.",
+        {
+          id: pendingToastId,
+          duration: 8000,
+          closeButton: true,
+        }
+      );
+    }
+  }
+}, [profileGate, location.pathname, navigate]);
 
   // Fetch profile notifications
   const fetchProfileNotifications = useCallback(async () => {
