@@ -10,6 +10,7 @@ import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import { createSecureUrl } from "../util/createSecureUrl";
 import { s3 } from "../app";
 import { ObjectCannedACL, PutObjectCommand } from "@aws-sdk/client-s3";
+import { saveUploadedFileLocally } from "../util/localFileStorage";
 
 export class LessonController {
   constructor(private _lessonService: LessonService) {}
@@ -58,21 +59,30 @@ export class LessonController {
         //   message: SUCCESS_MESSAGES.CREATED,
         // });
 
-        const timestamp = Date.now();
-        const fileExtension = req.file.mimetype.split("/")[1];
-        key = `lessons_video/${timestamp}.${fileExtension}`;
+       if (process.env.FILE_STORAGE_DRIVER === "local") {
+  key = await saveUploadedFileLocally(
+    req.file,
+    "lessons_video",
+    String(req.body.courseId || "lesson")
+  );
 
-        // Updated: Upload to S3 instead of Cloudinary
-        const uploadParams = {
-          Bucket: process.env.AWS_S3_BUCKET as string,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-          ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
-        };
+  console.log("Saved lesson video locally with Key:", key);
+} else {
+  const timestamp = Date.now();
+  const fileExtension = req.file.mimetype.split("/")[1];
+  key = `lessons_video/${timestamp}.${fileExtension}`;
 
-        await s3.send(new PutObjectCommand(uploadParams));
-        console.log("Uploaded to S3 with Key:", key);
+  const uploadParams = {
+    Bucket: process.env.AWS_S3_BUCKET as string,
+    Key: key,
+    Body: req.file.buffer,
+    ContentType: req.file.mimetype,
+    ACL: ObjectCannedACL.private,
+  };
+
+  await s3.send(new PutObjectCommand(uploadParams));
+  console.log("Uploaded to S3 with Key:", key);
+}
       }
 
       await this._lessonService.addLesson(req.body, key); // Updated: Pass S3 key instead of Cloudinary publicId
@@ -197,20 +207,30 @@ export class LessonController {
         //   message: SUCCESS_MESSAGES.UPDATE_SUCCESS,
         // });
 
-        const timestamp = Date.now();
-        const fileExtension = req.file.mimetype.split("/")[1];
-        key = `lessons_video/${lessonId}-${timestamp}.${fileExtension}`;
+       if (process.env.FILE_STORAGE_DRIVER === "local") {
+  key = await saveUploadedFileLocally(
+    req.file,
+    "lessons_video",
+    String(lessonId)
+  );
 
-        const uploadParams = {
-          Bucket: process.env.AWS_S3_BUCKET as string,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-          ACL: ObjectCannedACL.private, // Ensure the file is not publicly accessible
-        };
+  console.log("Saved lesson video locally with Key:", key);
+} else {
+  const timestamp = Date.now();
+  const fileExtension = req.file.mimetype.split("/")[1];
+  key = `lessons_video/${lessonId}-${timestamp}.${fileExtension}`;
 
-        await s3.send(new PutObjectCommand(uploadParams));
-        console.log("Uploaded to S3 with Key:", key);
+  const uploadParams = {
+    Bucket: process.env.AWS_S3_BUCKET as string,
+    Key: key,
+    Body: req.file.buffer,
+    ContentType: req.file.mimetype,
+    ACL: ObjectCannedACL.private,
+  };
+
+  await s3.send(new PutObjectCommand(uploadParams));
+  console.log("Uploaded to S3 with Key:", key);
+}
       }
 
       await this._lessonService.editLesson(req.body, key, lessonId); // Updated: Pass S3 key instead of Cloudinary publicId

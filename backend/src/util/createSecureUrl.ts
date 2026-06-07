@@ -28,23 +28,26 @@
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3 } from "../app";
+import { resolveLocalFileUrl } from "./localFileStorage";
 
-// Updated: Function to generate a signed URL for S3 objects
 export const createSecureUrl = async (
   key: string,
   type: "image" | "video"
 ): Promise<string> => {
   try {
+    if (process.env.FILE_STORAGE_DRIVER === "local") {
+      return resolveLocalFileUrl(key);
+    }
+
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET as string,
       Key: key,
     });
 
-    // Generate a signed URL that expires in 1 hour (3600 seconds)
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
     return signedUrl;
   } catch (error) {
-    console.error("Error generating S3 signed URL:", error);
+    console.error("Error generating file URL:", error);
     throw new Error("Failed to generate secure URL");
   }
 };

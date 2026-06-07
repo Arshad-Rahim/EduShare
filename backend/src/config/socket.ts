@@ -8,6 +8,7 @@ import { createSecureUrl } from "../util/createSecureUrl";
 import { userModel } from "../models/userModels";
 import { s3 } from "../app";
 import { ObjectCannedACL, PutObjectCommand } from "@aws-sdk/client-s3";
+import { saveUploadedFileLocally } from "../util/localFileStorage";
 
 export function initializeSocket(httpServer: HttpServer, corsOptions: any) {
   const io = new Server(httpServer, {

@@ -12,6 +12,7 @@ import { ICourseService } from "../interfaces/serviceInterfaces/courseService";
 import { createSecureUrl } from "../util/createSecureUrl";
 import { s3 } from "../app";
 import { ObjectCannedACL, PutObjectCommand } from "@aws-sdk/client-s3";
+import { saveUploadedFileLocally } from "../util/localFileStorage";
 
 export class CourseController {
   constructor(private _courseService: ICourseService) {}
@@ -31,20 +32,30 @@ export class CourseController {
       let key: string = "";
 
       if (req.file) {
-        const timestamp = Date.now();
-        const fileExtension = req.file.mimetype.split("/")[1];
-        key = `course_thumbnails/${tutor.userId}-${timestamp}.${fileExtension}`;
+       if (process.env.FILE_STORAGE_DRIVER === "local") {
+  key = await saveUploadedFileLocally(
+    req.file,
+    "course_thumbnails",
+    String(tutor.userId)
+  );
 
-        const uploadParams = {
-          Bucket: process.env.AWS_S3_BUCKET as string,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-          ACL: ObjectCannedACL.private,
-        };
+  console.log("Saved course thumbnail locally with Key:", key);
+} else {
+  const timestamp = Date.now();
+  const fileExtension = req.file.mimetype.split("/")[1];
+  key = `course_thumbnails/${tutor.userId}-${timestamp}.${fileExtension}`;
 
-        await s3.send(new PutObjectCommand(uploadParams));
-        console.log("Uploaded to S3 with Key:", key);
+  const uploadParams = {
+    Bucket: process.env.AWS_S3_BUCKET as string,
+    Key: key,
+    Body: req.file.buffer,
+    ContentType: req.file.mimetype,
+    ACL: ObjectCannedACL.private,
+  };
+
+  await s3.send(new PutObjectCommand(uploadParams));
+  console.log("Uploaded to S3 with Key:", key);
+}
       }
 
       await this._courseService.addCourse(req.body, key, tutor.userId);
@@ -114,20 +125,30 @@ export class CourseController {
       const { courseId } = req.params;
       let key: string = "";
       if (req.file) {
-        const timestamp = Date.now();
-        const fileExtension = req.file.mimetype.split("/")[1];
-        key = `course_thumbnails/${courseId}-${timestamp}.${fileExtension}`;
+        if (process.env.FILE_STORAGE_DRIVER === "local") {
+  key = await saveUploadedFileLocally(
+    req.file,
+    "course_thumbnails",
+    String(courseId)
+  );
 
-        const uploadParams = {
-          Bucket: process.env.AWS_S3_BUCKET as string,
-          Key: key,
-          Body: req.file.buffer,
-          ContentType: req.file.mimetype,
-          ACL: ObjectCannedACL.private,
-        };
+  console.log("Saved course thumbnail locally with Key:", key);
+} else {
+  const timestamp = Date.now();
+  const fileExtension = req.file.mimetype.split("/")[1];
+  key = `course_thumbnails/${courseId}-${timestamp}.${fileExtension}`;
 
-        await s3.send(new PutObjectCommand(uploadParams));
-        console.log("Uploaded to S3 with Key:", key);
+  const uploadParams = {
+    Bucket: process.env.AWS_S3_BUCKET as string,
+    Key: key,
+    Body: req.file.buffer,
+    ContentType: req.file.mimetype,
+    ACL: ObjectCannedACL.private,
+  };
+
+  await s3.send(new PutObjectCommand(uploadParams));
+  console.log("Uploaded to S3 with Key:", key);
+}
       }
 
       await this._courseService.updateCourse(

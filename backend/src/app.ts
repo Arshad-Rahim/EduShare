@@ -4,6 +4,7 @@ dotenv.config();
 import express, { Express, NextFunction, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
 import { createServer } from "http";
 import { connectDB } from "./config/connectDB";
 import userRoutes from "./routes/userRoutes";
@@ -56,6 +57,11 @@ app.use(morgan("dev"));
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
+
+app.use(
+  "/uploads",
+  express.static(path.resolve(process.cwd(), process.env.LOCAL_UPLOAD_DIR || "uploads"))
+);
 
 // Routes
 app.use("/users", userRoutes);
