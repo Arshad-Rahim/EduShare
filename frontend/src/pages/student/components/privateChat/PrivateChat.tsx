@@ -7,6 +7,7 @@ import { io, Socket } from "socket.io-client";
 import { profileService } from "@/services/userService/profileService";
 import { toast } from "sonner";
 import { Header } from "@/pages/student/components/Header";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
 interface Message {
   _id?: string;
@@ -101,7 +102,7 @@ export function PrivateChat() {
       return;
     }
 
-    socketRef.current = io("https://edushare.arshadrahim.tech", {
+    socketRef.current = io(SOCKET_URL, {
       reconnection: true,
     });
 

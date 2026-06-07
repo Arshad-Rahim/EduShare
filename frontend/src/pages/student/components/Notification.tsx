@@ -4,6 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { courseService } from "@/services/courseService";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
 interface Notification {
   id: string;
@@ -36,7 +37,7 @@ export function Notifications() {
     console.log("Notifications initializing:", { userId, isTutor });
 
     // Initialize socket
-    socketRef.current = io("https://edushare.arshadrahim.tech", {
+    socketRef.current = io(SOCKET_URL, {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

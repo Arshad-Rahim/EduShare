@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { authAxiosInstance } from "@/api/authAxiosInstance";
 import { useSelector } from "react-redux";
 import { AxiosError } from "axios";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
 // Define types for type safety
 interface TutorResponse {
@@ -37,8 +38,7 @@ interface AppContextType {
 }
 
 // Constants for configuration
-const SOCKET_URL =
-  import.meta.env.REACT_APP_SOCKET_URL || "https://edushare.arshadrahim.tech";
+
 const ROLES = {
   TUTOR: "tutor" as const,
 };

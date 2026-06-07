@@ -27,8 +27,9 @@ import {
   Maximize2,
   X,
 } from "lucide-react";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
-const socket = io("https://edushare.arshadrahim.tech", {
+const socket = io(SOCKET_URL, {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,

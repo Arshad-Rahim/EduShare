@@ -24,6 +24,7 @@ import { removeUser } from "@/redux/slice/userSlice";
 import { toast } from "sonner";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { io, Socket } from "socket.io-client";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
 // Define notification type for profile updates
 interface ProfileNotification {
@@ -132,7 +133,7 @@ function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   useEffect(() => {
     if (!user) return;
 
-    socketRef.current = io("https://edushare.arshadrahim.tech", {
+    socketRef.current = io(SOCKET_URL, {
       reconnection: true,
     });
 

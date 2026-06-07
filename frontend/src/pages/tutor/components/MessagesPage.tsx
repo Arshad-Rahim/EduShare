@@ -14,6 +14,7 @@ import Header from "./Header";
 import  SideBar  from "./SideBar";
 import { tutorService } from "@/services/tutorService/tutorService";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
 interface Chat {
   privateChatId: string;
@@ -104,7 +105,7 @@ function MessagesPage() {
   useEffect(() => {
     if (!tutorId) return;
 
-    socketRef.current = io("https://edushare.arshadrahim.tech", {
+    socketRef.current = io(SOCKET_URL, {
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

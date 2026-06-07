@@ -14,6 +14,7 @@ import { courseService } from "@/services/courseService";
 import { profileService } from "@/services/userService/profileService";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SOCKET_URL } from "@/lib/socketUrl";
 
 interface Message {
   _id?: string;
@@ -114,7 +115,7 @@ export function CommunityChat() {
       return;
     }
 
-    socketRef.current = io("https://edushare.arshadrahim.tech", {
+    socketRef.current = io(SOCKET_URL, {
       reconnection: true,
     });
 
